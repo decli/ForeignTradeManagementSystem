@@ -1,0 +1,1832 @@
+<title>MT 通商 · TRADEFLOW｜界面与交互初稿</title>
+
+<style>
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root{
+  color-scheme: light dark;
+
+  /* 中性面：带一点蓝偏，不用纯灰 */
+  --paper:#F3F6FA;
+  --surface:#FFFFFF;
+  --surface-2:#F8FAFD;
+  --line:#E2E8F1;
+  --line-strong:#CBD5E3;
+
+  --text:#141D2B;
+  --text-2:#57657A;
+  --text-3:#8894A6;
+
+  /* 主色：航线蓝 */
+  --accent:#3B5BD6;
+  --accent-ink:#2A44AE;
+  --accent-soft:#E9EDFC;
+  --on-accent:#FFFFFF;
+
+  /* 语义色（与主色分离） */
+  --jade:#0E8F63;   --jade-soft:#E1F4EC;
+  --amber:#A96A00;  --amber-soft:#FAF0DA;
+  --coral:#C93B3B;  --coral-soft:#FBE6E6;
+  --violet:#6D46C4; --violet-soft:#EFE9FB;
+
+  /* 导航轨：两个主题都是深色，作为品牌锚点 */
+  --rail-bg:#0B1220;
+  --rail-bg-2:#111B2C;
+  --rail-line:#1E293C;
+  --rail-text:#C3CEDF;
+  --rail-text-2:#6E7E97;
+  --rail-active:#FFFFFF;
+
+  --shadow-1:0 1px 2px rgba(14,22,38,.06), 0 1px 3px rgba(14,22,38,.05);
+  --shadow-2:0 8px 24px -8px rgba(14,22,38,.18), 0 2px 6px rgba(14,22,38,.06);
+  --shadow-3:0 24px 60px -18px rgba(14,22,38,.35);
+
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+  --rail-w:238px;
+
+  --sans:"PingFang SC","HarmonyOS Sans SC","Hiragino Sans GB","Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"SF Mono","JetBrains Mono","Roboto Mono","DejaVu Sans Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0C121B;
+    --surface:#141C28;
+    --surface-2:#18212F;
+    --line:#243043;
+    --line-strong:#33435C;
+
+    --text:#E5EBF4;
+    --text-2:#9AA8BD;
+    --text-3:#6E7E95;
+
+    --accent:#8098F5;
+    --accent-ink:#A9BAFF;
+    --accent-soft:#1B2545;
+    --on-accent:#0B1220;
+
+    --jade:#41C596;  --jade-soft:#0F3128;
+    --amber:#D79A34; --amber-soft:#332711;
+    --coral:#E97070; --coral-soft:#3A1D1F;
+    --violet:#A98CEC; --violet-soft:#241C3D;
+
+    --rail-bg:#070C14;
+    --rail-bg-2:#0D1420;
+    --rail-line:#1A2333;
+
+    --shadow-1:0 1px 2px rgba(0,0,0,.4);
+    --shadow-2:0 8px 24px -8px rgba(0,0,0,.55);
+    --shadow-3:0 24px 60px -18px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0C121B; --surface:#141C28; --surface-2:#18212F;
+  --line:#243043; --line-strong:#33435C;
+  --text:#E5EBF4; --text-2:#9AA8BD; --text-3:#6E7E95;
+  --accent:#8098F5; --accent-ink:#A9BAFF; --accent-soft:#1B2545; --on-accent:#0B1220;
+  --jade:#41C596; --jade-soft:#0F3128;
+  --amber:#D79A34; --amber-soft:#332711;
+  --coral:#E97070; --coral-soft:#3A1D1F;
+  --violet:#A98CEC; --violet-soft:#241C3D;
+  --rail-bg:#070C14; --rail-bg-2:#0D1420; --rail-line:#1A2333;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4);
+  --shadow-2:0 8px 24px -8px rgba(0,0,0,.55);
+  --shadow-3:0 24px 60px -18px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --paper:#F3F6FA; --surface:#FFFFFF; --surface-2:#F8FAFD;
+  --line:#E2E8F1; --line-strong:#CBD5E3;
+  --text:#141D2B; --text-2:#57657A; --text-3:#8894A6;
+  --accent:#3B5BD6; --accent-ink:#2A44AE; --accent-soft:#E9EDFC; --on-accent:#FFFFFF;
+  --jade:#0E8F63; --jade-soft:#E1F4EC;
+  --amber:#A96A00; --amber-soft:#FAF0DA;
+  --coral:#C93B3B; --coral-soft:#FBE6E6;
+  --violet:#6D46C4; --violet-soft:#EFE9FB;
+  --rail-bg:#0B1220; --rail-bg-2:#111B2C; --rail-line:#1E293C;
+  --shadow-1:0 1px 2px rgba(14,22,38,.06), 0 1px 3px rgba(14,22,38,.05);
+  --shadow-2:0 8px 24px -8px rgba(14,22,38,.18), 0 2px 6px rgba(14,22,38,.06);
+  --shadow-3:0 24px 60px -18px rgba(14,22,38,.35);
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--paper); color:var(--text);
+  font-family:var(--sans); font-size:14px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+:where(button,input,select,textarea){ font:inherit; color:inherit; }
+:where(a){ color:var(--accent); text-decoration:none; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+.num{ font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+}
+
+/* ============================================================
+   App shell
+   ============================================================ */
+.app{ display:grid; grid-template-columns:var(--rail-w) minmax(0,1fr); min-height:100vh; }
+.app[data-collapsed="1"]{ --rail-w:64px; }
+
+/* ---- navigation rail ---- */
+.rail{
+  background:var(--rail-bg);
+  border-right:1px solid var(--rail-line);
+  display:flex; flex-direction:column;
+  position:sticky; top:0; height:100vh; overflow:hidden;
+}
+.brand{
+  display:flex; align-items:center; gap:11px;
+  padding:18px 16px 16px; border-bottom:1px solid var(--rail-line);
+  flex:0 0 auto;
+}
+.brand-mark{
+  width:34px; height:34px; flex:0 0 34px; border-radius:9px;
+  background:linear-gradient(155deg,#2F4ED0,#1B2C6E);
+  display:grid; place-items:center; box-shadow:0 3px 10px rgba(30,50,140,.45);
+}
+.brand-mark svg{ width:19px; height:19px; }
+.brand-txt{ min-width:0; }
+.brand-txt b{ display:block; color:#fff; font-size:15px; letter-spacing:.02em; line-height:1.25; }
+.brand-txt span{ display:block; color:var(--rail-text-2); font-size:10px; letter-spacing:.14em; font-family:var(--mono); }
+.app[data-collapsed="1"] .brand-txt{ display:none; }
+.app[data-collapsed="1"] .brand{ justify-content:center; padding-inline:0; }
+
+.nav{ flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain; padding:10px 8px 18px; }
+.nav::-webkit-scrollbar{ width:6px; }
+.nav::-webkit-scrollbar-thumb{ background:#22304A; border-radius:99px; }
+.nav-group{ margin-top:12px; }
+.nav-group:first-child{ margin-top:2px; }
+.nav-label{
+  display:flex; align-items:center; gap:7px;
+  padding:6px 10px; color:var(--rail-text-2);
+  font-size:11px; letter-spacing:.16em;
+}
+.nav-label svg{ width:13px; height:13px; opacity:.75; }
+.app[data-collapsed="1"] .nav-label span{ display:none; }
+.app[data-collapsed="1"] .nav-label{ justify-content:center; padding-inline:0; }
+
+.nav-item{
+  width:100%; display:flex; align-items:center; gap:10px;
+  padding:7px 10px; margin:1px 0; border:0; border-radius:8px;
+  background:transparent; color:var(--rail-text); cursor:pointer;
+  font-size:13.5px; text-align:left; transition:background .14s, color .14s;
+}
+.nav-item:hover{ background:var(--rail-bg-2); color:#fff; }
+.nav-item[aria-current="true"]{ background:var(--rail-bg-2); color:var(--rail-active); font-weight:600; }
+.nav-dot{
+  width:6px; height:6px; flex:0 0 6px; border-radius:99px;
+  background:#3B4A63; transition:background .14s, box-shadow .14s;
+}
+.nav-item:hover .nav-dot{ background:#5D7096; }
+.nav-item[aria-current="true"] .nav-dot{ background:#6E8CF5; box-shadow:0 0 0 3px rgba(110,140,245,.18); }
+.nav-item .ni-t{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tag-built{
+  flex:0 0 auto; font-size:10px; padding:1px 5px; border-radius:4px;
+  border:1px solid #2C5B45; color:#57B98D; letter-spacing:.02em;
+}
+.tag-new{ border-color:#4A3A68; color:#A98CEC; }
+.app[data-collapsed="1"] .nav-item .ni-t,
+.app[data-collapsed="1"] .tag-built{ display:none; }
+.app[data-collapsed="1"] .nav-item{ justify-content:center; padding-inline:0; }
+
+.rail-foot{
+  flex:0 0 auto; border-top:1px solid var(--rail-line); padding:10px 12px;
+  display:flex; align-items:center; gap:10px;
+}
+.avatar{
+  width:30px; height:30px; flex:0 0 30px; border-radius:99px;
+  background:#22304A; color:#C3CEDF; display:grid; place-items:center;
+  font-size:13px; font-weight:600;
+}
+.rail-foot .who{ min-width:0; flex:1; }
+.rail-foot .who b{ display:block; color:#E7EDF7; font-size:12.5px; font-weight:600; }
+.rail-foot .who span{ display:block; color:var(--rail-text-2); font-size:11px; }
+.app[data-collapsed="1"] .rail-foot .who,
+.app[data-collapsed="1"] .rail-foot .icon-btn{ display:none; }
+.app[data-collapsed="1"] .rail-foot{ justify-content:center; }
+
+/* ---- main column ---- */
+.main{ min-width:0; display:flex; flex-direction:column; }
+
+.topbar{
+  position:sticky; top:0; z-index:30;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter:saturate(1.4) blur(10px);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:14px;
+  padding:9px 20px; min-height:52px;
+}
+.fx{
+  display:flex; align-items:center; gap:9px;
+  background:var(--surface-2); border:1px solid var(--line);
+  border-radius:99px; padding:4px 12px 4px 10px; white-space:nowrap;
+}
+.fx .live{ width:7px; height:7px; border-radius:99px; background:var(--jade); box-shadow:0 0 0 3px color-mix(in srgb,var(--jade) 20%, transparent); }
+.fx .k{ color:var(--text-3); font-size:12px; }
+.fx .v{ font-size:13px; font-weight:600; }
+.fx .sep{ width:1px; height:14px; background:var(--line-strong); }
+
+.clocks{ display:flex; align-items:center; gap:16px; overflow:hidden; flex:1 1 auto; }
+.clock{ display:flex; align-items:center; gap:6px; white-space:nowrap; color:var(--text-3); font-size:12px; }
+.clock .t{ font-size:12.5px; color:var(--text-2); }
+.clock[data-open="1"]{ color:var(--text-2); }
+.clock[data-open="1"] .t{ color:var(--text); font-weight:600; }
+.clock .bulb{ width:6px; height:6px; border-radius:99px; background:var(--line-strong); }
+.clock[data-open="1"] .bulb{ background:var(--jade); }
+.clock[data-home="1"] .bulb{ background:var(--accent); }
+
+.topbar-right{ display:flex; align-items:center; gap:6px; margin-left:auto; }
+.icon-btn{
+  width:32px; height:32px; display:grid; place-items:center; position:relative;
+  border:1px solid transparent; border-radius:8px; background:transparent;
+  color:var(--text-2); cursor:pointer; transition:background .14s,color .14s;
+}
+.icon-btn:hover{ background:var(--surface-2); color:var(--text); border-color:var(--line); }
+.icon-btn svg{ width:17px; height:17px; }
+.rail .icon-btn{ color:var(--rail-text-2); }
+.rail .icon-btn:hover{ background:var(--rail-bg-2); color:#fff; border-color:transparent; }
+.bell-dot{
+  position:absolute; top:5px; right:5px; min-width:15px; height:15px; padding:0 4px;
+  border-radius:99px; background:var(--coral); color:#fff; font-size:10px;
+  display:grid; place-items:center; font-family:var(--mono);
+}
+
+/* ---- canvas ---- */
+.canvas{ padding:24px 24px 56px; max-width:1560px; width:100%; transition:padding-bottom .26s; }
+.app:has(.bulkbar.is-on) .canvas{ padding-bottom:180px; }
+.page{ display:none; animation:fade .22s ease; }
+.page.is-on{ display:block; }
+@keyframes fade{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:none; } }
+
+.page-head{ display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+.page-head h1{ margin:0; font-size:25px; line-height:1.25; letter-spacing:-.01em; text-wrap:balance; }
+.page-head p{ margin:4px 0 0; color:var(--text-3); font-size:13px; }
+.page-head .acts{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+
+/* ---- buttons ---- */
+.btn{
+  display:inline-flex; align-items:center; gap:6px;
+  height:34px; padding:0 14px; border-radius:8px;
+  border:1px solid var(--line-strong); background:var(--surface);
+  color:var(--text); font-size:13px; cursor:pointer;
+  transition:background .14s, border-color .14s, transform .08s;
+}
+.btn:hover{ background:var(--surface-2); border-color:var(--text-3); }
+.btn:active{ transform:translateY(1px); }
+.btn svg{ width:15px; height:15px; }
+.btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+.btn-primary:hover{ background:var(--accent-ink); border-color:var(--accent-ink); }
+.btn-ghost{ border-color:transparent; background:transparent; color:var(--text-2); }
+.btn-ghost:hover{ background:var(--surface-2); color:var(--text); }
+.btn-sm{ height:28px; padding:0 10px; font-size:12.5px; border-radius:7px; }
+
+/* ---- cards ---- */
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow-1); }
+.card-h{ padding:14px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
+.card-h h3{ margin:0; font-size:14px; font-weight:600; }
+.card-h .sub{ color:var(--text-3); font-size:12px; }
+.card-b{ padding:16px; }
+
+/* ---- KPI ---- */
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-bottom:16px; }
+.kpi{
+  position:relative; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r-lg); padding:14px 16px 13px; box-shadow:var(--shadow-1);
+  display:flex; flex-direction:column; gap:2px; overflow:hidden;
+}
+.kpi::before{ content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--line-strong); }
+.kpi[data-tone="accent"]::before{ background:var(--accent); }
+.kpi[data-tone="jade"]::before{ background:var(--jade); }
+.kpi[data-tone="amber"]::before{ background:var(--amber); }
+.kpi[data-tone="coral"]::before{ background:var(--coral); }
+.kpi .k{ color:var(--text-3); font-size:12px; display:flex; align-items:center; gap:6px; }
+.kpi .v{ font-size:27px; font-weight:600; line-height:1.25; }
+.kpi[data-tone="coral"] .v{ color:var(--coral); }
+.kpi[data-tone="jade"] .v{ color:var(--jade); }
+.kpi .f{ font-size:11.5px; color:var(--text-3); display:flex; align-items:center; gap:5px; }
+.kpi .spark{ position:absolute; right:10px; bottom:10px; opacity:.85; }
+.delta{ font-family:var(--mono); font-size:11.5px; }
+.delta.up{ color:var(--jade); } .delta.down{ color:var(--coral); }
+
+/* ---- filter bar ---- */
+.filters{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  margin-bottom:14px; box-shadow:var(--shadow-1);
+}
+.field{ position:relative; display:flex; align-items:center; }
+.field > svg{ position:absolute; left:9px; width:15px; height:15px; color:var(--text-3); pointer-events:none; }
+input[type="text"],input[type="search"],input[type="month"],select,textarea{
+  height:32px; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:8px; padding:0 10px; font-size:13px; min-width:0;
+  transition:border-color .14s, box-shadow .14s;
+}
+.field input{ padding-left:29px; }
+input:hover,select:hover{ border-color:var(--text-3); }
+input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%, transparent); }
+textarea{ height:auto; padding:8px 10px; line-height:1.55; resize:vertical; width:100%; font-family:var(--sans); }
+select{ cursor:pointer; padding-right:26px; appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:calc(100% - 14px) 14px, calc(100% - 9px) 14px;
+  background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+
+.check{ display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-size:13px; color:var(--text-2); user-select:none; }
+.check input{ width:15px; height:15px; accent-color:var(--accent); cursor:pointer; }
+
+.segment{ display:inline-flex; background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:2px; gap:2px; }
+.segment button{
+  border:0; background:transparent; color:var(--text-2); cursor:pointer;
+  padding:5px 13px; border-radius:7px; font-size:13px; transition:background .14s,color .14s;
+}
+.segment button:hover{ color:var(--text); }
+.segment button[aria-pressed="true"]{ background:var(--text); color:var(--surface); font-weight:600; }
+
+/* ---- table ---- */
+.table-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow-1); overflow:hidden; }
+.table-bar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:10px 14px; border-bottom:1px solid var(--line); background:var(--surface-2);
+  font-size:12.5px; color:var(--text-2);
+}
+.table-bar .hint{ margin-left:auto; color:var(--text-3); font-size:12px; }
+.table-scroll{ overflow-x:auto; }
+table{ border-collapse:separate; border-spacing:0; width:100%; }
+thead th{
+  position:sticky; top:0; z-index:2; background:var(--surface);
+  text-align:left; font-size:11.5px; font-weight:600; color:var(--text-3);
+  letter-spacing:.04em; padding:9px 12px; border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+tbody td{ padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:middle; font-size:13px; }
+tbody tr{ transition:background .12s; }
+tbody tr:hover{ background:var(--surface-2); }
+tbody tr[data-sel="1"]{ background:var(--accent-soft); }
+tbody tr:last-child td{ border-bottom:0; }
+td.mono,th.mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+td.nw{ white-space:nowrap; }
+.td-r{ text-align:right; }
+.cell-main{ font-weight:600; font-family:var(--mono); font-size:13px; letter-spacing:-.01em; white-space:nowrap; }
+.cell-sub{ color:var(--text-3); font-size:11.5px; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.row-flag{ display:inline-block; width:3px; align-self:stretch; }
+.row-acts{ display:flex; gap:1px; opacity:.45; transition:opacity .14s; }
+tbody tr:hover .row-acts, .row-acts:focus-within{ opacity:1; }
+.row-acts .icon-btn{ width:28px; height:28px; }
+.row-acts .icon-btn svg{ width:15px; height:15px; }
+
+/* status pills */
+.pill{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:2px 8px; border-radius:99px; font-size:11.5px; font-weight:600;
+  border:1px solid transparent; white-space:nowrap;
+}
+.pill::before{ content:""; width:5px; height:5px; border-radius:99px; background:currentColor; }
+.pill.jade{ background:var(--jade-soft); color:var(--jade); }
+.pill.amber{ background:var(--amber-soft); color:var(--amber); }
+.pill.coral{ background:var(--coral-soft); color:var(--coral); }
+.pill.accent{ background:var(--accent-soft); color:var(--accent-ink); }
+.pill.violet{ background:var(--violet-soft); color:var(--violet); }
+.pill.mute{ background:var(--surface-2); color:var(--text-3); border-color:var(--line); }
+.pill.plain::before{ display:none; }
+
+.chip{
+  display:inline-flex; align-items:center; gap:5px; max-width:280px;
+  padding:4px 8px; border-radius:8px; font-size:12.5px;
+  border:1px dashed var(--line-strong); background:var(--surface-2); color:var(--text-2);
+}
+.badge-batch{ font-size:10.5px; padding:1px 5px; border-radius:4px; background:var(--violet-soft); color:var(--violet); font-weight:600; }
+.badge-todo{ font-size:10.5px; padding:1px 5px; border-radius:4px; background:var(--amber-soft); color:var(--amber); font-weight:600; }
+
+/* editable note button */
+.note-btn{
+  display:flex; align-items:flex-start; gap:6px; width:100%; max-width:330px; text-align:left;
+  border:1px solid var(--line); background:var(--surface-2); color:var(--text);
+  border-radius:9px; padding:6px 8px; font-size:12.5px; line-height:1.45; cursor:pointer;
+  transition:border-color .14s, background .14s;
+}
+.note-btn:hover{ border-color:var(--accent); background:var(--accent-soft); }
+.note-btn .txt{ flex:1 1 auto; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.note-btn .caret{ flex:0 0 auto; margin-top:3px; opacity:.5; }
+.note-btn .caret svg{ width:12px; height:12px; display:block; }
+.note-empty{ color:var(--text-3); font-style:normal; }
+
+/* ============================================================
+   Signature component — milestone rail (里程碑航程线)
+   ============================================================ */
+.mrail{ min-width:250px; padding-top:2px; }
+.mrail-track{ position:relative; height:14px; }
+.mrail-line{ position:absolute; top:6px; height:2px; background:var(--line-strong); border-radius:2px; }
+.mrail-fill{ position:absolute; top:6px; height:2px; background:var(--accent); border-radius:2px; transition:width .4s cubic-bezier(.4,0,.2,1); }
+.mrail-nodes{ display:grid; }
+.mnode{ display:flex; flex-direction:column; align-items:center; gap:1px; position:relative; }
+.mdot{
+  width:11px; height:11px; border-radius:99px; box-sizing:border-box;
+  border:2px solid var(--line-strong); background:var(--surface); margin-bottom:3px;
+}
+.mnode[data-s="done"] .mdot{ background:var(--accent); border-color:var(--accent); }
+.mnode[data-s="now"] .mdot{ background:var(--surface); border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%, transparent); }
+.mnode[data-s="late"] .mdot{ background:var(--coral); border-color:var(--coral); box-shadow:0 0 0 3px color-mix(in srgb,var(--coral) 18%, transparent); }
+.mnode .ml{ font-size:10.5px; color:var(--text-3); letter-spacing:.02em; white-space:nowrap; }
+.mnode .mv{ font-family:var(--mono); font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; }
+.mnode[data-s="pending"] .mv{ color:var(--text-3); font-weight:400; }
+.mnode[data-s="late"] .mv{ color:var(--coral); }
+.mnode[data-s="now"] .mv{ color:var(--accent-ink); }
+.mnode .tip{
+  position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%) translateY(3px);
+  background:var(--text); color:var(--surface); font-size:11.5px; line-height:1.5;
+  padding:6px 9px; border-radius:7px; white-space:nowrap; pointer-events:none;
+  opacity:0; transition:opacity .14s, transform .14s; z-index:5; box-shadow:var(--shadow-2);
+}
+.mnode:hover .tip,.mnode:focus-visible .tip{ opacity:1; transform:translateX(-50%) translateY(0); }
+.mnode:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+
+/* ---- bulk action bar（勾选后从底部升起，表格保留满宽） ---- */
+.bulkbar{
+  position:fixed; bottom:16px; left:calc(var(--rail-w) + 20px); right:20px; z-index:55;
+  transform:translateY(150%); transition:transform .26s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.bulkbar.is-on{ transform:none; pointer-events:auto; }
+.bulkbar-in{
+  max-width:1120px; margin:0 auto; background:var(--surface);
+  border:1px solid var(--line-strong); border-radius:var(--r-lg); box-shadow:var(--shadow-3);
+  padding:11px 14px; display:flex; flex-direction:column; gap:9px;
+}
+.bb-top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.bb-n{ font-size:13px; font-weight:600; white-space:nowrap; }
+.bb-n b{ color:var(--accent-ink); }
+.bb-main{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.bb-main .grow{ flex:1 1 260px; min-width:200px; }
+.phrase-wrap{ display:flex; flex-wrap:wrap; gap:5px; }
+.phrase{
+  border:1px solid var(--line); background:var(--surface-2); color:var(--text-2);
+  border-radius:99px; padding:3px 9px; font-size:11.5px; cursor:pointer; transition:.14s;
+}
+.phrase:hover{ border-color:var(--accent); color:var(--accent-ink); background:var(--accent-soft); }
+.sel-list{ display:flex; gap:4px; overflow:hidden; flex:1 1 auto; min-width:0; }
+.sel-chip{ font-family:var(--mono); font-size:11px; background:var(--accent-soft); color:var(--accent-ink); border-radius:5px; padding:2px 6px; white-space:nowrap; }
+
+/* ---- drawer ---- */
+.scrim{
+  position:fixed; inset:0; background:rgba(8,14,24,.42); backdrop-filter:blur(2px);
+  opacity:0; pointer-events:none; transition:opacity .2s; z-index:60;
+}
+.scrim.is-on{ opacity:1; pointer-events:auto; }
+.drawer{
+  position:fixed; top:0; right:0; bottom:0; width:min(560px,94vw); z-index:61;
+  background:var(--surface); border-left:1px solid var(--line); box-shadow:var(--shadow-3);
+  transform:translateX(100%); transition:transform .26s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column;
+}
+.drawer.is-on{ transform:none; }
+.drawer-h{ padding:16px 18px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; gap:12px; }
+.drawer-h h2{ margin:0; font-size:17px; }
+.drawer-h .sub{ color:var(--text-3); font-size:12px; margin-top:3px; }
+.drawer-b{ flex:1; overflow-y:auto; padding:18px; }
+.drawer-f{ padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; background:var(--surface-2); }
+
+.tabs{ display:flex; gap:2px; border-bottom:1px solid var(--line); margin-bottom:16px; }
+.tabs button{
+  border:0; background:transparent; color:var(--text-2); cursor:pointer;
+  padding:8px 12px; font-size:13px; position:relative; border-radius:7px 7px 0 0;
+}
+.tabs button:hover{ color:var(--text); background:var(--surface-2); }
+.tabs button[aria-selected="true"]{ color:var(--accent-ink); font-weight:600; }
+.tabs button[aria-selected="true"]::after{ content:""; position:absolute; left:8px; right:8px; bottom:-1px; height:2px; background:var(--accent); border-radius:2px; }
+
+.dl{ display:grid; grid-template-columns:88px 1fr; gap:9px 14px; font-size:13px; }
+.dl dt{ color:var(--text-3); font-size:12.5px; }
+.dl dd{ margin:0; }
+
+.tl{ list-style:none; margin:0; padding:0 0 0 20px; position:relative; }
+.tl::before{ content:""; position:absolute; left:4px; top:6px; bottom:8px; width:2px; background:var(--line); }
+.tl li{ position:relative; padding:0 0 16px; }
+.tl li::before{ content:""; position:absolute; left:-20px; top:5px; width:10px; height:10px; border-radius:99px; background:var(--surface); border:2px solid var(--line-strong); }
+.tl li[data-s="done"]::before{ background:var(--accent); border-color:var(--accent); }
+.tl li[data-s="late"]::before{ background:var(--coral); border-color:var(--coral); }
+.tl .when{ font-family:var(--mono); font-size:11.5px; color:var(--text-3); }
+.tl .what{ font-size:13px; }
+.tl .who{ font-size:11.5px; color:var(--text-3); }
+
+/* cost bar */
+.costbar{ display:flex; height:11px; border-radius:99px; overflow:hidden; background:var(--surface-2); margin:10px 0 12px; }
+.costbar i{ display:block; }
+.legend{ display:flex; flex-wrap:wrap; gap:10px 16px; font-size:12px; color:var(--text-2); }
+.legend span{ display:inline-flex; align-items:center; gap:6px; }
+.legend i{ width:9px; height:9px; border-radius:3px; }
+
+/* ---- popover ---- */
+.pop{
+  position:absolute; z-index:80; width:320px; background:var(--surface);
+  border:1px solid var(--line-strong); border-radius:var(--r-md); box-shadow:var(--shadow-3);
+  padding:12px; display:none;
+}
+.pop.is-on{ display:block; }
+.pop h4{ margin:0 0 8px; font-size:12.5px; color:var(--text-3); font-weight:600; letter-spacing:.04em; }
+.pop-f{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+
+/* ---- toast ---- */
+.toasts{ position:fixed; right:20px; bottom:20px; z-index:90; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+.toast{
+  display:flex; align-items:center; gap:10px; background:var(--text); color:var(--surface);
+  padding:10px 14px; border-radius:10px; box-shadow:var(--shadow-3); font-size:13px;
+  animation:pop .22s cubic-bezier(.2,.8,.3,1);
+}
+.toast button{ border:0; background:transparent; color:var(--accent-ink); font-weight:600; cursor:pointer; padding:0; }
+:root[data-theme="dark"] .toast button, :root:not([data-theme]) .toast button{ color:var(--accent); }
+@keyframes pop{ from{ opacity:0; transform:translateY(8px) scale(.97);} to{ opacity:1; transform:none;} }
+
+/* ---- pagination ---- */
+.pager{ display:flex; align-items:center; gap:10px; padding:11px 14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--text-3); }
+.pager .grow{ margin-left:auto; display:flex; align-items:center; gap:6px; }
+
+/* ---- doc pages (设计说明 / 技术选型) ---- */
+.doc{ max-width:960px; }
+.doc h2{ font-size:19px; margin:34px 0 10px; letter-spacing:-.01em; }
+.doc h2:first-of-type{ margin-top:8px; }
+.doc h3{ font-size:14.5px; margin:22px 0 8px; }
+.doc p{ color:var(--text-2); margin:0 0 12px; max-width:68ch; }
+.doc ul{ color:var(--text-2); margin:0 0 12px; padding-left:20px; }
+.doc li{ margin-bottom:6px; }
+.doc code{ font-family:var(--mono); font-size:12.5px; background:var(--surface-2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; }
+.doc table{ font-size:13px; margin-bottom:14px; }
+.doc table th{ position:static; background:var(--surface-2); }
+.doc .card{ overflow:hidden; }
+.lead{ font-size:15px; color:var(--text-2); max-width:64ch; }
+.rule{ height:1px; background:var(--line); margin:26px 0; border:0; }
+
+.swatches{ display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px; }
+.sw{ border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface); }
+.sw i{ display:block; height:46px; }
+.sw b{ display:block; padding:7px 9px 2px; font-size:12px; }
+.sw code{ display:block; margin:0 9px 8px; font-size:11px; background:transparent; border:0; padding:0; color:var(--text-3); }
+
+.note{ border-left:3px solid var(--accent); background:var(--accent-soft); padding:11px 14px; border-radius:0 9px 9px 0; font-size:13px; color:var(--text-2); margin:0 0 14px; }
+.note.warn{ border-color:var(--amber); background:var(--amber-soft); }
+.note b{ color:var(--text); }
+
+.qa{ border:1px solid var(--line); border-radius:var(--r-md); padding:12px 14px; margin-bottom:10px; background:var(--surface); }
+.qa b{ display:block; margin-bottom:4px; font-size:13.5px; }
+.qa p{ margin:0; font-size:12.5px; }
+
+/* ---- dashboard bits ---- */
+.grid-2{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }
+.grid-3{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; align-items:start; }
+.bars{ display:flex; flex-direction:column; gap:11px; }
+.bar-row{ display:grid; grid-template-columns:74px 1fr 62px; gap:10px; align-items:center; font-size:12.5px; }
+.bar-track{ display:block; height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden; }
+.bar-fill{ display:block; height:100%; border-radius:99px; background:var(--accent); }
+.risk{ display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--line); align-items:flex-start; }
+.risk:last-child{ border-bottom:0; }
+.risk .ico{ width:26px; height:26px; flex:0 0 26px; border-radius:8px; display:grid; place-items:center; }
+.risk .ico svg{ width:14px; height:14px; }
+.risk b{ display:block; font-size:13px; font-weight:600; }
+.risk span{ font-size:12px; color:var(--text-3); }
+.risk .go{ margin-left:auto; }
+.lead-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+.lead-row:last-child{ border-bottom:0; }
+.rank{ width:20px; font-family:var(--mono); font-size:12px; color:var(--text-3); }
+
+/* ---- customer split ---- */
+.split{ display:grid; grid-template-columns:300px minmax(0,1fr); gap:16px; align-items:start; }
+.clist{ max-height:560px; overflow:auto; }
+.crow{
+  display:flex; gap:10px; align-items:center; width:100%; text-align:left;
+  padding:11px 14px; border:0; border-bottom:1px solid var(--line);
+  background:transparent; cursor:pointer; color:inherit; transition:background .12s;
+}
+.crow:hover{ background:var(--surface-2); }
+.crow[aria-current="true"]{ background:var(--accent-soft); }
+.crow .who b{ display:block; font-size:13px; }
+.crow .who span{ display:block; font-size:11.5px; color:var(--text-3); }
+
+/* ---- placeholder page ---- */
+.soon{ text-align:center; padding:56px 20px; }
+.soon .badge{ display:inline-flex; margin-bottom:14px; }
+.soon h2{ margin:0 0 8px; font-size:20px; }
+.soon p{ color:var(--text-3); max-width:52ch; margin:0 auto 18px; }
+.scope{ display:inline-flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:640px; }
+.scope span{ border:1px solid var(--line); border-radius:99px; padding:4px 11px; font-size:12.5px; color:var(--text-2); background:var(--surface-2); }
+
+/* ---- responsive ---- */
+@media (max-width:1280px){ .grid-2{ grid-template-columns:1fr; } }
+@media (max-width:1080px){
+  .app{ grid-template-columns:64px minmax(0,1fr); --rail-w:64px; }
+  .app .brand-txt,.app .nav-label span,.app .nav-item .ni-t,.app .tag-built,.app .rail-foot .who{ display:none; }
+  .app .nav-item,.app .nav-label,.app .brand,.app .rail-foot{ justify-content:center; padding-inline:0; }
+  .clocks{ display:none; }
+  .split{ grid-template-columns:1fr; }
+}
+@media (max-width:720px){
+  .canvas{ padding:16px 14px 48px; }
+  .page-head h1{ font-size:21px; }
+  .fx .k{ display:none; }
+}
+</style>
+
+<div class="app" id="app">
+  <!-- ==================== NAV RAIL ==================== -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 16.5 12 21l9-4.5"/><path d="M3 12 12 16.5 21 12"/><path d="M12 3 3 7.5 12 12l9-4.5L12 3Z"/>
+        </svg>
+      </div>
+      <div class="brand-txt"><b>MT 通商</b><span>MT TRADEFLOW</span></div>
+    </div>
+    <nav class="nav" id="nav" aria-label="主导航"></nav>
+    <div class="rail-foot">
+      <div class="avatar">尤</div>
+      <div class="who"><b>尤麒翔</b><span>管理员 · 全部数据</span></div>
+      <button class="icon-btn" id="collapseBtn" title="收起导航" aria-label="收起导航">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN ==================== -->
+  <div class="main">
+    <header class="topbar">
+      <div class="fx" title="点击可改自定汇率">
+        <span class="live" aria-hidden="true"></span>
+        <span class="k">市场</span><span class="v num">6.7392</span>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="k">自定</span><span class="v num">6.7000</span>
+        <span class="k num" style="opacity:.7">07/23</span>
+      </div>
+      <div class="clocks" id="clocks" aria-label="客户所在地时间"></div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="themeBtn" title="切换浅色 / 深色" aria-label="切换浅色 / 深色">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <button class="icon-btn" title="待办与提醒" aria-label="待办与提醒">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bell-dot num">7</span>
+        </button>
+        <button class="icon-btn" title="退出登录" aria-label="退出登录">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="canvas" id="canvas">
+
+      <!-- ============ 设计说明 ============ -->
+      <section class="page doc" data-page="brief">
+        <div class="page-head">
+          <div>
+            <h1>界面与交互初稿</h1>
+            <p>MT 通商 · TRADEFLOW ｜ 提交评审 · 2026-08-06</p>
+          </div>
+        </div>
+
+        <p class="lead">本页是可点击原型，不是静态图。左侧导航里带 <span class="tag-built" style="border-color:var(--jade);color:var(--jade)">已建</span> 的模块都能点开；跟单表、订单核算、退税、看板、客户五个页面接了模拟数据，状态直改、批量更新、抽屉详情、筛选都真的能操作。</p>
+
+        <h2>一、这次重构解决的四个具体问题</h2>
+        <div class="grid-3">
+          <div class="card"><div class="card-b">
+            <b style="font-size:13.5px">① 里程碑读不出「进度」</b>
+            <p style="margin:6px 0 0;font-size:12.5px">原来是四个孤立圆点，看得出哪几步有日期，看不出这票走到哪、离下一步还有几天。新方案把圆点连成一条<b>有填充进度的航程线</b>，当前节点带光晕，超期节点转珊瑚红，悬停出「计划 vs 实际」。</p>
+          </div></div>
+          <div class="card"><div class="card-b">
+            <b style="font-size:13.5px">② 一屏塞了两排筛选</b>
+            <p style="margin:6px 0 0;font-size:12.5px">九个筛选器平铺占掉两行。新方案保留最高频的三个（搜索 / 动态 / 仅进行中），其余收进「更多筛选」，并把已生效的条件以可单独删除的胶囊回显——筛完之后永远知道自己在看什么。</p>
+          </div></div>
+          <div class="card"><div class="card-b">
+            <b style="font-size:13.5px">③ 数字和文字混在一种字体里</b>
+            <p style="margin:6px 0 0;font-size:12.5px">柜号、PI 号、报关单号、金额都是<b>要逐位核对</b>的数据。全部改用等宽字体 + 等宽数字，列与列之间小数点自然对齐，抄柜号时不会把 <span class="num">0</span> 看成 <span class="num">O</span>。</p>
+          </div></div>
+          <div class="card"><div class="card-b">
+            <b style="font-size:13.5px">④ 「快捷更新」占了一整条右栏</b>
+            <p style="margin:6px 0 0;font-size:12.5px">原来它常驻右侧约 300px，没勾选时是空的，却让里程碑那一列在 1600px 以下的屏幕上被挤出可视区。新方案改成<b>勾选后从底部升起的操作条</b>：表格永远满宽，操作条只在需要时出现。<span style="color:var(--text-3)">这条改动与截图不同，如果你更习惯右栏，我改回去也很快。</span></p>
+          </div></div>
+          <div class="card"><div class="card-b">
+            <b style="font-size:13.5px">⑤ 异常不会自己冒出来</b>
+            <p style="margin:6px 0 0;font-size:12.5px">停滞、超期、利润率为负、退税未关联，原来都要靠人去翻。新方案统一成语义色（松绿=正常 / 琥珀=待办 / 珊瑚红=异常），行首 3px 色条，看板首屏有「今天要处理什么」清单。</p>
+          </div></div>
+        </div>
+
+        <h2>二、色彩</h2>
+        <p>主色只有一个（航线蓝），语义色三个，两者严格分离：蓝色永远表示「系统的强调」，绿 / 琥珀 / 红永远表示「业务的状态」。深浅两套主题都调过对比度，导航轨在两种主题下都是深色，作为品牌锚点。</p>
+        <div class="swatches" id="swatches"></div>
+
+        <h2>三、字体与层级</h2>
+        <p>中文正文走系统字体栈（PingFang / 鸿蒙 / 微软雅黑），不外链网络字体，内网和离线环境都不会掉字。代码型数据统一等宽。</p>
+        <div class="card"><div class="card-b" style="display:flex;flex-direction:column;gap:12px">
+          <div><div style="font-size:11.5px;color:var(--text-3)">页面标题 / 25px / 600</div><div style="font-size:25px;font-weight:600">订单核算跟踪</div></div>
+          <div><div style="font-size:11.5px;color:var(--text-3)">KPI 数值 / 27px / 600 / 等宽</div><div class="num" style="font-size:27px;font-weight:600">$4,620,946</div></div>
+          <div><div style="font-size:11.5px;color:var(--text-3)">表格正文 / 13px</div><div style="font-size:13px">待客户确认清关资料 + 付尾款</div></div>
+          <div><div style="font-size:11.5px;color:var(--text-3)">代码型数据 / 13px / 等宽</div><div class="num" style="font-size:13px">TCNU4968789 · MT26X04118-4 · ¥113,760.00</div></div>
+          <div><div style="font-size:11.5px;color:var(--text-3)">表头与标签 / 11.5px / 字距 .04em</div><div style="font-size:11.5px;letter-spacing:.04em;color:var(--text-3)">柜号 / 船司　　进度里程碑　　订单利润率</div></div>
+        </div></div>
+
+        <h2>四、组件表</h2>
+        <div class="card"><div class="card-b" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <span class="pill jade">已放行</span><span class="pill amber">未放行</span><span class="pill accent">待报关</span>
+          <span class="pill coral">停滞 8 天</span><span class="pill violet">已归档</span><span class="pill mute">草稿</span>
+          <span class="badge-batch">第 4 批</span><span class="badge-todo">费用估算未填</span>
+          <button class="btn btn-sm">次要按钮</button><button class="btn btn-primary btn-sm">主要按钮</button>
+          <span class="chip">FOB-SH · 整柜</span>
+        </div></div>
+
+        <h2>五、交互约定</h2>
+        <ul>
+          <li><b>就地编辑优先。</b>动态、状态、里程碑日期都点一下就能改，不必进详情页——这是跟单员一天要做几十次的动作。</li>
+          <li><b>批量是一等公民。</b>勾选多行 → 右侧「快捷更新」面板亮起 → 一次写完动态 + 日期，常用短语一键填入。</li>
+          <li><b>详情用抽屉不用跳页。</b>看完就关，列表滚动位置和筛选条件都不丢。</li>
+          <li><b>破坏性操作必有撤销。</b>删除、批量覆盖后弹出带「撤销」的提示条，5 秒内可反悔。</li>
+          <li><b>每个手势都有按钮替身。</b>不依赖右键、长按、拖拽这类不可发现的操作。</li>
+          <li><b>空态说人话。</b>不写「暂无数据」，写「当前筛选下没有进行中的批次，试试关掉『仅进行中』」。</li>
+        </ul>
+
+        <hr class="rule"/>
+        <p style="font-size:12.5px;color:var(--text-3)">下一页 →「技术选型」列出了栈的取舍、部署方式、SQLite → MySQL 的切换路径，以及需要你拍板的问题。</p>
+      </section>
+
+      <!-- ============ 技术选型 ============ -->
+      <section class="page doc" data-page="stack">
+        <div class="page-head"><div><h1>技术选型</h1><p>目标：一条命令跑起来、单进程单端口、没有重型中间件、数据库能从 SQLite 平滑换到 MySQL</p></div></div>
+
+        <div class="note"><b>推荐方案：Next.js 15 全栈单服务 + Prisma + SQLite。</b>前后端同一个工程、同一个进程、同一个端口，<code>npm install &amp;&amp; npm run build &amp;&amp; npm start</code> 就能用；数据库就是一个 <code>.db</code> 文件，拷走即备份。要上 MySQL 时改一行 <code>provider</code> 加一条连接串。</div>
+
+        <h2>一、栈明细</h2>
+        <div class="card"><div class="table-scroll"><table>
+          <thead><tr><th>层</th><th>选型</th><th>为什么</th></tr></thead>
+          <tbody>
+            <tr><td>运行时</td><td class="mono">Node.js 20 LTS</td><td>群晖 / 任何 Linux 都能装；只需要一个运行时</td></tr>
+            <tr><td>框架</td><td class="mono">Next.js 15 (App Router) + React 19</td><td>页面和 API 在一个工程里，一个端口，省掉前后端分离的部署复杂度</td></tr>
+            <tr><td>语言</td><td class="mono">TypeScript</td><td>金额、汇率、状态机这类逻辑，类型能挡掉大量低级错误</td></tr>
+            <tr><td>样式</td><td class="mono">Tailwind CSS v4</td><td>零运行时；本原型的 token 体系可直接搬成 Tailwind 变量</td></tr>
+            <tr><td>组件</td><td class="mono">shadcn/ui (Radix)</td><td>组件源码直接进仓库，不是黑盒依赖，可按本设计稿随意改</td></tr>
+            <tr><td>表格</td><td class="mono">TanStack Table v8</td><td>只有逻辑没有样式；列固定、排序、行选择、虚拟滚动都够用</td></tr>
+            <tr><td>数据层</td><td class="mono">Prisma ORM</td><td>SQLite / MySQL 同一套 schema；迁移、类型生成一条龙</td></tr>
+            <tr><td>数据库</td><td class="mono">SQLite（默认）→ MySQL 8</td><td>见下一节的切换路径</td></tr>
+            <tr><td>登录</td><td class="mono">Cookie Session + argon2</td><td>自建约 200 行，不引入 OAuth 体系；后续要接企业微信 / 钉钉再加</td></tr>
+            <tr><td>Excel</td><td class="mono">SheetJS / ExcelJS</td><td>导入导出在服务端跑，模板与现有台账对齐</td></tr>
+            <tr><td>图表</td><td class="mono">Recharts</td><td>看板用量不大；如果嫌重可直接用本原型的手写 SVG</td></tr>
+            <tr><td>定时任务</td><td class="mono">node-cron（进程内）</td><td>汇率刷新、超期扫描、退税提醒——这个量级不需要独立调度器</td></tr>
+          </tbody>
+        </table></div></div>
+
+        <h3>明确不引入</h3>
+        <p>Kafka / RabbitMQ（几万行数据用数据库表当队列足够）、Redis（Node 进程内缓存够用，需要多实例时再加）、Elasticsearch（SQLite FTS5 / MySQL 全文索引就能覆盖搜索）、Oracle / PostgreSQL（超配）、微服务拆分（团队规模不匹配）、Docker Swarm / K8s（单机就够）。</p>
+
+        <h2>二、SQLite → MySQL 的切换路径</h2>
+        <ul>
+          <li><code>schema.prisma</code> 里 <code>provider</code> 从 <code>sqlite</code> 改成 <code>mysql</code>，<code>DATABASE_URL</code> 换连接串，跑一次 <code>prisma migrate</code>，代码零改动。</li>
+          <li>迁移目录按方言分开维护（<code>prisma/migrations-sqlite</code> / <code>-mysql</code>），因为两边生成的 DDL 不同。</li>
+          <li>schema 只用两库都支持的类型：不用 SQLite 特有写法，不用 MySQL 的 <code>ENUM</code>（状态一律存字符串 + 应用层枚举）。</li>
+          <li>存量数据用一次性导出导入脚本搬过去（<code>scripts/migrate-to-mysql.ts</code>），本身也是备份工具。</li>
+        </ul>
+        <div class="note warn"><b>金额一律用整数存。</b>SQLite 没有真正的 DECIMAL，浮点会在核算和退税上凑不平账。约定：金额存「分」（<code>BigInt</code>），汇率存 6 位小数的整数（<code>6.7392</code> → <code>6739200</code>），只在展示层格式化。这条在第一行代码之前定下来，后面改成本极高。</div>
+
+        <h2>三、部署</h2>
+        <ul>
+          <li><b>裸机 / 群晖 SSH：</b><code>npm ci &amp;&amp; npm run build &amp;&amp; npm start</code>，默认 3000 端口，用 <code>pm2</code> 或 systemd 守护。</li>
+          <li><b>Docker（群晖套件推荐）：</b>一个镜像 + 一个数据卷，<code>docker compose up -d</code> 完事。没有第二个容器。</li>
+          <li><b>备份：</b>SQLite 阶段就是定时拷贝那个 <code>.db</code> 文件；MySQL 阶段用 <code>mysqldump</code>。</li>
+          <li><b>升级：</b>拉代码 → build → 重启，迁移在启动时自动执行。</li>
+        </ul>
+
+        <h2>四、数据模型草案（核心表）</h2>
+        <div class="card"><div class="table-scroll"><table>
+          <thead><tr><th>表</th><th>关键字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">customer</td><td class="mono">code, name, country, sales_id, credit_level, sinosure_limit</td><td>客户主档，中信保额度挂在这</td></tr>
+            <tr><td class="mono">pi</td><td class="mono">pi_no, customer_id, sales_id, signed_at, amount_cents, currency, seller_id</td><td>PI 取号即建档，全系统主线索</td></tr>
+            <tr><td class="mono">order_costing</td><td class="mono">pi_id, purchase_cost, receivable, payable, profit_rate, status</td><td>订单核算，成本超支自动进复核</td></tr>
+            <tr><td class="mono">shipment</td><td class="mono">batch_no, pi_id, country, term, mode, fcl, container_no, carrier, pod, release_state</td><td>跟单表一行 = 一个出运批次</td></tr>
+            <tr><td class="mono">shipment_milestone</td><td class="mono">shipment_id, kind, planned_on, actual_on</td><td>交期 / 装柜 / 进仓 / ATD / ETA，一行一个节点</td></tr>
+            <tr><td class="mono">shipment_note</td><td class="mono">shipment_id, body, happened_on, author_id</td><td>动态是流水而非单字段，才能有历史</td></tr>
+            <tr><td class="mono">tax_invoice</td><td class="mono">declare_month, batch, buyer_id, seller, invoice_no, amount, tax, customs_no, pi_id?</td><td><code>pi_id</code> 可空 = 未关联订单行</td></tr>
+            <tr><td class="mono">payment</td><td class="mono">pi_id, direction, amount_cents, currency, paid_on, account_id</td><td>收付款，汇总到资金看板</td></tr>
+            <tr><td class="mono">audit_log</td><td class="mono">actor_id, entity, entity_id, action, before, after, at</td><td>改动全留痕，对应「审计日志」模块</td></tr>
+          </tbody>
+        </table></div></div>
+
+        <h2>五、权限</h2>
+        <p>两个维度组合，不做复杂的 RBAC 树：<b>角色</b>（管理员 / 业务员 / 跟单 / 采购 / 财务 / 只读）决定能进哪些模块和能不能改；<b>数据范围</b>（本人 / 本组 / 全部）决定看到哪些行。财务字段（成本、利润率、应付）对业务员默认隐藏，可按角色单独开。</p>
+
+        <h2>六、建议的推进顺序</h2>
+        <div class="card"><div class="table-scroll"><table>
+          <thead><tr><th>阶段</th><th>内容</th><th>产出</th></tr></thead>
+          <tbody>
+            <tr><td>M1</td><td>工程骨架 + 登录 + 权限 + 客户 / PI 取号 + 设计系统落地</td><td>能登录、能建客户和 PI</td></tr>
+            <tr><td>M2</td><td><b>跟单表</b>（含里程碑、动态、批量更新、Excel 导入导出）</td><td>跟单员可以完全脱离 Excel</td></tr>
+            <tr><td>M3</td><td>订单核算跟踪 + 收付款 + 供应商 / 采购合同</td><td>利润率与资金链路打通</td></tr>
+            <tr><td>M4</td><td>退税管理 + 单证备案 + 银行日记账</td><td>财务闭环</td></tr>
+            <tr><td>M5</td><td>数据看板 + 报表中心 + 提成绩效 + 审计日志</td><td>管理视角</td></tr>
+          </tbody>
+        </table></div></div>
+
+        <h2>七、需要你拍板的问题</h2>
+        <div class="qa"><b>1. 这套系统是替换现有的，还是并行重建？</b><p>如果是替换，我需要知道现有系统的数据能不能导出（Excel 就行），我按导出结构设计导入器；如果是并行，第一期就只做只读的展示层，不碰写入。</p></div>
+        <div class="qa"><b>2. 第一期先落哪个模块？</b><p>我的建议是跟单表——它是使用频率最高、Excel 最难承载的一块，做完就能立刻见效。</p></div>
+        <div class="qa"><b>3. 多公司段是怎么划的？</b><p>退税页有「晓行天下 / 供应链」两个段。这是两套独立账套（数据完全隔离），还是同一套数据的开票主体不同？这决定表结构要不要加租户维度。</p></div>
+        <div class="qa"><b>4. 手机上要用吗？</b><p>如果业务员在外面要查跟单状态，我会把跟单表和订单做成移动端可用的卡片视图；如果只在电脑上用，我就把宽度全部让给数据密度。</p></div>
+      </section>
+
+      <!-- ============ 数据看板 ============ -->
+      <section class="page" data-page="dashboard">
+        <div class="page-head">
+          <div><h1>数据看板</h1><p>2026 年度 · 全部公司段 · 数据截至今天 11:47</p></div>
+          <div class="acts">
+            <select aria-label="统计范围"><option>本年度 2026</option><option>本季度</option><option>本月</option></select>
+            <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>导出报表</button>
+          </div>
+        </div>
+        <div class="kpis" id="dashKpis"></div>
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-h"><h3>月度出运与订单额</h3><span class="sub">柱=出运柜量 · 线=订单额（万美元）</span></div>
+            <div class="card-b" id="chartTrend"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>今天要处理什么</h3><span class="sub" style="margin-left:auto"><span class="pill coral">7 项</span></span></div>
+            <div class="card-b" style="padding-top:4px" id="riskList"></div>
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-h"><h3>目的国 TOP 6</h3><span class="sub">按在跟订单额</span></div>
+            <div class="card-b"><div class="bars" id="countryBars"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>业务员业绩</h3><span class="sub">在跟订单额 / 利润率</span></div>
+            <div class="card-b" style="padding-top:6px" id="leaderboard"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>订单利润率分布</h3><span class="sub">共 176 单</span></div>
+            <div class="card-b" id="chartProfit"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 跟单表 ============ -->
+      <section class="page" data-page="followups">
+        <div class="page-head">
+          <div><h1>跟单表</h1><p>出运跟踪台账 · 一行一个出运批次</p></div>
+          <div class="acts">
+            <button class="btn" data-toast="已导出当前筛选结果（20 行）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>导出 Excel</button>
+            <button class="btn btn-primary" data-toast="新增批次表单（原型未实现）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>新增批次</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="fuSearch" placeholder="搜批次号 / 柜号 / 客户" style="width:230px"/>
+          </div>
+          <select id="fuState" aria-label="放行状态"><option value="">放行状态：全部</option><option>已放行</option><option>未放行</option><option>待报关</option></select>
+          <select id="fuSales" aria-label="业务员"><option value="">业务员：全部</option><option>Ada</option><option>Sophie</option><option>Sunny</option><option>Summer</option></select>
+          <label class="check"><input type="checkbox" id="fuActive" checked/>仅进行中</label>
+          <button class="btn btn-ghost btn-sm" id="fuMore">更多筛选 <span class="num" style="color:var(--text-3)">+5</span></button>
+          <button class="btn btn-ghost btn-sm" id="fuReset" style="margin-left:auto">重置</button>
+        </div>
+
+        <div>
+          <div class="table-wrap">
+            <div class="table-bar">
+              <span id="fuCount">本页 <b class="num">0</b> 条</span>
+              <span class="pill jade plain" id="fuActiveCount">进行中 0</span>
+              <span class="pill coral plain" id="fuLateCount">停滞 / 超期 0</span>
+              <span class="hint">点动态或状态即可直改 · 勾选多行可批量</span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr>
+                  <th style="width:36px"><input type="checkbox" id="fuAll" aria-label="全选" style="accent-color:var(--accent)"/></th>
+                  <th style="min-width:156px">批次号 / 国家</th><th>业务员 / 小组</th><th>走货</th><th style="min-width:250px">最新动态</th>
+                  <th style="min-width:130px">柜号 / 船司</th><th style="min-width:266px">进度里程碑</th><th style="width:96px">操作</th>
+                </tr></thead>
+                <tbody id="fuBody"></tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <span>共 <b class="num">86</b> 条记录</span>
+              <div class="grow">
+                <button class="btn btn-sm" disabled style="opacity:.5">上一页</button>
+                <span class="num">1 / 5</span>
+                <button class="btn btn-sm" data-toast="翻页（原型只有第 1 页数据）">下一页</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 订单核算跟踪 ============ -->
+      <section class="page" data-page="orders">
+        <div class="page-head">
+          <div><h1>订单核算跟踪</h1><p>每个 PI 一行 · 成本超支自动进入复核</p></div>
+          <div class="acts">
+            <button class="btn" data-toast="Excel 导入向导（原型未实现）">导入 Excel</button>
+            <button class="btn" data-toast="已导出 175 行">导出 Excel</button>
+            <button class="btn btn-primary" data-toast="新增订单表单（原型未实现）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>新增订单</button>
+          </div>
+        </div>
+        <div class="kpis" id="ordKpis"></div>
+        <div class="filters">
+          <div class="segment" role="group" aria-label="归档状态">
+            <button aria-pressed="true" data-arch="0">在跟进</button><button aria-pressed="false" data-arch="1">已归档</button>
+          </div>
+          <div class="segment" role="group" aria-label="结算状态" id="ordSeg">
+            <button aria-pressed="true" data-st="">全部</button><button aria-pressed="false" data-st="未完结">未完结</button><button aria-pressed="false" data-st="已完结">已完结</button>
+          </div>
+          <label class="check" style="margin-left:6px"><input type="checkbox" id="ordRisk"/>只看利润率预警</label>
+          <div class="field" style="margin-left:auto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="ordSearch" placeholder="搜 PI 号或业务员" style="width:220px"/>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-bar"><span id="ordCount"></span><span class="hint">点任意行看成本构成与收付款进度</span></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>PI 号</th><th>签约</th><th>业务员</th><th>客户</th><th>目的国</th><th>产品</th>
+                <th class="td-r">订单额</th><th class="td-r">采购成本</th><th class="td-r">应收</th><th class="td-r">应付</th>
+                <th class="td-r">利润率</th><th>状态</th><th style="width:60px"></th>
+              </tr></thead>
+              <tbody id="ordBody"></tbody>
+            </table>
+          </div>
+          <div class="pager"><span>共 <b class="num">175</b> 条记录</span>
+            <div class="grow"><button class="btn btn-sm" disabled style="opacity:.5">上一页</button><span class="num">1 / 9</span><button class="btn btn-sm" data-toast="翻页（原型只有第 1 页数据）">下一页</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 退税管理 ============ -->
+      <section class="page" data-page="tax">
+        <div class="page-head">
+          <div><h1>退税管理</h1><p>出口退税发票明细台账</p></div>
+          <div class="acts">
+            <button class="btn" data-toast="Excel 导入向导（原型未实现）">导入 Excel</button>
+            <button class="btn" data-toast="已导出当前筛选结果">导出 Excel</button>
+            <button class="btn btn-primary" data-toast="新增发票表单（原型未实现）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>新增发票</button>
+          </div>
+        </div>
+        <div class="kpis" id="taxKpis"></div>
+        <p style="font-size:12px;color:var(--text-3);margin:-4px 0 14px">KPI 随公司段与筛选联动重算：金额按公司段全量口径（申报月筛选只决定月卡口径，年卡跨月是本意），行数随全部筛选。</p>
+        <div class="filters">
+          <div class="segment" role="group" aria-label="公司段" id="taxSeg">
+            <button aria-pressed="true" data-seg="">全部</button><button aria-pressed="false" data-seg="晓行天下">晓行天下</button><button aria-pressed="false" data-seg="供应链">供应链</button>
+          </div>
+          <input type="month" id="taxMonth" aria-label="申报月" style="width:150px"/>
+          <select id="taxBuyer" aria-label="采购员"><option value="">采购员：全部</option><option>魏巍</option><option>黄媛媛</option><option>林珊</option></select>
+          <label class="check"><input type="checkbox" id="taxUnlinked"/>只看未关联订单</label>
+          <div class="field" style="margin-left:auto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="taxSearch" placeholder="搜 PI 号 / 发票号 / 报关单号" style="width:240px"/>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-bar"><span id="taxCount"></span><span class="hint">未关联订单的行会标红 · 点「关联」可挂到 PI 上</span></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>申报月</th><th>批次</th><th>采购员</th><th>订单号</th><th>销售方</th><th>发票号</th><th>明细</th>
+                <th class="td-r">数量</th><th class="td-r">含税</th><th class="td-r">不含税</th><th class="td-r">税额</th>
+                <th>出口时间</th><th>报关单号</th><th class="td-r">报关 USD</th><th style="width:44px"></th>
+              </tr></thead>
+              <tbody id="taxBody"></tbody>
+            </table>
+          </div>
+          <div class="pager"><span>共 <b class="num">233</b> 条记录</span>
+            <div class="grow"><button class="btn btn-sm" disabled style="opacity:.5">上一页</button><span class="num">1 / 12</span><button class="btn btn-sm" data-toast="翻页（原型只有第 1 页数据）">下一页</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 客户管理 ============ -->
+      <section class="page" data-page="customers">
+        <div class="page-head">
+          <div><h1>客户管理</h1><p>客户主档 · 跟进记录 · 中信保额度</p></div>
+          <div class="acts"><button class="btn btn-primary" data-toast="新增客户表单（原型未实现）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>新增客户</button></div>
+        </div>
+        <div class="split">
+          <div class="card" style="overflow:hidden">
+            <div class="card-h" style="padding:10px 12px">
+              <div class="field" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="cusSearch" placeholder="搜客户 / 国家" style="width:100%"/></div>
+            </div>
+            <div class="clist" id="cusList"></div>
+          </div>
+          <div id="cusDetail"></div>
+        </div>
+      </section>
+
+      <!-- ============ 占位页 ============ -->
+      <section class="page" data-page="soon">
+        <div class="card"><div class="card-b soon">
+          <span class="badge pill violet plain" id="soonTag">规划中</span>
+          <h2 id="soonTitle">模块</h2>
+          <p id="soonDesc"></p>
+          <div class="scope" id="soonScope"></div>
+        </div></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ==================== 批量操作条 ==================== -->
+  <div class="bulkbar" id="bulkbar" aria-hidden="true">
+    <div class="bulkbar-in">
+      <div class="bb-top">
+        <span class="bb-n"><b class="num" id="bbN">0</b> 行已选</span>
+        <div class="sel-list" id="bbChips"></div>
+        <div class="phrase-wrap" id="bbPhrases"></div>
+        <button class="btn btn-ghost btn-sm" id="qClear">取消选择</button>
+      </div>
+      <div class="bb-main">
+        <input type="text" id="qNote" class="grow" placeholder="写一条动态，一次应用到所选批次…"/>
+        <input type="text" id="qDate" class="num" value="2026-08-06" aria-label="动态日期" style="width:124px"/>
+        <select id="qRel" aria-label="放行状态"><option value="">放行状态不变</option><option>已放行</option><option>未放行</option><option>待报关</option></select>
+        <button class="btn btn-primary" id="qApply">应用到所选</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== overlays ==================== -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true"></aside>
+  <div class="pop" id="pop" role="dialog" aria-label="修改动态"></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = (n, cur = "$") => cur + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const int = (n) => n.toLocaleString("en-US");
+
+/* ============================================================
+   Navigation model — 完整信息架构，每个模块都可点开
+   ============================================================ */
+const ICONS = {
+  review: '<path d="M4 4h16v13H5.5L4 20V4Z"/><path d="M8 9h8M8 13h5"/>',
+  biz: '<path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/>',
+  sales: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M17 11h4M19 9v4"/>',
+  buy: '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12h11.2L21 7H6"/>',
+  ship: '<path d="M3 17c1.5 1 3 1 4.5 0S10.5 16 12 17s3 1 4.5 0S19.5 16 21 17"/><path d="M5 14V8h14l-2 6"/><path d="M12 8V4"/>',
+  fin: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  sys: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.7-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 11 3a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.7l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 21 11a2 2 0 1 1 0 4Z"/>',
+};
+const NAV = [
+  { g: "评审", i: "review", items: [
+    { id: "brief", t: "设计说明", tag: "本页" },
+    { id: "stack", t: "技术选型", tag: "本页" },
+  ]},
+  { g: "经营", i: "biz", items: [
+    { id: "dashboard", t: "数据看板", built: 1 },
+  ]},
+  { g: "业务", i: "sales", items: [
+    { id: "customers", t: "客户管理", built: 1 },
+    { id: "pi", t: "PI 取号", built: 1, d: "统一编号规则，取号即建档，后续跟单 / 核算 / 退税全靠这个号串联。", s: ["号段规则", "重号校验", "作废与补号", "取号人留痕"] },
+    { id: "myorders", t: "我的订单", built: 1, d: "业务员视角的订单列表，只看自己的单，默认按待办紧急度排序。", s: ["我的待办", "客户回款提醒", "出运进度", "快速新建 PI"] },
+    { id: "stock", t: "库存管理", d: "现货与备货库存，支持按 PI 锁库。", s: ["入库 / 出库", "按 PI 锁库", "库龄预警", "盘点单"] },
+  ]},
+  { g: "采购协同", i: "buy", items: [
+    { id: "rfq", t: "询价单", built: 1, d: "一次询多家供应商，横向比价后一键转生产单。", s: ["多供应商比价", "历史价对比", "转生产单"] },
+    { id: "prod", t: "生产单", built: 1, d: "下给工厂的生产指令，跟踪排产与交期。", s: ["排产进度", "交期预警", "验货节点", "交期变更留痕"] },
+    { id: "pc", t: "采购合同", built: 1, d: "合同条款、付款节奏与实际付款的对账。", s: ["条款模板", "付款计划", "付款执行对账", "盖章件归档"] },
+    { id: "product", t: "产品管理", built: 1, d: "产品主档，HS 编码与退税率挂这里，退税计算直接取。", s: ["HS 编码", "退税率", "规格与包装", "历史成本曲线"] },
+    { id: "supplier", t: "供应商管理", built: 1, d: "供应商档案、资质有效期与供货评分。", s: ["资质到期提醒", "供货评分", "开票信息", "账期"] },
+  ]},
+  { g: "跟单", i: "ship", items: [
+    { id: "followups", t: "跟单表", built: 1 },
+    { id: "freight", t: "运费询价", built: 1, d: "按航线比价货代，中标价直接带入订单成本。", s: ["航线比价", "有效期提醒", "带入订单成本"] },
+    { id: "docs", t: "单证备案", built: 1, d: "提单、产地证、FORM 系列、清关文件的归档与齐套检查。", s: ["文件齐套检查", "版本管理", "到期提醒", "打包下载"] },
+  ]},
+  { g: "财务", i: "fin", items: [
+    { id: "orders", t: "订单核算跟踪", built: 1 },
+    { id: "sinosure", t: "中信保客户信息", built: 1, d: "投保客户的限额、账期与在保余额。", s: ["限额占用", "账期监控", "超限预警", "报损流程"] },
+    { id: "invoice", t: "开票资料", built: 1, d: "开票抬头与税务信息主档。", s: ["抬头档案", "税号校验", "开票申请"] },
+    { id: "seller", t: "PI 卖方档案", built: 1, d: "多个出口主体的抬头、账户与签章，PI 上按需选择。", s: ["主体档案", "银行账户", "签章模板"] },
+    { id: "pay", t: "收付款 / 财务", built: 1, d: "收汇与付汇的登记、认领与核销。", s: ["水单认领", "自动核销", "汇率锁定", "未核销预警"] },
+    { id: "tax", t: "退税管理", built: 1 },
+    { id: "bank", t: "银行日记账", built: 1, d: "银行流水导入与自动匹配收付款单。", s: ["流水导入", "自动匹配", "余额对账", "多账户"] },
+    { id: "fund", t: "资金汇总", built: 1, d: "多币种多账户的资金池与现金流预测。", s: ["多币种余额", "现金流预测", "资金调拨"] },
+    { id: "expense", t: "费用明细报表", built: 1, d: "按订单 / 部门 / 科目的费用穿透查询。", s: ["按订单穿透", "科目汇总", "同比环比"] },
+    { id: "coa", t: "账户与科目", built: 1, d: "银行账户与会计科目主档。", s: ["账户档案", "科目树", "启用停用"] },
+  ]},
+  { g: "分析", i: "chart", items: [
+    { id: "commission", t: "提成与绩效", d: "按利润率阶梯自动算提成，业务员可自查。", s: ["提成规则", "自动试算", "月度封账", "个人自查"] },
+    { id: "reports", t: "报表中心", built: 1, d: "常用报表的集中出口，支持自定义筛选后导出。", s: ["预置报表", "自定义筛选", "定时推送", "导出 Excel"] },
+  ]},
+  { g: "系统", i: "sys", items: [
+    { id: "settings", t: "系统设置与权限", d: "角色、数据范围、字段级可见性与字典维护。", s: ["角色权限", "数据范围", "字段可见性", "数据字典"] },
+    { id: "audit", t: "审计日志", built: 1, d: "所有写操作留痕，可按人 / 单据 / 时间回查改动前后值。", s: ["改动前后对比", "按单据回查", "导出"] },
+    { id: "login", t: "登录记录", built: 1, d: "登录时间、IP 与设备，异常登录提醒。", s: ["登录明细", "异常提醒", "强制下线"] },
+  ]},
+];
+const NAV_INDEX = {};
+NAV.forEach((g) => g.items.forEach((it) => (NAV_INDEX[it.id] = it)));
+const REAL_PAGES = new Set(["brief", "stack", "dashboard", "followups", "orders", "tax", "customers"]);
+
+function renderNav() {
+  $("#nav").innerHTML = NAV.map((g) => `
+    <div class="nav-group">
+      <div class="nav-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${g.i ? ICONS[g.i] : ""}</svg><span>${esc(g.g)}</span></div>
+      ${g.items.map((it) => `
+        <button class="nav-item" data-go="${it.id}" title="${esc(it.t)}">
+          <span class="nav-dot" aria-hidden="true"></span><span class="ni-t">${esc(it.t)}</span>
+          ${it.built ? '<span class="tag-built">已建</span>' : it.tag ? `<span class="tag-built tag-new">${esc(it.tag)}</span>` : ""}
+        </button>`).join("")}
+    </div>`).join("");
+}
+
+/* ---------- routing ---------- */
+function go(id) {
+  const known = REAL_PAGES.has(id) ? id : "soon";
+  $$(".page").forEach((p) => p.classList.toggle("is-on", p.dataset.page === known));
+  $$(".nav-item").forEach((b) => b.setAttribute("aria-current", String(b.dataset.go === id)));
+  if (known === "soon") {
+    const m = NAV_INDEX[id] || { t: "模块" };
+    $("#soonTitle").textContent = m.t;
+    $("#soonTag").textContent = m.built ? "现有模块 · 待重构" : "规划中";
+    $("#soonTag").className = "pill plain " + (m.built ? "accent" : "violet");
+    $("#soonDesc").textContent = m.d || "该模块沿用同一套设计系统：筛选条 → KPI 带 → 数据表 → 抽屉详情，交互与跟单表一致。";
+    $("#soonScope").innerHTML = (m.s || ["列表与筛选", "详情抽屉", "Excel 导入导出", "操作留痕"]).map((s) => `<span>${esc(s)}</span>`).join("");
+  }
+  window.scrollTo({ top: 0, behavior: "instant" });
+  if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-go]");
+  if (b) { go(b.dataset.go); }
+  const t = e.target.closest("[data-toast]");
+  if (t) toast(t.dataset.toast);
+});
+
+/* ---------- toast ---------- */
+function toast(msg, undo) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<span>${esc(msg)}</span>` + (undo ? `<button type="button">撤销</button>` : "");
+  if (undo) el.querySelector("button").addEventListener("click", () => { undo(); el.remove(); toast("已撤销"); });
+  $("#toasts").append(el);
+  setTimeout(() => { el.style.transition = "opacity .25s, transform .25s"; el.style.opacity = "0"; el.style.transform = "translateY(6px)"; setTimeout(() => el.remove(), 260); }, undo ? 5200 : 2400);
+}
+
+/* ---------- theme & collapse ---------- */
+$("#themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.dataset.theme = cur === "dark" ? "light" : "dark";
+  paintSwatches();
+});
+$("#collapseBtn").addEventListener("click", () => {
+  const a = $("#app");
+  a.dataset.collapsed = a.dataset.collapsed === "1" ? "0" : "1";
+});
+
+/* ---------- world clocks ---------- */
+const CLOCKS = [
+  { k: "厦门", tz: "Asia/Shanghai", home: 1 },
+  { k: "利马", tz: "America/Lima" },
+  { k: "纽约", tz: "America/New_York" },
+  { k: "布宜诺斯艾利斯", tz: "America/Argentina/Buenos_Aires" },
+  { k: "伦敦", tz: "Europe/London" },
+  { k: "迪拜", tz: "Asia/Dubai" },
+];
+function tickClocks() {
+  const now = new Date();
+  $("#clocks").innerHTML = CLOCKS.map((c) => {
+    let hhmm = "--:--", h = 0;
+    try {
+      hhmm = new Intl.DateTimeFormat("zh-CN", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(now);
+      h = +new Intl.DateTimeFormat("en-US", { timeZone: c.tz, hour: "2-digit", hour12: false }).format(now);
+    } catch (_) {}
+    const open = h >= 9 && h < 18 ? 1 : 0;
+    return `<span class="clock" data-open="${open}" data-home="${c.home || 0}" title="${esc(c.k)}｜${open ? "对方在上班时间" : "对方非工作时间"}">
+      <span class="bulb" aria-hidden="true"></span>${esc(c.k)} <span class="t num">${hhmm}</span></span>`;
+  }).join("");
+}
+
+/* ============================================================
+   Mock data
+   ============================================================ */
+let FU = [
+  { id: "F1", no: "MT26X04118-4", batch: "第4批", country: "美国", term: "FOB-SH", sales: "Ada", team: "PPE组", mode: "海运", fcl: 1, rel: "已放行", note: "待客户付尾款后电放", cn: "TCNU4968789", carrier: "ONE", pod: "洛杉矶", ms: [["交期", "7.31", "done"], ["装柜", "7.19", "done"], ["ATD", "8.2", "done"], ["ETA", "8.21", "now"]], todo: 0 },
+  { id: "F2", no: "MT26X06203", batch: "", country: "德国", term: "DDU", sales: "Sophie", team: "PPE组", mode: "海运", fcl: 1, rel: "已放行", note: "待收 BL COPY，此票开船后需要找货代确认 ETA", cn: "CAJU5340821", carrier: "ONE", pod: "汉堡", ms: [["交期", "7.31", "done"], ["装柜", "8.1", "done"], ["ATD", "8.9", "now"], ["ETA", "—", "pending"]], todo: 1 },
+  { id: "F3", no: "MT26X04119", batch: "", country: "澳大利亚", term: "FOB-WH", sales: "Sunny", team: "PPE组", mode: "海运", fcl: 1, rel: "已放行", note: "尾款已收 + 文件已确认，待沟通好费用问题即可放单", cn: "TSSU5067819", carrier: "TSL", pod: "BRISBANE", ms: [["交期", "7.31", "done"], ["装柜", "8.2", "done"], ["ATD", "8.4", "done"], ["ETA", "9.11", "now"]], todo: 0 },
+  { id: "F4", no: "MT26X05144-1", batch: "第1批", country: "罗马尼亚", term: "FOB-WH", sales: "Sunny", team: "PPE组", mode: "海运", fcl: 0, rel: "未放行", note: "待 7 号上午找指代拿放箱令", cn: "", carrier: "", pod: "", ms: [["交期", "8.1", "done"], ["装柜", "8.10", "now"], ["进仓", "—", "pending"], ["ATD", "—", "pending"], ["ETA", "—", "pending"]], todo: 1 },
+  { id: "F5", no: "MT26X05132", batch: "", country: "沙特", term: "FOB-GZ", sales: "Summer", team: "CCTV组", mode: "海运", fcl: 1, rel: "已放行", note: "SC 已出，尾款到账后电放", cn: "PCIU9185538", carrier: "PIL", pod: "吉达", ms: [["交期", "7.9", "done"], ["装柜", "7.10", "done"], ["ATD", "7.21", "done"], ["ETA", "8.13", "now"]], todo: 0 },
+  { id: "F6", no: "MT26X04118-5", batch: "第5批", country: "美国", term: "FOB-SH", sales: "Ada", team: "PPE组", mode: "海运", fcl: 1, rel: "已放行", note: "待客户确认清关资料 + 付尾款", cn: "SMCU1019790", carrier: "SML", pod: "洛杉矶", ms: [["交期", "7.31", "done"], ["装柜", "7.23", "done"], ["ATD", "8.6", "done"], ["ETA", "8.23", "now"]], todo: 0 },
+  { id: "F7", no: "MT26X05151", batch: "", country: "韩国", term: "FOB-WH", sales: "Sophie", team: "PPE组", mode: "海运", fcl: 1, rel: "待报关", note: "待柜子到厦门后报关；待船开后拿到 BL COPY 申请正本 FORM K + 电放", cn: "TBJU7316640", carrier: "SIT", pod: "仁川", ms: [["交期", "8.5", "done"], ["装柜", "8.5", "now"], ["ATD", "8.7", "pending"], ["ETA", "—", "pending"]], todo: 1 },
+  { id: "F8", no: "MT26X06188", batch: "", country: "秘鲁", term: "CIF", sales: "Sophie", team: "PPE组", mode: "海运", fcl: 0, rel: "未放行", note: "工厂说面料还没到，已催 3 次没有明确交期", cn: "", carrier: "", pod: "卡亚俄", ms: [["交期", "7.28", "late"], ["装柜", "—", "pending"], ["进仓", "—", "pending"], ["ATD", "—", "pending"], ["ETA", "—", "pending"]], todo: 1, stall: 9 },
+  { id: "F9", no: "MT26X07235", batch: "", country: "加拿大", term: "FOB-SZ", sales: "Ada", team: "CCTV组", mode: "空运", fcl: 1, rel: "已放行", note: "已交空运公司，等 AWB 号", cn: "AWB 297-88451203", carrier: "CX", pod: "多伦多", ms: [["交期", "8.3", "done"], ["装柜", "8.4", "done"], ["ATD", "8.5", "done"], ["ETA", "8.7", "now"]], todo: 0 },
+  { id: "F10", no: "MT26X05144-2", batch: "第2批", country: "罗马尼亚", term: "FOB-WH", sales: "Sunny", team: "PPE组", mode: "海运", fcl: 1, rel: "未放行", note: "", cn: "", carrier: "", pod: "康斯坦察", ms: [["交期", "8.18", "now"], ["装柜", "—", "pending"], ["ATD", "—", "pending"], ["ETA", "—", "pending"]], todo: 0 },
+  { id: "F11", no: "MT26X06190", batch: "", country: "智利", term: "FOB-SH", sales: "Summer", team: "CCTV组", mode: "海运", fcl: 1, rel: "已放行", note: "客户要求改唛头，已让工厂重新印刷", cn: "MSCU7712004", carrier: "MSC", pod: "圣安东尼奥", ms: [["交期", "7.20", "done"], ["装柜", "7.25", "done"], ["ATD", "7.29", "done"], ["ETA", "9.2", "now"]], todo: 1 },
+  { id: "F12", no: "MT26X04120", batch: "", country: "英国", term: "DDP", sales: "Sophie", team: "PPE组", mode: "海运", fcl: 0, rel: "待报关", note: "并柜方还差一家没进仓，货代说最晚 8 号截仓", cn: "拼柜 · 待配柜", carrier: "COSCO", pod: "费利克斯托", ms: [["交期", "7.30", "done"], ["装柜", "8.4", "done"], ["进仓", "8.8", "now"], ["ATD", "—", "pending"], ["ETA", "—", "pending"]], todo: 1 },
+];
+
+const ORD = [
+  { pi: "MT26X05162", signed: "07-02", sales: "Sophie", cus: "Andes Trading", country: "秘鲁", prod: "一次性防护服（L 码）", amt: 19224, cost: 113760, ar: 19224, ap: 63760, rate: 21.04, st: "未完结", flag: "费用估算未填" },
+  { pi: "MT26X05163", signed: "07-02", sales: "Sophie", cus: "Andes Trading", country: "秘鲁", prod: "7.2 万件 无纺布口罩（1 件一袋）", amt: 19224, cost: 113760, ar: 19224, ap: 63760, rate: 20.61, st: "未完结", flag: "费用估算未填" },
+  { pi: "MT26X05164", signed: "07-03", sales: "Sophie", cus: "Andes Trading", country: "秘鲁", prod: "隔离衣 · 蓝色 XL", amt: 19224, cost: 113760, ar: 19224, ap: 65760, rate: 18.42, st: "未完结", flag: "费用估算未填" },
+  { pi: "MT26X06186", signed: "07-14", sales: "Sophie", cus: "Lima Medical", country: "秘鲁", prod: "隔离衣（L 码）", amt: 19224, cost: 115200, ar: 19224, ap: 85200, rate: 20.05, st: "未完结", flag: "" },
+  { pi: "MT26X06187", signed: "07-14", sales: "Sophie", cus: "Lima Medical", country: "秘鲁", prod: "口罩 5.2 万件", amt: 19224, cost: 115200, ar: 0, ap: 85200, rate: 9.83, st: "未完结", flag: "利润率偏低" },
+  { pi: "MT26X07235", signed: "07-28", sales: "Ada", cus: "NorthGate Supply", country: "加拿大", prod: "监控摄像机 1500 台", amt: 33900.5, cost: 0, ar: 33900.5, ap: 0, rate: 4.32, st: "未完结", flag: "采购成本未录" },
+  { pi: "MT26X04118", signed: "06-11", sales: "Ada", cus: "PacificPPE Inc.", country: "美国", prod: "防护服 8 万件（分 5 批）", amt: 168400, cost: 906500, ar: 168400, ap: 620400, rate: 24.86, st: "未完结", flag: "" },
+  { pi: "MT26X05132", signed: "06-28", sales: "Summer", cus: "Al Khuzama", country: "沙特", prod: "ALKHUZAMA 牌一次性医用口罩", amt: 29790, cost: 173017.7, ar: 29790, ap: 152400, rate: 14.22, st: "已完结", flag: "" },
+  { pi: "MT26X04119", signed: "06-12", sales: "Sunny", cus: "Southern Cross", country: "澳大利亚", prod: "防护面屏 12 万件", amt: 46200, cost: 246800, ar: 46200, ap: 246800, rate: 20.31, st: "未完结", flag: "" },
+  { pi: "MT26X06188", signed: "07-15", sales: "Sophie", cus: "Andes Trading", country: "秘鲁", prod: "医用外科口罩 30 万只", amt: 21400, cost: 152600, ar: 0, ap: 152600, rate: -2.41, st: "未完结", flag: "亏损" },
+  { pi: "MT26X06203", signed: "07-18", sales: "Sophie", cus: "Rheinland GmbH", country: "德国", prod: "隔离衣 6 万件 · DDU 汉堡", amt: 58900, cost: 322400, ar: 29450, ap: 322400, rate: 17.88, st: "未完结", flag: "" },
+  { pi: "MT26X06190", signed: "07-16", sales: "Summer", cus: "Cono Sur SpA", country: "智利", prod: "监控摄像机 800 台", amt: 24600, cost: 138900, ar: 24600, ap: 96300, rate: 22.47, st: "未完结", flag: "" },
+];
+
+const TAX = [
+  { m: "2026-07", b: "001", buyer: "魏巍", pi: "MS26X04116", seller: "泉州黑鹰威视电子科技有限公司", inv: "12354076", item: "公共安全设备*监控摄像机", qty: 1500, gross: 140250, net: 124115.04, tax: 16134.96, exp: "2026-07-10", cus: "531620260002305", usd: 19845.0, seg: "供应链", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "MT26X05132", seller: "厦门安洁无纺制品有限公司", inv: "07788312", item: "纺织产品*ALKHUZAMA 牌一次性医用口罩", qty: 320200, gross: 195510, net: 173017.7, tax: 22492.3, exp: "2026-07-22", cus: "471420260001204", usd: 29790.0, seg: "晓行天下", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "MT26X06188", seller: "江苏正阳防护用品有限公司", inv: "35660411", item: "纺织产品*一次性隔离衣", qty: 70200, gross: 83300, net: 73716.81, tax: 9583.19, exp: "2026-07-09", cus: "471420260000873", usd: 11640.5, seg: "晓行天下", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "", seller: "浙江宏达医疗器械有限公司", inv: "29734121", item: "纺织产品*一次性医用口罩", qty: 366000, gross: 26352, net: 23320.35, tax: 3031.65, exp: "2026-07-06", cus: "471420260000664", usd: 4113.71, seg: "晓行天下", linked: 0 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "", seller: "湖北康泰无纺布制品有限公司", inv: "29775830", item: "纺织产品*一次性手术衣", qty: 90000, gross: 23760, net: 21026.55, tax: 2733.45, exp: "2026-07-07", cus: "471420260000665", usd: 3007.35, seg: "晓行天下", linked: 0 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "MT26X03086", seller: "湖北康泰无纺布制品有限公司", inv: "29774271", item: "纺织产品*一次性帽子", qty: 154000, gross: 9240, net: 8176.99, tax: 1063.01, exp: "2026-07-09", cus: "471420260000666", usd: 1294.71, seg: "晓行天下", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "MT26X03086", seller: "湖北康泰无纺布制品有限公司", inv: "29775671", item: "纺织产品*一次性防护服", qty: 18200, gross: 31000, net: 27433.63, tax: 3566.37, exp: "2026-07-09", cus: "471420260000667", usd: 16648.01, seg: "晓行天下", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "黄媛媛", pi: "MT26X03078", seller: "江苏正阳防护用品有限公司", inv: "29775758", item: "纺织产品*一次性袖套", qty: 86000, gross: 8240, net: 7292.04, tax: 947.96, exp: "2026-07-09", cus: "471420260000668", usd: 1305.88, seg: "供应链", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "林珊", pi: "MT26X03078", seller: "湖北真诚无纺布制品有限公司", inv: "29775831", item: "纺织产品*一次性鞋套", qty: 300000, gross: 29800, net: 26371.68, tax: 3428.32, exp: "2026-07-09", cus: "471420260000669", usd: 0, seg: "供应链", linked: 1 },
+  { m: "2026-07", b: "001", buyer: "林珊", pi: "", seller: "湖北真诚无纺布制品有限公司", inv: "29775831", item: "纺织产品*一次性实验服", qty: 25000, gross: 55500, net: 49115.04, tax: 6384.96, exp: "2026-07-09", cus: "471420260000670", usd: 7420.4, seg: "供应链", linked: 0 },
+];
+
+const CUS = [
+  { id: "C1", name: "PacificPPE Inc.", country: "美国", sales: "Ada", level: "A", limit: 800000, used: 512400, orders: 26, amt: 1268400, since: "2023-04", contact: "Michael Reyes", tz: "America/Los_Angeles", note: "老客户，付款准时，对交期敏感；每批都要提前发装柜照片。" },
+  { id: "C2", name: "Andes Trading", country: "秘鲁", sales: "Sophie", level: "B", limit: 300000, used: 268900, orders: 41, amt: 742600, since: "2024-01", contact: "Camila Rojas", tz: "America/Lima", note: "下单频繁但单量小，额度已用 90%，再下单前需先回款。" },
+  { id: "C3", name: "Rheinland GmbH", country: "德国", sales: "Sophie", level: "A", limit: 600000, used: 121000, orders: 12, amt: 486300, since: "2024-09", contact: "Jonas Weber", tz: "Europe/Berlin" , note: "DDU 条款，对单证要求严格，需要 EUR.1 和 CE 证书。" },
+  { id: "C4", name: "Southern Cross", country: "澳大利亚", sales: "Sunny", level: "B", limit: 250000, used: 46200, orders: 9, amt: 318700, since: "2025-02", contact: "Emma Clarke", tz: "Australia/Sydney", note: "澳洲检疫要求熏蒸证明，木托必须处理。" },
+  { id: "C5", name: "Al Khuzama", country: "沙特", sales: "Summer", level: "C", limit: 150000, used: 29790, orders: 6, amt: 164200, since: "2025-06", contact: "Faisal Al-Otaibi", tz: "Asia/Riyadh", note: "需要 SASO 认证，斋月期间沟通会变慢。" },
+  { id: "C6", name: "NorthGate Supply", country: "加拿大", sales: "Ada", level: "B", limit: 200000, used: 33900, orders: 4, amt: 96800, since: "2026-01", contact: "Olivia Tremblay", tz: "America/Toronto", note: "新客户，前两单走空运试单。" },
+];
+
+/* ============================================================
+   Milestone rail
+   ============================================================ */
+function railHTML(ms) {
+  const n = ms.length;
+  let lastDone = -1;
+  ms.forEach((m, i) => { if (m[2] === "done" || m[2] === "late") lastDone = i; });
+  const half = 100 / (2 * n);
+  const span = 100 - 2 * half;
+  const frac = n > 1 ? Math.max(0, lastDone) / (n - 1) : 0;
+  const nodes = ms.map((m) => {
+    const [label, val, st] = m;
+    const tip = st === "pending" ? "尚未安排" : st === "late" ? "计划 " + val + "，已超期未确认" : st === "now" ? "计划 " + val + "，进行中" : "实际 " + val + " 已完成";
+    return `<div class="mnode" data-s="${st}" tabindex="0">
+      <span class="mdot" aria-hidden="true"></span>
+      <span class="ml">${esc(label)}</span>
+      <span class="mv">${esc(val)}</span>
+      <span class="tip">${esc(label)}｜${esc(tip)}</span>
+    </div>`;
+  }).join("");
+  return `<div class="mrail">
+    <div class="mrail-track" aria-hidden="true">
+      <span class="mrail-line" style="left:${half}%;right:${half}%"></span>
+      <span class="mrail-fill" style="left:${half}%;width:${(span * frac).toFixed(2)}%"></span>
+    </div>
+    <div class="mrail-nodes" style="grid-template-columns:repeat(${n},1fr)">${nodes}</div>
+  </div>`;
+}
+
+/* ============================================================
+   跟单表
+   ============================================================ */
+const sel = new Set();
+const relTone = { "已放行": "jade", "未放行": "amber", "待报关": "accent" };
+
+function fuFiltered() {
+  const q = $("#fuSearch").value.trim().toLowerCase();
+  const st = $("#fuState").value, sa = $("#fuSales").value, act = $("#fuActive").checked;
+  return FU.filter((r) => {
+    if (q && !(r.no + r.cn + r.country).toLowerCase().includes(q)) return false;
+    if (st && r.rel !== st) return false;
+    if (sa && r.sales !== sa) return false;
+    if (act && r.ms.every((m) => m[2] === "done")) return false;
+    return true;
+  });
+}
+function renderFU() {
+  const rows = fuFiltered();
+  const late = rows.filter((r) => r.stall || r.ms.some((m) => m[2] === "late")).length;
+  $("#fuCount").innerHTML = `本页 <b class="num">${rows.length}</b> 条`;
+  $("#fuActiveCount").textContent = `进行中 ${rows.filter((r) => !r.stall).length}`;
+  $("#fuLateCount").textContent = `停滞 / 超期 ${late}`;
+  $("#fuLateCount").className = "pill plain " + (late ? "coral" : "mute");
+
+  $("#fuBody").innerHTML = rows.length ? rows.map((r) => `
+    <tr data-id="${r.id}" data-sel="${sel.has(r.id) ? 1 : 0}">
+      <td><input type="checkbox" class="fu-ck" data-id="${r.id}" ${sel.has(r.id) ? "checked" : ""} aria-label="选择 ${esc(r.no)}" style="accent-color:var(--accent)"/></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px"><span class="cell-main">${esc(r.no)}</span>${r.batch ? `<span class="badge-batch">${esc(r.batch)}</span>` : ""}</div>
+        <div class="cell-sub">${esc(r.country)} · ${esc(r.term)}${r.fcl ? "" : " · 拼柜"}<a href="#" onclick="return false" style="font-size:11px">PI ↗</a></div>
+      </td>
+      <td><div>${esc(r.sales)}</div><div class="cell-sub">${esc(r.team)}</div></td>
+      <td><div>${esc(r.mode)}</div><div style="margin-top:3px"><span class="pill ${relTone[r.rel]}">${esc(r.rel)}</span></div></td>
+      <td>
+        <button class="note-btn" data-note="${r.id}">
+          <span class="txt ${r.note ? "" : "note-empty"}">${esc(r.note || "点这里写第一条动态")}</span>
+          <span class="caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        </button>
+        ${r.stall ? `<div style="margin-top:5px"><span class="pill coral">停滞 ${r.stall} 天</span></div>` : ""}
+        ${r.todo ? `<div style="margin-top:5px"><span class="badge-todo">有待办</span></div>` : ""}
+      </td>
+      <td>${r.cn ? `<div class="num" style="font-size:12.5px">${esc(r.cn)}</div><div class="cell-sub">${esc(r.carrier)} · ${esc(r.pod)}</div>` : `<div style="color:var(--text-3)">—</div><div class="cell-sub">${r.pod ? esc(r.pod) : "待订舱"}</div>`}</td>
+      <td>${railHTML(r.ms)}</td>
+      <td>
+        <div class="row-acts">
+          <button class="icon-btn" data-edit="${r.id}" title="编辑批次" aria-label="编辑 ${esc(r.no)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="icon-btn" data-toast="已为 ${esc(r.no)} 创建待办" title="加待办" aria-label="为 ${esc(r.no)} 加待办">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V4h13l-1.5 3L17 10H4"/><path d="M4 21V10"/></svg>
+          </button>
+          <button class="icon-btn" data-del="${r.id}" title="删除批次" aria-label="删除 ${esc(r.no)}" style="color:var(--coral)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M9 6V4h6v2"/><path d="M6 6l1 14h10l1-14"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join("")
+    : `<tr><td colspan="8" style="padding:44px;text-align:center;color:var(--text-3)">
+        当前筛选下没有批次。试试关掉「仅进行中」，或点右上角「重置」。
+       </td></tr>`;
+  renderQuick();
+}
+const PHRASES = ["待客户付尾款", "待电放", "待收 BL COPY", "待报关", "已放单"];
+$("#bbPhrases").innerHTML = PHRASES.map((p) => `<button type="button" class="phrase" data-phrase="${esc(p)}">${esc(p)}</button>`).join("");
+
+function renderQuick() {
+  const ids = [...sel];
+  const bar = $("#bulkbar");
+  bar.classList.toggle("is-on", ids.length > 0);
+  bar.setAttribute("aria-hidden", String(ids.length === 0));
+  if (!ids.length) return;
+  $("#bbN").textContent = ids.length;
+  const names = ids.map((i) => FU.find((r) => r.id === i)).filter(Boolean);
+  const shown = names.slice(0, 4);
+  $("#bbChips").innerHTML = shown.map((r) => `<span class="sel-chip">${esc(r.no)}</span>`).join("")
+    + (names.length > shown.length ? `<span class="sel-chip">+${names.length - shown.length}</span>` : "");
+}
+
+$("#fuBody").addEventListener("change", (e) => {
+  const ck = e.target.closest(".fu-ck");
+  if (!ck) return;
+  ck.checked ? sel.add(ck.dataset.id) : sel.delete(ck.dataset.id);
+  ck.closest("tr").dataset.sel = ck.checked ? 1 : 0;
+  renderQuick();
+});
+$("#fuAll").addEventListener("change", (e) => {
+  const rows = fuFiltered();
+  sel.clear();
+  if (e.target.checked) rows.forEach((r) => sel.add(r.id));
+  renderFU();
+});
+$("#qClear").addEventListener("click", () => { sel.clear(); renderFU(); });
+$("#bulkbar").addEventListener("click", (e) => {
+  const p = e.target.closest("[data-phrase]");
+  if (p) { const f = $("#qNote"); f.value = f.value ? f.value + "；" + p.dataset.phrase : p.dataset.phrase; f.focus(); return; }
+  if (e.target.closest("#qApply")) {
+    const note = $("#qNote").value.trim(), rel = $("#qRel").value, ids = [...sel];
+    if (!note && !rel) { toast("先写一条动态，或选一个放行状态"); $("#qNote").focus(); return; }
+    const before = ids.map((id) => { const r = FU.find((x) => x.id === id); return { id, note: r.note, rel: r.rel }; });
+    ids.forEach((id) => { const r = FU.find((x) => x.id === id); if (note) r.note = note; if (rel) r.rel = rel; });
+    sel.clear(); $("#qNote").value = ""; $("#qRel").value = ""; renderFU();
+    toast(`已更新 ${ids.length} 行`, () => { before.forEach((b) => { const r = FU.find((x) => x.id === b.id); r.note = b.note; r.rel = b.rel; }); renderFU(); });
+  }
+});
+["#fuSearch", "#fuState", "#fuSales", "#fuActive"].forEach((s) => $(s).addEventListener("input", renderFU));
+$("#fuReset").addEventListener("click", () => {
+  $("#fuSearch").value = ""; $("#fuState").value = ""; $("#fuSales").value = ""; $("#fuActive").checked = true;
+  sel.clear(); renderFU(); toast("筛选已重置");
+});
+$("#fuMore").addEventListener("click", () => toast("更多筛选：小组 / 走货方式 / 整柜拼柜 / 国家 / 年份"));
+
+/* ---------- inline note popover ---------- */
+const pop = $("#pop");
+let popId = null;
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-note]");
+  if (btn) {
+    const r = FU.find((x) => x.id === btn.dataset.note);
+    popId = r.id;
+    pop.innerHTML = `<h4>更新最新动态 · ${esc(r.no)}</h4>
+      <textarea id="popNote" rows="3">${esc(r.note)}</textarea>
+      <div class="phrase-wrap">${["待客户付尾款", "待电放", "待收 BL COPY", "待报关", "已放单"].map((p) => `<button type="button" class="phrase" data-pp="${esc(p)}">${esc(p)}</button>`).join("")}</div>
+      <div class="pop-f"><button class="btn btn-sm" data-pop-cancel>取消</button><button class="btn btn-primary btn-sm" data-pop-ok>保存</button></div>`;
+    const rect = btn.getBoundingClientRect();
+    pop.classList.add("is-on");
+    const top = window.scrollY + rect.bottom + 6;
+    const left = Math.min(window.scrollX + rect.left, window.scrollX + document.documentElement.clientWidth - 336);
+    pop.style.top = top + "px"; pop.style.left = Math.max(8, left) + "px";
+    $("#popNote").focus();
+    return;
+  }
+  if (e.target.closest("[data-pp]")) {
+    const ta = $("#popNote"); const v = e.target.closest("[data-pp]").dataset.pp;
+    ta.value = ta.value ? ta.value + "；" + v : v; ta.focus(); return;
+  }
+  if (e.target.closest("[data-pop-ok]")) {
+    const r = FU.find((x) => x.id === popId); const old = r.note;
+    r.note = $("#popNote").value.trim(); closePop(); renderFU();
+    toast("动态已更新", () => { r.note = old; renderFU(); }); return;
+  }
+  if (e.target.closest("[data-pop-cancel]")) { closePop(); return; }
+  if (pop.classList.contains("is-on") && !e.target.closest("#pop")) closePop();
+});
+function closePop() { pop.classList.remove("is-on"); popId = null; }
+
+/* ---------- delete with undo ---------- */
+document.addEventListener("click", (e) => {
+  const del = e.target.closest("[data-del]");
+  if (!del) return;
+  const idx = FU.findIndex((x) => x.id === del.dataset.del);
+  if (idx < 0) return;
+  const [row] = FU.splice(idx, 1);
+  sel.delete(row.id); renderFU();
+  toast(`已删除 ${row.no}`, () => { FU.splice(idx, 0, row); renderFU(); });
+});
+
+/* ============================================================
+   Drawer
+   ============================================================ */
+const drawer = $("#drawer"), scrim = $("#scrim");
+let lastFocus = null;
+function openDrawer(html) {
+  lastFocus = document.activeElement;
+  drawer.innerHTML = html;
+  drawer.classList.add("is-on"); scrim.classList.add("is-on");
+  drawer.setAttribute("aria-hidden", "false");
+  const f = drawer.querySelector("button,[href],input,select,textarea");
+  if (f) f.focus();
+}
+function closeDrawer() {
+  drawer.classList.remove("is-on"); scrim.classList.remove("is-on");
+  drawer.setAttribute("aria-hidden", "true");
+  if (lastFocus) lastFocus.focus();
+}
+scrim.addEventListener("click", closeDrawer);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeDrawer(); closePop(); } });
+document.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) closeDrawer(); });
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-edit]");
+  if (!b) return;
+  const r = FU.find((x) => x.id === b.dataset.edit);
+  openDrawer(`
+    <div class="drawer-h">
+      <div style="flex:1">
+        <h2 id="drawerTitle" class="num">${esc(r.no)} ${r.batch ? `<span class="badge-batch">${esc(r.batch)}</span>` : ""}</h2>
+        <div class="sub">${esc(r.country)} · ${esc(r.term)} · ${esc(r.mode)}${r.fcl ? " · 整柜" : " · 拼柜"} · 业务员 ${esc(r.sales)}</div>
+      </div>
+      <span class="pill ${relTone[r.rel]}">${esc(r.rel)}</span>
+      <button class="icon-btn" data-close aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="drawer-b">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="a">概览</button>
+        <button role="tab" aria-selected="false" data-tab="b">动态流水</button>
+        <button role="tab" aria-selected="false" data-tab="c">单证齐套</button>
+      </div>
+      <div data-panel="a">
+        <div style="margin:2px 0 20px">${railHTML(r.ms)}</div>
+        <dl class="dl">
+          <dt>柜号</dt><dd class="num">${esc(r.cn || "待订舱")}</dd>
+          <dt>船司 / 目的港</dt><dd>${esc(r.carrier || "—")} · ${esc(r.pod || "—")}</dd>
+          <dt>贸易条款</dt><dd>${esc(r.term)}</dd>
+          <dt>小组</dt><dd>${esc(r.team)}</dd>
+          <dt>最新动态</dt><dd>${esc(r.note || "—")}</dd>
+        </dl>
+        <div style="margin-top:18px"><label style="font-size:11.5px;color:var(--text-3)">补充动态</label>
+          <textarea rows="3" placeholder="写一条新动态，会追加到流水里…" style="margin-top:5px"></textarea></div>
+      </div>
+      <div data-panel="b" hidden>
+        <ul class="tl">
+          <li data-s="done"><div class="when">08-05 14:20</div><div class="what">${esc(r.note || "已建档")}</div><div class="who">${esc(r.sales)}</div></li>
+          <li data-s="done"><div class="when">08-04 09:41</div><div class="what">货代回复截关时间提前一天，已通知工厂</div><div class="who">${esc(r.sales)}</div></li>
+          <li data-s="done"><div class="when">08-02 17:03</div><div class="what">柜号确认 ${esc(r.cn || "待定")}，已发客户</div><div class="who">跟单 · 小林</div></li>
+          <li data-s="done"><div class="when">07-28 11:12</div><div class="what">工厂确认交期，安排订舱</div><div class="who">${esc(r.sales)}</div></li>
+        </ul>
+      </div>
+      <div data-panel="c" hidden>
+        ${[["商业发票", 1], ["装箱单", 1], ["提单 BL COPY", r.cn ? 1 : 0], ["产地证 FORM", 0], ["报关单", r.rel === "待报关" ? 0 : 1], ["熏蒸证明", 0]]
+          .map(([n, ok]) => `<div class="risk"><div class="ico" style="background:${ok ? "var(--jade-soft)" : "var(--amber-soft)"};color:${ok ? "var(--jade)" : "var(--amber)"}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ok ? '<path d="m5 13 4 4L19 7"/>' : '<path d="M12 8v5M12 17h.01"/>'}</svg></div>
+            <div><b>${esc(n)}</b><span>${ok ? "已上传 · 2026-08-04" : "待补齐"}</span></div>
+            <button class="btn btn-sm go">${ok ? "查看" : "上传"}</button></div>`).join("")}
+      </div>
+    </div>
+    <div class="drawer-f"><button class="btn" data-close>关闭</button><button class="btn btn-primary" data-close data-toast="已保存">保存</button></div>`);
+});
+drawer.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-tab]");
+  if (!t) return;
+  $$("[data-tab]", drawer).forEach((b) => b.setAttribute("aria-selected", String(b === t)));
+  $$("[data-panel]", drawer).forEach((p) => (p.hidden = p.dataset.panel !== t.dataset.tab));
+});
+
+/* ============================================================
+   订单核算跟踪
+   ============================================================ */
+let ordSt = "", ordArch = "0";
+function rateTone(v) { return v < 0 ? "coral" : v < 11 ? "amber" : "jade"; }
+function renderOrd() {
+  const q = $("#ordSearch").value.trim().toLowerCase();
+  const onlyRisk = $("#ordRisk").checked;
+  const rows = ORD.filter((r) => {
+    if (ordSt && r.st !== ordSt) return false;
+    if (onlyRisk && r.rate >= 11) return false;
+    if (q && !(r.pi + r.sales + r.cus).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  $("#ordCount").innerHTML = `本页 <b class="num">${rows.length}</b> 条 · 利润率预警 <b class="num" style="color:var(--coral)">${rows.filter((r) => r.rate < 11).length}</b> 条`;
+  $("#ordBody").innerHTML = rows.length ? rows.map((r) => `
+    <tr data-ord="${r.pi}" style="cursor:pointer">
+      <td><div class="cell-main" style="color:var(--accent-ink)">${esc(r.pi)}</div>${r.flag ? `<div style="margin-top:3px"><span class="badge-todo">${esc(r.flag)}</span></div>` : ""}</td>
+      <td class="mono" style="font-size:12.5px">${esc(r.signed)}</td>
+      <td>${esc(r.sales)}</td><td>${esc(r.cus)}</td><td>${esc(r.country)}</td>
+      <td style="max-width:190px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.prod)}</div></td>
+      <td class="td-r num">${money(r.amt)}</td>
+      <td class="td-r num" style="color:var(--text-2)">${r.cost ? "¥" + int(Math.round(r.cost)) : "—"}</td>
+      <td class="td-r num">${money(r.ar)}</td>
+      <td class="td-r num" style="color:var(--text-2)">${r.ap ? "¥" + int(Math.round(r.ap)) : "—"}</td>
+      <td class="td-r num" style="font-weight:600;color:var(--${rateTone(r.rate)})">${r.rate.toFixed(2)}%</td>
+      <td><span class="pill ${r.st === "已完结" ? "mute" : "accent"}">${esc(r.st)}</span></td>
+      <td><span style="color:var(--accent);font-size:12.5px">详情</span></td>
+    </tr>`).join("")
+    : `<tr><td colspan="13" style="padding:44px;text-align:center;color:var(--text-3)">没有匹配的订单，换个关键词或取消「只看利润率预警」。</td></tr>`;
+}
+$("#ordSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-st]"); if (!b) return;
+  $$("[data-st]", $("#ordSeg")).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  ordSt = b.dataset.st; renderOrd();
+});
+$$("[data-arch]").forEach((b) => b.addEventListener("click", () => {
+  $$("[data-arch]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  ordArch = b.dataset.arch;
+  toast(ordArch === "1" ? "已归档：原型只提供在跟进数据" : "回到在跟进");
+}));
+["#ordSearch", "#ordRisk"].forEach((s) => $(s).addEventListener("input", renderOrd));
+
+$("#ordBody").addEventListener("click", (e) => {
+  const tr = e.target.closest("[data-ord]"); if (!tr) return;
+  const r = ORD.find((x) => x.pi === tr.dataset.ord);
+  const parts = [["采购成本", r.cost || r.amt * 5.2, "var(--accent)"], ["海运及本地费", r.amt * 0.42, "var(--violet)"], ["报关与单证", r.amt * 0.12, "var(--amber)"], ["银行及汇兑", r.amt * 0.08, "var(--text-3)"]];
+  const total = parts.reduce((s, p) => s + p[1], 0);
+  openDrawer(`
+    <div class="drawer-h">
+      <div style="flex:1"><h2 id="drawerTitle" class="num">${esc(r.pi)}</h2>
+        <div class="sub">${esc(r.cus)} · ${esc(r.country)} · 业务员 ${esc(r.sales)} · 签约 ${esc(r.signed)}</div></div>
+      <span class="pill ${rateTone(r.rate)}">利润率 ${r.rate.toFixed(2)}%</span>
+      <button class="icon-btn" data-close aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="drawer-b">
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+        <div class="kpi" data-tone="accent"><span class="k">订单额</span><span class="v num" style="font-size:20px">${money(r.amt)}</span></div>
+        <div class="kpi" data-tone="${r.rate < 0 ? "coral" : "jade"}"><span class="k">预估毛利</span><span class="v num" style="font-size:20px">${money(r.amt * r.rate / 100)}</span></div>
+        <div class="kpi"><span class="k">回款进度</span><span class="v num" style="font-size:20px">${r.ar ? Math.round(r.ar / r.amt * 100) : 0}%</span></div>
+      </div>
+      <h3 style="font-size:13.5px;margin:0 0 2px">成本构成</h3>
+      <div class="costbar">${parts.map((p) => `<i style="width:${(p[1] / total * 100).toFixed(1)}%;background:${p[2]}"></i>`).join("")}</div>
+      <div class="legend">${parts.map((p) => `<span><i style="background:${p[2]}"></i>${esc(p[0])} <b class="num">¥${int(Math.round(p[1]))}</b></span>`).join("")}</div>
+      <h3 style="font-size:13.5px;margin:22px 0 6px">收付款进度</h3>
+      <ul class="tl">
+        <li data-s="done"><div class="when">${esc(r.signed)}</div><div class="what">收定金 30% · <span class="num">${money(r.amt * .3)}</span></div><div class="who">已到账</div></li>
+        <li data-s="${r.ar ? "done" : "late"}"><div class="when">${r.ar ? "07-30" : "待收"}</div><div class="what">收尾款 70% · <span class="num">${money(r.amt * .7)}</span></div><div class="who">${r.ar ? "已到账" : "超期 6 天未收"}</div></li>
+        <li data-s="${r.ap ? "done" : ""}"><div class="when">${r.ap ? "07-25" : "待付"}</div><div class="what">付供应商货款 · <span class="num">¥${int(r.ap || 0)}</span></div><div class="who">${r.ap ? "已付" : "未安排"}</div></li>
+      </ul>
+      <h3 style="font-size:13.5px;margin:22px 0 6px">关联单据</h3>
+      <div class="scope" style="justify-content:flex-start"><span>出运批次 3 个</span><span>采购合同 2 份</span><span>退税发票 4 张</span><span>费用单 7 条</span></div>
+    </div>
+    <div class="drawer-f"><button class="btn" data-close>关闭</button><button class="btn btn-primary" data-close data-toast="已提交复核">提交复核</button></div>`);
+});
+
+/* ============================================================
+   退税
+   ============================================================ */
+let taxSeg = "";
+function renderTax() {
+  const q = $("#taxSearch").value.trim().toLowerCase();
+  const buyer = $("#taxBuyer").value, unl = $("#taxUnlinked").checked, mon = $("#taxMonth").value;
+  const rows = TAX.filter((r) => {
+    if (taxSeg && r.seg !== taxSeg) return false;
+    if (buyer && r.buyer !== buyer) return false;
+    if (unl && r.linked) return false;
+    if (mon && r.m !== mon) return false;
+    if (q && !(r.pi + r.inv + r.cus + r.seller).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const taxSum = rows.reduce((s, r) => s + r.tax, 0);
+  $("#taxCount").innerHTML = `本页 <b class="num">${rows.length}</b> 条 · 税额合计 <b class="num">¥${int(Math.round(taxSum))}</b>`;
+  $("#taxBody").innerHTML = rows.length ? rows.map((r) => `
+    <tr>
+      <td class="mono" style="font-size:12.5px">${esc(r.m)}</td><td class="mono">${esc(r.b)}</td><td class="nw">${esc(r.buyer)}</td>
+      <td class="nw">${r.pi ? `<span class="cell-main" style="color:var(--accent-ink)">${esc(r.pi)}</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:6px"><span class="pill coral">未关联</span><button class="btn btn-sm" data-toast="打开关联向导：按发票号 / 报关单号自动匹配 PI">关联</button></span>`}</td>
+      <td style="max-width:170px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.seller)}</div></td>
+      <td class="mono" style="font-size:12.5px">${esc(r.inv)}</td>
+      <td style="max-width:210px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.item)}</div></td>
+      <td class="td-r num">${int(r.qty)}</td>
+      <td class="td-r num">¥${int(r.gross)}</td>
+      <td class="td-r num">¥${r.net.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="td-r num" style="font-weight:600">¥${r.tax.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="mono" style="font-size:12.5px">${esc(r.exp)}</td>
+      <td class="mono" style="font-size:12px">${esc(r.cus)}</td>
+      <td class="td-r num" style="color:${r.usd ? "var(--accent-ink)" : "var(--text-3)"}">${r.usd ? money(r.usd) : "—"}</td>
+      <td><button class="icon-btn" data-toast="发票影像与报关单附件" aria-label="附件"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.19 5.19l-9.2 9.19a1.83 1.83 0 0 1-2.59-2.59l8.49-8.48"/></svg></button></td>
+    </tr>`).join("")
+    : `<tr><td colspan="15" style="padding:44px;text-align:center;color:var(--text-3)">没有匹配的发票行。</td></tr>`;
+}
+$("#taxSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-seg]"); if (!b) return;
+  $$("[data-seg]", $("#taxSeg")).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  taxSeg = b.dataset.seg; renderTax(); renderTaxKpis();
+});
+["#taxSearch", "#taxBuyer", "#taxUnlinked", "#taxMonth"].forEach((s) => $(s).addEventListener("input", () => { renderTax(); renderTaxKpis(); }));
+
+/* 公司段口径下的全量统计（原型只渲染第 1 页明细，KPI 取全量口径） */
+const TAX_KPI = {
+  "":       { year: 1956962, lines: 233, unlinked: 108 },
+  "晓行天下": { year: 1284310, lines: 151, unlinked: 74 },
+  "供应链":   { year: 672652,  lines: 82,  unlinked: 34 },
+};
+function renderTaxKpis() {
+  const k = TAX_KPI[taxSeg] || TAX_KPI[""];
+  $("#taxKpis").innerHTML = `
+    <div class="kpi" data-tone="jade"><span class="k">本年实退税 ¥ · 2026</span><span class="v num">¥${int(k.year)}</span><span class="f"><span class="delta up">▲ 12.4%</span> 同比</span></div>
+    <div class="kpi"><span class="k">本月申报 ¥ · 2026-08</span><span class="v num">¥0</span><span class="f">8 月尚未开始申报</span></div>
+    <div class="kpi" data-tone="accent"><span class="k">发票行数</span><span class="v num">${int(k.lines)}</span><span class="f">当前公司段口径</span></div>
+    <div class="kpi" data-tone="coral"><span class="k">未关联订单行数</span><span class="v num">${int(k.unlinked)}</span><span class="f">影响退税进度，需尽快挂到 PI</span></div>`;
+}
+
+/* ============================================================
+   客户
+   ============================================================ */
+let cusId = "C1";
+function renderCus() {
+  const q = $("#cusSearch").value.trim().toLowerCase();
+  const rows = CUS.filter((c) => !q || (c.name + c.country).toLowerCase().includes(q));
+  $("#cusList").innerHTML = rows.map((c) => {
+    const pct = Math.round(c.used / c.limit * 100);
+    return `<button class="crow" data-cus="${c.id}" aria-current="${c.id === cusId}">
+      <span class="avatar" style="background:var(--accent-soft);color:var(--accent-ink)">${esc(c.name[0])}</span>
+      <span class="who"><b>${esc(c.name)}</b><span>${esc(c.country)} · ${esc(c.sales)}</span></span>
+      <span class="pill ${pct > 85 ? "coral" : pct > 60 ? "amber" : "jade"} plain num">${pct}%</span>
+    </button>`;
+  }).join("") || `<div style="padding:30px;text-align:center;color:var(--text-3);font-size:12.5px">没有匹配的客户</div>`;
+  const c = CUS.find((x) => x.id === cusId) || CUS[0];
+  const pct = Math.round(c.used / c.limit * 100);
+  let localTime = "";
+  try { localTime = new Intl.DateTimeFormat("zh-CN", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()); } catch (_) {}
+  $("#cusDetail").innerHTML = `
+    <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+      <div class="kpi" data-tone="accent"><span class="k">累计订单额</span><span class="v num" style="font-size:22px">${money(c.amt)}</span><span class="f">${c.orders} 单 · 自 ${esc(c.since)}</span></div>
+      <div class="kpi" data-tone="${pct > 85 ? "coral" : "jade"}"><span class="k">中信保额度占用</span><span class="v num" style="font-size:22px">${pct}%</span><span class="f">${money(c.used)} / ${money(c.limit)}</span></div>
+      <div class="kpi"><span class="k">当地时间</span><span class="v num" style="font-size:22px">${esc(localTime)}</span><span class="f">发邮件前先看一眼</span></div>
+      <div class="kpi"><span class="k">信用等级</span><span class="v" style="font-size:22px">${esc(c.level)} 级</span><span class="f">业务员 ${esc(c.sales)}</span></div>
+    </div>
+    <div class="card" style="margin-top:16px"><div class="card-h"><h3>${esc(c.name)}</h3><span class="sub">${esc(c.country)} · 联系人 ${esc(c.contact)}</span>
+      <button class="btn btn-sm" style="margin-left:auto" data-toast="打开客户编辑">编辑</button></div>
+      <div class="card-b">
+        <div class="note" style="margin-bottom:16px">${esc(c.note)}</div>
+        <h3 style="font-size:13.5px;margin:0 0 6px">近期跟进</h3>
+        <ul class="tl">
+          <li data-s="done"><div class="when">08-04</div><div class="what">确认 8 月第二批数量，客户要求提前 3 天出运</div><div class="who">${esc(c.sales)}</div></li>
+          <li data-s="done"><div class="when">07-29</div><div class="what">发送新报价单（含 2026 Q4 价格调整说明）</div><div class="who">${esc(c.sales)}</div></li>
+          <li data-s="late"><div class="when">07-21</div><div class="what">尾款超期 6 天未收，已发提醒邮件</div><div class="who">财务 · 陈曦</div></li>
+        </ul>
+      </div></div>`;
+}
+$("#cusList").addEventListener("click", (e) => { const b = e.target.closest("[data-cus]"); if (b) { cusId = b.dataset.cus; renderCus(); } });
+$("#cusSearch").addEventListener("input", renderCus);
+
+/* ============================================================
+   Dashboard
+   ============================================================ */
+function sparkline(vals, color) {
+  const w = 76, h = 26, max = Math.max(...vals), min = Math.min(...vals), span = max - min || 1;
+  const pts = vals.map((v, i) => [i / (vals.length - 1) * w, h - ((v - min) / span) * (h - 4) - 2]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + ` L${w} ${h} L0 ${h} Z`;
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <path d="${area}" fill="${color}" opacity=".12"/><path d="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${pts.at(-1)[0].toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="2.4" fill="${color}"/></svg>`;
+}
+function renderDash() {
+  $("#dashKpis").innerHTML = `
+    <div class="kpi" data-tone="accent"><span class="k">在跟订单额 USD</span><span class="v num">$4,620,946</span><span class="f"><span class="delta up">▲ 8.2%</span> 环比上月</span>${sparkline([31, 34, 33, 38, 41, 39, 46], "var(--accent)")}</div>
+    <div class="kpi"><span class="k">本月出运柜量</span><span class="v num">37</span><span class="f"><span class="delta up">▲ 4</span> 较上月</span>${sparkline([22, 28, 25, 31, 29, 33, 37], "var(--text-3)")}</div>
+    <div class="kpi" data-tone="amber"><span class="k">利润率预警订单</span><span class="v num">18</span><span class="f">其中 <b style="color:var(--coral)">3</b> 单为负毛利</span></div>
+    <div class="kpi" data-tone="coral"><span class="k">停滞 / 超期批次</span><span class="v num">5</span><span class="f">最长停滞 <span class="num">9</span> 天</span></div>
+    <div class="kpi" data-tone="jade"><span class="k">本年实退税</span><span class="v num">¥1,956,962</span><span class="f"><span class="delta up">▲ 12.4%</span> 同比</span>${sparkline([120, 145, 133, 168, 155, 190, 210], "var(--jade)")}</div>`;
+
+  // 出运趋势
+  const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月"];
+  const cnt = [24, 18, 31, 29, 35, 33, 41, 37];
+  const val = [38, 26, 44, 41, 52, 47, 61, 55];
+  const W = 560, H = 210, PL = 34, PR = 10, PT = 12, PB = 26;
+  const iw = W - PL - PR, ih = H - PT - PB;
+  const maxC = 48, maxV = 70;
+  const bw = iw / cnt.length * .5;
+  const bars = cnt.map((c, i) => {
+    const x = PL + iw / cnt.length * (i + .5) - bw / 2;
+    const bh = c / maxC * ih;
+    return `<rect x="${x.toFixed(1)}" y="${(PT + ih - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="var(--accent)" opacity=".2"/>`;
+  }).join("");
+  const pts = val.map((v, i) => [PL + iw / val.length * (i + .5), PT + ih - v / maxV * ih]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const dots = pts.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === pts.length - 1 ? 4 : 2.6}" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>`).join("");
+  const grid = [0, .25, .5, .75, 1].map((f) => `<line x1="${PL}" x2="${W - PR}" y1="${(PT + ih * f).toFixed(1)}" y2="${(PT + ih * f).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`).join("");
+  const labs = months.map((m, i) => `<text x="${(PL + iw / months.length * (i + .5)).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="var(--text-3)">${m}</text>`).join("");
+  const ylab = [0, 12, 24, 36, 48].map((v) => `<text x="${PL - 7}" y="${(PT + ih - ih * (v / maxC) + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text-3)" style="font-family:var(--mono)">${v}</text>`).join("");
+  $("#chartTrend").innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="月度出运柜量与订单额趋势">
+    ${grid}${ylab}${bars}<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>${dots}${labs}</svg>`;
+
+  // 风险
+  const risks = [
+    ["coral", "5 个批次停滞超过 7 天", "MT26X06188 已停滞 9 天，工厂未给明确交期", "followups"],
+    ["coral", "3 单预估为负毛利", "MT26X06188 利润率 −2.41%，成本已超报价", "orders"],
+    ["amber", "108 行退税发票未关联订单", "影响本月退税申报进度", "tax"],
+    ["amber", "6 张尾款超期未收", "合计 $186,400，最长超期 21 天", "orders"],
+    ["amber", "4 票单证不齐", "缺产地证 FORM A / 熏蒸证明", "docs"],
+    ["accent", "2 家供应商资质本月到期", "需在 8 月 20 日前更新", "supplier"],
+    ["accent", "汇率已 3 天未更新", "自定汇率 6.7000 与市场价偏离 0.58%", "settings"],
+  ];
+  $("#riskList").innerHTML = risks.map(([tone, t, s, go]) => `
+    <div class="risk">
+      <div class="ico" style="background:var(--${tone}-soft);color:var(--${tone})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+      </div>
+      <div style="flex:1;min-width:0"><b>${esc(t)}</b><span>${esc(s)}</span></div>
+      <button class="btn btn-sm go" data-go="${go}">去处理</button>
+    </div>`).join("");
+
+  // 目的国
+  const countries = [["美国", 1268400], ["秘鲁", 742600], ["德国", 486300], ["澳大利亚", 318700], ["智利", 214500], ["沙特", 164200]];
+  const cmax = countries[0][1];
+  $("#countryBars").innerHTML = countries.map(([n, v]) => `
+    <div class="bar-row"><span>${esc(n)}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(v / cmax * 100).toFixed(1)}%"></span></span>
+      <span class="num" style="text-align:right;color:var(--text-2)">${(v / 10000).toFixed(1)}万</span></div>`).join("");
+
+  // 业务员
+  const board = [["Sophie", 1642300, 18.4], ["Ada", 1365200, 24.9], ["Sunny", 864700, 20.3], ["Summer", 748700, 17.1]];
+  $("#leaderboard").innerHTML = board.map(([n, v, r], i) => `
+    <div class="lead-row"><span class="rank">${i + 1}</span>
+      <span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px;background:var(--accent-soft);color:var(--accent-ink)">${esc(n[0])}</span>
+      <span style="flex:1"><b style="font-size:13px">${esc(n)}</b></span>
+      <span class="num" style="font-size:12.5px;color:var(--text-2)">$${int(v)}</span>
+      <span class="pill ${rateTone(r)} plain num" style="min-width:56px;justify-content:center">${r.toFixed(1)}%</span></div>`).join("");
+
+  // 利润率分布
+  const buckets = [["<0", 3, "coral"], ["0–11%", 15, "amber"], ["11–18%", 42, "accent"], ["18–25%", 78, "jade"], [">25%", 38, "jade"]];
+  const bmax = Math.max(...buckets.map((b) => b[1]));
+  const BW = 300, BH = 160, bp = 26;
+  const bars2 = buckets.map((b, i) => {
+    const bw2 = (BW - bp) / buckets.length * .6;
+    const x = bp + (BW - bp) / buckets.length * (i + .5) - bw2 / 2;
+    const h2 = b[1] / bmax * (BH - 34);
+    return `<rect x="${x.toFixed(1)}" y="${(BH - 22 - h2).toFixed(1)}" width="${bw2.toFixed(1)}" height="${h2.toFixed(1)}" rx="3" fill="var(--${b[2]})" opacity=".85"/>
+      <text x="${(x + bw2 / 2).toFixed(1)}" y="${(BH - 26 - h2).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="var(--text-2)" style="font-family:var(--mono)">${b[1]}</text>
+      <text x="${(x + bw2 / 2).toFixed(1)}" y="${BH - 6}" text-anchor="middle" font-size="10" fill="var(--text-3)">${b[0]}</text>`;
+  }).join("");
+  $("#chartProfit").innerHTML = `<svg viewBox="0 0 ${BW} ${BH}" style="width:100%;height:auto" role="img" aria-label="订单利润率分布">
+    <line x1="${bp}" x2="${BW}" y1="${BH - 22}" y2="${BH - 22}" stroke="var(--line)"/>${bars2}</svg>`;
+}
+
+/* ---------- orders KPIs ---------- */
+function renderOrdKpis() {
+  $("#ordKpis").innerHTML = `
+    <div class="kpi"><span class="k">订单总数</span><span class="v num">176</span><span class="f">在跟进 · 2026 年度</span></div>
+    <div class="kpi" data-tone="accent"><span class="k">未完结</span><span class="v num">114</span><span class="f">占比 <span class="num">64.8%</span></span></div>
+    <div class="kpi" data-tone="amber"><span class="k">利润率预警 &lt; 11%</span><span class="v num">18</span><span class="f">需财务复核</span></div>
+    <div class="kpi" data-tone="coral"><span class="k">利润率 &lt; 0</span><span class="v num">3</span><span class="f">已自动进入复核队列</span></div>
+    <div class="kpi" data-tone="jade"><span class="k">在跟订单额 USD</span><span class="v num">$4,620,946</span><span class="f">RMB 单按折算价并入</span></div>`;
+}
+
+/* ---------- swatches ---------- */
+function paintSwatches() {
+  const set = [["主色 · 航线蓝", "--accent"], ["纸面", "--paper"], ["卡面", "--surface"], ["描边", "--line"],
+    ["松绿 · 完成", "--jade"], ["琥珀 · 待办", "--amber"], ["珊瑚 · 异常", "--coral"], ["紫 · 归档", "--violet"],
+    ["导航轨", "--rail-bg"], ["正文", "--text"]];
+  const cs = getComputedStyle(document.documentElement);
+  $("#swatches").innerHTML = set.map(([n, v]) => {
+    const val = cs.getPropertyValue(v).trim();
+    return `<div class="sw"><i style="background:var(${v})"></i><b>${esc(n)}</b><code>${esc(val)}</code></div>`;
+  }).join("");
+}
+
+/* ============================================================
+   boot
+   ============================================================ */
+renderNav();
+tickClocks(); setInterval(tickClocks, 20000);
+renderFU(); renderOrd(); renderOrdKpis(); renderTax(); renderTaxKpis(); renderCus(); renderDash(); paintSwatches();
+go(location.hash.slice(1) || "brief");
+window.addEventListener("hashchange", () => go(location.hash.slice(1) || "brief"));
+})();
+</script>

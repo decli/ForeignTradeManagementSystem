@@ -7,6 +7,7 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { scryptSync, randomBytes } from "node:crypto";
 import process from "node:process";
 import path from "node:path";
+import { databaseUrl } from "../src/lib/database-url.js";
 
 try {
   process.loadEnvFile(path.join(process.cwd(), ".env"));
@@ -14,7 +15,7 @@ try {
   /* 用进程环境变量 */
 }
 
-const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! });
+const adapter = new PrismaBetterSqlite3({ url: databaseUrl() });
 const db = new PrismaClient({ adapter });
 
 /** 与 src/lib/password.ts 保持一致的算法 */

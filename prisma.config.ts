@@ -1,6 +1,7 @@
 import path from "node:path";
 import process from "node:process";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
+import { DEFAULT_DATABASE_URL } from "./src/lib/database-url";
 
 // Prisma CLI 不会自动读 .env（Next.js 运行时会）。用 Node 内置的 loadEnvFile，
 // 省掉一个 dotenv 依赖。文件不存在时忽略（CI 里用真实环境变量）。
@@ -23,5 +24,7 @@ export default defineConfig({
     path: path.join("prisma", "migrations-sqlite"),
     seed: "tsx prisma/seed.ts",
   },
-  datasource: { url: env("DATABASE_URL") },
+  // 不用 env()：它在变量缺失时直接抛错，会让全新 clone 的 `npm install`
+  // 在 postinstall 跑 prisma generate 时就失败——那时用户还没来得及创建 .env。
+  datasource: { url: process.env.DATABASE_URL || DEFAULT_DATABASE_URL },
 });

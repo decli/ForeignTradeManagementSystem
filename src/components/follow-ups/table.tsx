@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { MilestoneRail } from "@/components/milestone-rail";
 import { toast } from "@/components/toast";
 import type { ShipmentRow, ShipmentDetail } from "@/server/shipments";
@@ -24,6 +25,7 @@ export function FollowUpTable({
   rows: ShipmentRow[];
   loadDetail: (id: string) => Promise<ShipmentDetail | null>;
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
 
@@ -95,6 +97,7 @@ export function FollowUpTable({
     setEditing(null);
     startTransition(async () => {
       const res = await updateNote(row.id, text);
+      router.refresh();
       toast(res.ok ? `已更新 ${row.batchNo} 的动态` : res.error ?? "更新失败");
     });
   };
@@ -112,12 +115,14 @@ export function FollowUpTable({
         return;
       }
       const snapshot = res.undo;
+      router.refresh();
       setSelected(new Set());
       setBulkNote("");
       setBulkRel("");
       toast(`已更新 ${res.count} 行`, () => {
         startTransition(async () => {
           await revertBulk(snapshot);
+          router.refresh();
           toast("已撤销");
         });
       });
@@ -131,9 +136,11 @@ export function FollowUpTable({
         toast(res.error ?? "删除失败");
         return;
       }
+      router.refresh();
       toast(`已删除 ${res.batchNo}`, () => {
         startTransition(async () => {
           await restoreShipment(row.id);
+          router.refresh();
           toast("已恢复");
         });
       });
@@ -193,7 +200,7 @@ export function FollowUpTable({
             </thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr>
+                <tr className="empty-row">
                   <td colSpan={8} className="empty">
                     当前筛选下没有批次。试试关掉「仅进行中」，或点右上角「重置」。
                   </td>
@@ -301,6 +308,7 @@ export function FollowUpTable({
                           onClick={() =>
                             startTransition(async () => {
                               await toggleTodo(r.id, !r.hasTodo);
+                              router.refresh();
                               toast(r.hasTodo ? `已取消 ${r.batchNo} 的待办` : `已为 ${r.batchNo} 加待办`);
                             })
                           }

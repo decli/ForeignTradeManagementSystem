@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useHydrated } from "@/lib/use-hydrated";
 
 /**
  * 截图里九个筛选器平铺占两行。这里只留最高频的三个 + 「仅进行中」，
@@ -12,6 +13,7 @@ export function Filters({ salesNames }: { salesNames: string[] }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const hydrated = useHydrated();
 
   const [q, setQ] = useState(params.get("q") ?? "");
   const firstRender = useRef(true);
@@ -41,7 +43,7 @@ export function Filters({ salesNames }: { salesNames: string[] }) {
     Boolean(params.get("q") || params.get("state") || params.get("sales")) || !onlyActive;
 
   return (
-    <div className="filters">
+    <div className="filters" data-ready={hydrated ? "1" : "0"}>
       <div className="field">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />

@@ -11,7 +11,10 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test": "npm run build && playwright test",
+    "test:ui": "playwright test --ui",
+    "test:only": "playwright test"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
@@ -20,9 +23,11 @@
     "prisma": "^7.9.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tsx": "^4.23.9"
+    "tsx": "^4.23.9",
+    "write-excel-file": "^4.1.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

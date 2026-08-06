@@ -29,14 +29,14 @@ export const NAV: NavGroup[] = [
     title: "经营",
     icon: "biz",
     items: [
-      { slug: "dashboard", title: "数据看板", desc: "全局经营视图：在跟订单额、出运柜量、利润率预警、退税进度，以及「今天要处理什么」清单。", scope: ["KPI 与趋势", "风险清单", "业务员业绩", "目的国分布"] },
+      { slug: "dashboard", title: "数据看板", built: true, href: "/dashboard", desc: "全局经营视图：在跟订单额、出运柜量、利润率预警、退税进度，以及「今天要处理什么」清单。", scope: ["KPI 与趋势", "风险清单", "业务员业绩", "目的国分布"] },
     ],
   },
   {
     title: "业务",
     icon: "sales",
     items: [
-      { slug: "customers", title: "客户管理", desc: "客户主档、跟进记录与中信保额度占用。", scope: ["客户档案", "额度占用", "跟进记录", "当地时间"] },
+      { slug: "customers", title: "客户管理", built: true, href: "/customers", desc: "客户主档、跟进记录与中信保额度占用。", scope: ["客户档案", "额度占用", "跟进记录", "当地时间"] },
       { slug: "pi", title: "PI 取号", desc: "统一编号规则，取号即建档，后续跟单 / 核算 / 退税全靠这个号串联。", scope: ["号段规则", "重号校验", "作废与补号", "取号人留痕"] },
       { slug: "my-orders", title: "我的订单", desc: "业务员视角的订单列表，只看自己的单，默认按待办紧急度排序。", scope: ["我的待办", "回款提醒", "出运进度", "快速新建 PI"] },
       { slug: "stock", title: "库存管理", desc: "现货与备货库存，支持按 PI 锁库。", scope: ["入库 / 出库", "按 PI 锁库", "库龄预警", "盘点单"] },
@@ -66,12 +66,12 @@ export const NAV: NavGroup[] = [
     title: "财务",
     icon: "fin",
     items: [
-      { slug: "orders", title: "订单核算跟踪", desc: "每个 PI 一行，成本超支自动进入复核；可下钻看成本构成与收付款进度。", scope: ["利润率预警", "成本构成", "收付款进度", "Excel 导入导出"] },
+      { slug: "orders", title: "订单核算跟踪", built: true, href: "/orders", desc: "每个 PI 一行，成本超支自动进入复核；可下钻看成本构成与收付款进度。", scope: ["利润率预警", "成本构成", "收付款进度", "Excel 导入导出"] },
       { slug: "sinosure", title: "中信保客户信息", desc: "投保客户的限额、账期与在保余额。", scope: ["限额占用", "账期监控", "超限预警", "报损流程"] },
       { slug: "invoice-info", title: "开票资料", desc: "开票抬头与税务信息主档。", scope: ["抬头档案", "税号校验", "开票申请"] },
       { slug: "seller-entities", title: "PI 卖方档案", desc: "多个开票主体的抬头、账户与签章，PI 上按需选择。", scope: ["主体档案", "银行账户", "签章模板"] },
       { slug: "payments", title: "收付款 / 财务", desc: "收汇与付汇的登记、认领与核销。", scope: ["水单认领", "自动核销", "汇率锁定", "未核销预警"] },
-      { slug: "tax-refund", title: "退税管理", desc: "出口退税发票明细台账，未关联订单的行会标红并可一键挂到 PI。", scope: ["按主体分账", "未关联提醒", "税额合计", "Excel 导入导出"] },
+      { slug: "tax-refund", title: "退税管理", built: true, href: "/tax-refund", desc: "出口退税发票明细台账，未关联订单的行会标红并可一键挂到 PI。", scope: ["按主体分账", "未关联提醒", "税额合计", "Excel 导入导出"] },
       { slug: "bank-journal", title: "银行日记账", desc: "银行流水导入与自动匹配收付款单。", scope: ["流水导入", "自动匹配", "余额对账", "多账户"] },
       { slug: "funds", title: "资金汇总", desc: "多币种多账户的资金池与现金流预测。", scope: ["多币种余额", "现金流预测", "资金调拨"] },
       { slug: "expenses", title: "费用明细报表", desc: "按订单 / 部门 / 科目的费用穿透查询。", scope: ["按订单穿透", "科目汇总", "同比环比"] },
@@ -91,7 +91,7 @@ export const NAV: NavGroup[] = [
     icon: "sys",
     items: [
       { slug: "settings", title: "系统设置与权限", desc: "角色、数据范围、字段级可见性与字典维护。", scope: ["角色权限", "数据范围", "字段可见性", "数据字典"] },
-      { slug: "audit", title: "审计日志", desc: "所有写操作留痕，可按人 / 单据 / 时间回查改动前后值。", scope: ["前后对比", "按单据回查", "导出"] },
+      { slug: "audit", title: "审计日志", built: true, href: "/audit", desc: "所有写操作留痕，可按人 / 单据 / 时间回查改动前后值。", scope: ["前后对比", "按单据回查", "导出"] },
       { slug: "logins", title: "登录记录", desc: "登录时间、IP 与设备，异常登录提醒。", scope: ["登录明细", "异常提醒", "强制下线"] },
     ],
   },

@@ -1,6 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+// 注意：这里不调用 revalidatePath。
+// 它会让客户端按「规范路径」重新取数，把用户通过 router.replace 加上去的查询参数
+// 丢掉——表现就是筛完之后随便改一条数据，筛选条件自己复位了。
+// 改由调用方在写成功后 router.refresh()，那个是按当前 URL（含查询串）刷新的。
+
 import { db } from "@/lib/db";
 
 /** TODO(M1): 接入登录后换成当前 session 用户 */
@@ -58,7 +62,6 @@ export async function updateNote(shipmentId: string, body: string, happenedOn?: 
   ]);
   await audit(actorId, "Shipment", shipmentId, "note.update", before, { latestNote: text, latestNoteOn: on });
 
-  revalidatePath("/follow-ups");
   return { ok: true as const };
 }
 
@@ -104,7 +107,6 @@ export async function bulkUpdate(
     });
   }
 
-  revalidatePath("/follow-ups");
   return {
     ok: true as const,
     count: ids.length,
@@ -136,7 +138,6 @@ export async function revertBulk(
   );
   for (const s of snapshot) await audit(actorId, "Shipment", s.id, "bulk.revert", null, s);
 
-  revalidatePath("/follow-ups");
   return { ok: true as const };
 }
 
@@ -152,7 +153,6 @@ export async function archiveShipment(id: string) {
   await db.shipment.update({ where: { id }, data: { archived: true } });
   await audit(actorId, "Shipment", id, "archive", before, { archived: true });
 
-  revalidatePath("/follow-ups");
   return { ok: true as const, batchNo: before.batchNo };
 }
 
@@ -161,7 +161,6 @@ export async function restoreShipment(id: string) {
   await db.shipment.update({ where: { id }, data: { archived: false } });
   await audit(actorId, "Shipment", id, "restore", { archived: true }, { archived: false });
 
-  revalidatePath("/follow-ups");
   return { ok: true as const };
 }
 
@@ -169,6 +168,5 @@ export async function toggleTodo(id: string, value: boolean) {
   const actorId = await currentUserId();
   await db.shipment.update({ where: { id }, data: { hasTodo: value } });
   await audit(actorId, "Shipment", id, "todo.toggle", null, { hasTodo: value });
-  revalidatePath("/follow-ups");
   return { ok: true as const };
 }

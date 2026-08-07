@@ -8,6 +8,7 @@ import { spotlightSearch } from "@/data/queries";
 import { useScrollLock } from "@/lib/hooks";
 import { ALL_ITEMS, navHref } from "@/lib/nav";
 import { useThemeCycle } from "@/lib/theme";
+import { useT } from "@/i18n";
 
 type Entry = { id: string; group: string; label: string; sub: string; icon: IconName; run: () => void };
 
@@ -16,6 +17,7 @@ type Entry = { id: string; group: string; label: string; sub: string; icon: Icon
  * 只做子序列匹配，不引模糊搜索库 —— 中文没词根，模糊分数反而不如「按输入顺序出现」直觉。
  */
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useT();
   const db = useDb();
   const { viewer, signOut } = useAuth();
   const nav = useNavigate();
@@ -125,7 +127,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         <div className="cmdk-list" ref={listRef}>
           {results.length === 0 ? (
             <div className="empty" style={{ padding: "32px 20px" }}>
-              <p>没搜到「{q}」。试试批次号的后四位，或者客户名。</p>
+              <p>{t("没搜到「{q}」。试试批次号的后四位，或者客户名。", { q })}</p>
             </div>
           ) : (
             results.map((r, i) => {
@@ -152,16 +154,16 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         <div className="cmdk-foot">
           <span>
             <kbd>↑</kbd>
-            <kbd>↓</kbd> 选择
+            <kbd>↓</kbd> {t("选择")}
           </span>
           <span>
-            <kbd>↵</kbd> 打开
+            <kbd>↵</kbd> {t("打开")}
           </span>
           <span>
-            <kbd>Esc</kbd> 关闭
+            <kbd>Esc</kbd> {t("关闭")}
           </span>
           <span className="spacer" />
-          <span>共 {results.length} 项</span>
+          <span>{t("共 {n} 项", { n: results.length })}</span>
         </div>
       </div>
     </>,

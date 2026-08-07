@@ -84,11 +84,11 @@ export function MonthlyChart({ data }: { data: { label: string; count: number; a
       <div className="chart-legend" style={{ marginTop: 8 }}>
         <span>
           <i style={{ background: "var(--accent)" }} />
-          出运柜量（票）
+          {tr("出运柜量（票）")}
         </span>
         <span>
           <i style={{ background: "var(--jade)" }} />
-          当月签约额（USD）
+          {tr("当月签约额（USD）")}
         </span>
       </div>
     </div>

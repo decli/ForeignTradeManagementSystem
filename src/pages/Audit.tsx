@@ -51,7 +51,7 @@ export default function Audit() {
       },
       { key: "actor", title: t("操作人"), width: 100, sort: (a, b) => a.actorName.localeCompare(b.actorName), render: (r) => r.actorName },
       { key: "action", title: t("动作"), width: 120, render: (r) => <Pill tone={r.action.includes("删除") ? "coral" : r.action.includes("批量") ? "violet" : "accent"}>{r.action}</Pill> },
-      { key: "entity", title: t("对象类型"), width: 106, render: (r) => ENTITY_LABEL[r.entity] ?? r.entity },
+      { key: "entity", title: t("对象类型"), width: 106, render: (r) => t(ENTITY_LABEL[r.entity] ?? r.entity) },
       { key: "label", title: t("单据"), width: 200, render: (r) => <span className="num truncate" style={{ display: "block" }}>{r.entityLabel}</span> },
       {
         key: "diff",
@@ -98,7 +98,7 @@ export default function Audit() {
                 ],
                 rows,
               );
-              toast(`已导出 ${rows.length} 条留痕`);
+              toast(t("已导出 {n} 条留痕", { n: rows.length }));
             }}
           >
             <Icon name="download" />
@@ -114,7 +114,7 @@ export default function Audit() {
           <option value="">{t("对象：全部")}</option>
           {entities.map((e) => (
             <option key={e} value={e}>
-              {ENTITY_LABEL[e] ?? e}
+              {t(ENTITY_LABEL[e] ?? e)}
             </option>
           ))}
         </select>
@@ -127,7 +127,7 @@ export default function Audit() {
           ))}
         </select>
         <span className="spacer" />
-        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{rows.length} 条留痕</span>
+        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("{n} 条留痕", { n: rows.length })}</span>
       </div>
 
       <DataGrid<AuditLog>
@@ -145,7 +145,7 @@ export default function Audit() {
             <div className="rcard-meta">
               <span>{r.actorName}</span>
               <span>{relativeTime(r.at)}</span>
-              <span>{ENTITY_LABEL[r.entity] ?? r.entity}</span>
+              <span>{t(ENTITY_LABEL[r.entity] ?? r.entity)}</span>
             </div>
           </div>
         )}

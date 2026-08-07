@@ -71,13 +71,18 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
         ))}
       </div>
 
-      <button className="icon-btn" onClick={onOpenPalette} data-tip={`${t("搜索")} · ⌘K`} aria-label={t("全局搜索")}>
-        <Icon name="search" />
-      </button>
-
-      <LangButton />
-      <DensityMenu />
-      <ThemeButton />
+      {/* 四个控件成组。散着放会有两个后果：
+          一是顶栏 12px 的 gap 让它们看着像四件不相干的东西；
+          二是一旦时钟被隐藏（≤640px）或内容变短，它们就跟着往左飘 ——
+          之前正好是「时钟宽度刚好填满」才看着靠右，是巧合不是布局。 */}
+      <div className="topbar-acts">
+        <button className="icon-btn" onClick={onOpenPalette} data-tip={`${t("搜索")} · ⌘K`} aria-label={t("全局搜索")}>
+          <Icon name="search" />
+        </button>
+        <LangButton />
+        <DensityMenu />
+        <ThemeButton />
+      </div>
     </header>
   );
 }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { load, snapshot, subscribe } from "./db";
 import type { Database } from "./types";
+import { tr } from "@/i18n";
 
 const Ready = createContext(false);
 
@@ -25,9 +26,9 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   if (error) {
     return (
       <div className="boot">
-        <p>账套装载失败：{error}</p>
+        <p>{tr("账套装载失败：{err}", { err: error })}</p>
         <button className="btn" onClick={() => location.reload()}>
-          重新装载
+          {tr("重新装载")}
         </button>
       </div>
     );

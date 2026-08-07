@@ -23,7 +23,7 @@ export default function ModulePlaceholder() {
             <Icon name="search" />
           </span>
           <h3>{t("没有这个模块")}</h3>
-          <p>地址里的 {slug} 不在模块清单里。</p>
+          <p>{t("地址里的 {slug} 不在模块清单里。", { slug })}</p>
           <Link className="btn" to="/dashboard">
             {t("回到数据看板")}
           </Link>
@@ -78,8 +78,8 @@ export default function ModulePlaceholder() {
             >
               <Icon name="info" size={16} style={{ color: "var(--text-3)", marginTop: 2, flex: "none" }} />
               <span>
-                {t("当前演示版已把")}<b>{t("跟单表、订单核算、退税管理、客户管理、PI 取号、数据看板、审计日志")}</b>接上了真实数据流；
-                这个模块的数据模型已经在 schema 里预留，界面按排期推进。
+                {t("当前演示版已把")}<b>{t("跟单表、订单核算、退税管理、客户管理、PI 取号、数据看板、审计日志")}</b>{t("接上了真实数据流；")}
+                {t("这个模块的数据模型已经在 schema 里预留，界面按排期推进。")}
               </span>
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function ModulePlaceholder() {
         {siblings.length ? (
           <section className="card">
             <div className="card-head">
-              <h3>{group?.title}下的其他模块</h3>
+              <h3>{t("{group}下的其他模块", { group: t(group?.title ?? "") })}</h3>
             </div>
             <div className="card-body" style={{ display: "grid", gap: 2, paddingBlock: 6 }}>
               {siblings.map((s) => (

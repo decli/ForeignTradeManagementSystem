@@ -185,7 +185,7 @@ function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultS
         {dup ? (
           <div className="login-err">
             <Icon name="alert" />
-            {piNo} 已经存在，换一个号
+            {t("{no} 已经存在，换一个号", { no: piNo })}
           </div>
         ) : null}
 

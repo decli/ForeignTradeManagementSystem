@@ -10,8 +10,10 @@ import { useHotkey, useIsMobile, useStored } from "@/lib/hooks";
 import { CommandPalette } from "./CommandPalette";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { useT } from "@/i18n";
 
 export function AppShell() {
+  const { t } = useT();
   const [collapsed, setCollapsed] = useStored("mt.rail.collapsed", false);
   const [railW, setRailW] = useStored("mt.rail.w", 244);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -39,7 +41,7 @@ export function AppShell() {
       style={{ ["--rail-w" as string]: `${railW}px` }}
     >
       <a className="skip-link" href="#main">
-        跳到主内容
+        {t("跳到主内容")}
       </a>
 
       <Sidebar
@@ -72,6 +74,7 @@ export function AppShell() {
 }
 
 function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClose: () => void }) {
+  const { t } = useT();
   const db = useDb();
   const nav = useNavigate();
   const { user, session, displayName, picture, signOut, impersonate } = useAuth();
@@ -102,7 +105,7 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
             {displayName}
           </b>
           <small className="muted truncate" style={{ display: "block", fontSize: "var(--fs-xs)" }}>
-            {session?.email ?? (user ? `${ROLE_LABEL[user.role]} · ${SCOPE_LABEL[user.scope]}` : "")}
+            {session?.email ?? (user ? `${t(ROLE_LABEL[user.role])} · ${t(SCOPE_LABEL[user.scope])}` : "")}
           </small>
         </div>
       </div>
@@ -110,7 +113,7 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
 
       {switching ? (
         <>
-          <div className="pop-title">以谁的身份查看（验证数据范围）</div>
+          <div className="pop-title">{t("以谁的身份查看（验证数据范围）")}</div>
           <div style={{ maxHeight: 240, overflowY: "auto" }}>
             {db.users
               .filter((u) => u.active)
@@ -128,7 +131,7 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
                   <span>{u.name}</span>
                   <span className="spacer" />
                   <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>
-                    {ROLE_LABEL[u.role]} · {SCOPE_LABEL[u.scope]}
+                    {t(ROLE_LABEL[u.role])} · {t(SCOPE_LABEL[u.scope])}
                   </span>
                 </button>
               ))}
@@ -136,16 +139,16 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
           <div className="pop-sep" />
           <button className="pop-item" onClick={() => setSwitching(false)}>
             <Icon name="chevronLeft" />
-            返回
+            {t("返回")}
           </button>
         </>
       ) : (
         <>
           <button className="pop-item" onClick={() => setSwitching(true)}>
             <Icon name="users" />
-            切换身份
+            {t("切换身份")}
             <span className="spacer" />
-            <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>看数据范围</span>
+            <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{t("看数据范围")}</span>
           </button>
           <button
             className="pop-item"
@@ -155,7 +158,7 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
             }}
           >
             <Icon name="sliders" />
-            系统设置
+            {t("系统设置")}
           </button>
           <button
             className="pop-item"
@@ -165,7 +168,7 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
             }}
           >
             <Icon name="shield" />
-            审计日志
+            {t("审计日志")}
           </button>
           <div className="pop-sep" />
           <button
@@ -176,7 +179,7 @@ function UserMenu({ pos, onClose }: { pos: { top: number; left: number }; onClos
             }}
           >
             <Icon name="logout" />
-            退出登录
+            {t("退出登录")}
           </button>
         </>
       )}

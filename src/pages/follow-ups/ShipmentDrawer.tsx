@@ -55,7 +55,7 @@ export function ShipmentDrawer({
     if (!text) return;
     updateNote(actor, detail.id, text, todayIso());
     setDraft("");
-    toast(`已给 ${detail.batchNo} 记一条动态`);
+    toast(tr("已给 {no} 记一条动态", { no: detail.batchNo }));
   };
 
   return (
@@ -80,7 +80,7 @@ export function ShipmentDrawer({
           {detail.customerName ? <span>· {detail.customerName}</span> : null}
           {clock ? (
             <span>
-              · 客户当地 {clock.time}
+              {tr("· 客户当地 {t}", { t: clock.time })}
               {clock.working ? t("（在上班）") : t("（多半不在）")}
             </span>
           ) : null}
@@ -88,7 +88,7 @@ export function ShipmentDrawer({
       }
       tabs={[
         { key: "overview", label: t("概览") },
-        { key: "notes", label: `动态流水 ${detail.notes.length}` },
+        { key: "notes", label: tr("动态流水 {n}", { n: detail.notes.length }) },
         { key: "docs", label: t("单证齐套") },
       ]}
       tab={tab}
@@ -100,7 +100,7 @@ export function ShipmentDrawer({
             disabled={readOnly}
             onClick={() => {
               toggleTodo(actor, detail.id, !detail.hasTodo);
-              toast(detail.hasTodo ? `已销掉 ${detail.batchNo} 的待办` : `已给 ${detail.batchNo} 加待办`);
+              toast(detail.hasTodo ? tr("已销掉 {no} 的待办", { no: detail.batchNo }) : tr("已给 {no} 加待办", { no: detail.batchNo }));
             }}
           >
             <Icon name="flag" />
@@ -113,7 +113,7 @@ export function ShipmentDrawer({
             disabled={readOnly}
             onChange={(e) => {
               setRelease(actor, detail.id, e.target.value as (typeof RELEASE_STATES)[number]);
-              toast(`${detail.batchNo} 改为「${e.target.value}」`);
+              toast(tr("{no} 改为「{v}」", { no: detail.batchNo, v: e.target.value }));
             }}
             aria-label={t("放行状态")}
           >
@@ -158,7 +158,7 @@ export function ShipmentDrawer({
                       value={m.planned ?? ""}
                       disabled={readOnly}
                       onChange={(e) => setMilestone(actor, detail.id, m.kind, "plannedOn", e.target.value || null)}
-                      aria-label={`${m.kind} 计划日期`}
+                      aria-label={tr("{k} 计划日期", { k: m.kind })}
                     />
                   </label>
                   <label className="row" style={{ gap: 5 }}>
@@ -170,7 +170,7 @@ export function ShipmentDrawer({
                       value={m.actual ?? ""}
                       disabled={readOnly}
                       onChange={(e) => setMilestone(actor, detail.id, m.kind, "actualOn", e.target.value || null)}
-                      aria-label={`${m.kind} 实际日期`}
+                      aria-label={tr("{k} 实际日期", { k: m.kind })}
                     />
                   </label>
                   {m.state === "late" ? <Pill tone="coral">{t("超期")}</Pill> : m.state === "now" ? <Pill tone="accent">{t("进行中")}</Pill> : null}

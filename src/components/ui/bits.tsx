@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/Icon";
 import type { Tone } from "@/lib/rules";
+import { tr } from "@/i18n";
 
 export function Pill({ tone = "mute", children, dot = true, className = "" }: { tone?: Tone; children: ReactNode; dot?: boolean; className?: string }) {
   return <span className={`pill ${tone}${dot ? "" : " no-dot"} ${className}`}>{children}</span>;
@@ -100,7 +101,7 @@ export function Chip({ label, value, onClear }: { label: string; value: string; 
   return (
     <span className="chip">
       {label} <b>{value}</b>
-      <button onClick={onClear} aria-label={`清除筛选 ${label}`}>
+      <button onClick={onClear} aria-label={tr("清除筛选 {label}", { label })}>
         <Icon name="x" />
       </button>
     </span>

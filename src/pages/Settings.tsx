@@ -153,7 +153,7 @@ export default function Settings() {
             </div>
             {!can("finance") ? (
               <p className="muted" style={{ fontSize: "var(--fs-sm)", paddingBottom: 12 }}>
-                只有财务和管理员能改汇率。当前身份是{user ? ROLE_LABEL[user.role] : t("访客")}。
+                {t("只有财务和管理员能改汇率。当前身份是{role}。", { role: user ? t(ROLE_LABEL[user.role]) : t("访客") })}
               </p>
             ) : null}
           </div>
@@ -169,7 +169,7 @@ export default function Settings() {
             <div className="row wrap" style={{ gap: 8, marginBottom: 14 }}>
               {Object.entries(stats).map(([k, v]) => (
                 <span className="tag" key={k} style={{ height: 24, fontSize: "var(--fs-sm)" }}>
-                  {k} <b className="num" style={{ marginLeft: 4, color: "var(--text)" }}>{v}</b>
+                  {t(k)} <b className="num" style={{ marginLeft: 4, color: "var(--text)" }}>{v}</b>
                 </span>
               ))}
             </div>
@@ -247,11 +247,11 @@ export default function Settings() {
               <div className="setting-t">
                 <b>{t("当前身份")}</b>
                 <small>
-                  {displayName} · {user ? `${ROLE_LABEL[user.role]} · ${SCOPE_LABEL[user.scope]}` : "—"} ·{" "}
+                  {displayName} · {user ? `${t(ROLE_LABEL[user.role])} · ${t(SCOPE_LABEL[user.scope])}` : "—"} ·{" "}
                   {session?.kind === "google" ? t("Google 账号") : session?.kind === "password" ? t("账密登录") : t("演示身份")}
                 </small>
               </div>
-              <Pill tone={user?.role === "viewer" ? "mute" : "accent"}>{user ? ROLE_LABEL[user.role] : t("访客")}</Pill>
+              <Pill tone={user?.role === "viewer" ? "mute" : "accent"}>{user ? t(ROLE_LABEL[user.role]) : t("访客")}</Pill>
             </div>
 
             <div className="setting">
@@ -276,13 +276,10 @@ export default function Settings() {
           </div>
           <div className="card-body" style={{ display: "grid", gap: 10, fontSize: "var(--fs-md)", lineHeight: 1.7 }}>
             <p>
-              {t("这是 信风 · Tradewind 的")}<b>{t("纯前端版本")}</b>：没有服务端，没有数据库，所有数据都在你自己的浏览器
-              （IndexedDB）里。关掉页面数据还在，换一台设备就是一套新的账套。
+              {t("这是 信风 · Tradewind 的")}<b>{t("纯前端版本")}</b>{t("：没有服务端，没有数据库，所有数据都在你自己的浏览器（IndexedDB）里。关掉页面数据还在，换一台设备就是一套新的账套。")}
             </p>
             <p className="muted">
-              {t("也就是说：")}<b>{t("不要把真实业务数据放进这个演示站")}</b>。它没有备份、没有多人协作、没有服务端校验。
-              要用在真实业务上，把 <code className="num">src/data/db.ts</code> 换成对接后端的 fetch 即可，
-              上层的查询与页面代码不用动。
+              {t("也就是说：")}<b>{t("不要把真实业务数据放进这个演示站")}</b>{t("。它没有备份、没有多人协作、没有服务端校验。要用在真实业务上，把")} <code className="num">src/data/db.ts</code>{t(" 换成对接后端的 fetch 即可，上层的查询与页面代码不用动。")}
             </p>
           </div>
         </section>

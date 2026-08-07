@@ -238,7 +238,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
             {t("订单总数")}
           </span>
           <span className="kpi-v">{kpi.total}</span>
-          <span className="kpi-s">未完结 {kpi.unsettled} 张</span>
+          <span className="kpi-s">{t("未完结 {n} 张", { n: kpi.unsettled })}</span>
         </div>
         <div className="kpi">
           <span className="kpi-k">
@@ -254,7 +254,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
             {t("利润率预警")}
           </span>
           <span className="kpi-v">{kpi.warn}</span>
-          <span className="kpi-s">低于 {PROFIT_WARN_PCT}% · 点这里只看它们</span>
+          <span className="kpi-s">{t("低于 {p}% · 点这里只看它们", { p: PROFIT_WARN_PCT })}</span>
         </button>
         <div className="kpi" data-tone={kpi.loss ? "coral" : undefined}>
           <span className="kpi-k">
@@ -335,7 +335,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
               {t("本页")} <b className="num">{rows.length}</b> {t("张订单")}
             </span>
             <span className="hint" style={{ marginLeft: 0 }}>
-              金额合计 {formatCompact(rows.reduce((s, r) => s + (r.currency === "CNY" ? r.amount / rate : r.amount), 0))}
+              {t("金额合计 {v}", { v: formatCompact(rows.reduce((s, r) => s + (r.currency === "CNY" ? r.amount / rate : r.amount), 0)) })}
             </span>
           </>
         }
@@ -410,7 +410,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
         <>
           <span className="num">{d.piNo}</span>
           <Pill tone={profitTone(d.profitRate)} dot={false}>
-            利润率 {formatPct(d.profitRate)}
+            {t("利润率 {p}", { p: formatPct(d.profitRate) })}
           </Pill>
           <Pill tone={d.settleState === "已完结" ? "jade" : "mute"}>{d.settleState}</Pill>
         </>
@@ -420,7 +420,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
           <span>
             {d.customerName} · {d.destination}
           </span>
-          <span>· 签约 {d.signedOn}</span>
+          <span>{t("· 签约 {d}", { d: d.signedOn })}</span>
           <span>· {d.sellerEntity ?? t("未指定主体")}</span>
         </>
       }
@@ -432,7 +432,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
           </Link>
           <span className="spacer" />
           <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>
-            复核状态：{REVIEW_LABEL[d.reviewState] ?? d.reviewState}
+            {t("复核状态：{s}", { s: t(REVIEW_LABEL[d.reviewState] ?? d.reviewState) })}
           </span>
         </>
       }
@@ -466,7 +466,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
             <Icon name="pie" size={14} />
             {t("成本构成")}
             <span className="spacer" />
-            <span className="num" style={{ fontWeight: 400 }}>合计 ¥{Math.round(totalCost).toLocaleString("en-US")}</span>
+            <span className="num" style={{ fontWeight: 400 }}>{t("合计 ¥{v}", { v: Math.round(totalCost).toLocaleString("en-US") })}</span>
           </div>
           <StackBar items={d.costs} />
         </div>
@@ -479,7 +479,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
       <div className="sect">
         <div className="sect-h">
           <Icon name="ship" size={14} />
-          关联出运批次 {d.shipments.length ? `（${d.shipments.length}）` : ""}
+          {t("关联出运批次 {n}", { n: d.shipments.length ? `（${d.shipments.length}）` : "" })}
         </div>
         {d.shipments.length === 0 ? (
           <p className="muted" style={{ fontSize: "var(--fs-md)" }}>{t("这张 PI 还没有出运批次。")}</p>
@@ -509,7 +509,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
       <div className="sect">
         <div className="sect-h">
           <Icon name="file" size={14} />
-          关联退税发票 {d.taxInvoices.length ? `（${d.taxInvoices.length}）` : ""}
+          {t("关联退税发票 {n}", { n: d.taxInvoices.length ? `（${d.taxInvoices.length}）` : "" })}
         </div>
         {d.taxInvoices.length === 0 ? (
           <p className="muted" style={{ fontSize: "var(--fs-md)" }}>{t("还没有发票挂到这张 PI 上。")}</p>

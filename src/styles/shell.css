@@ -616,13 +616,33 @@ button.rail-group-h:hover .rail-group-n {
 .topbar > * {
   flex: none;
 }
+/* ⚠️ 上面那条把 .spacer 的 flex: 1 也一起干掉了（同为 0,1,0，它在后面）。
+   于是顶栏右侧那一串其实没有任何东西在推 —— 之前看着靠右，纯粹是因为
+   时钟的宽度恰好把中间填满了。时钟一隐藏（≤640px）按钮就飘到中间去。
+   这里显式把它救回来：右侧那一组由它顶到底。 */
+.topbar .spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 右侧控件成组：一起靠右，彼此间距收紧成一个工具簇，
+   不再跟顶栏 12px 的大间距混在一起看着像四件不相干的东西。 */
+.topbar-acts {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
 /* 汉堡按钮只在窄屏出现 */
 .nav-toggle {
   display: none;
 }
 
-/* 中英切换按钮里是文字不是图标，字号单独压一档才跟旁边的图标一样大 */
+/* 中英切换按钮里是文字不是图标，字号单独压一档才跟旁边的图标一样大。
+   宽度写死：「EN」两个拉丁字母和「中」一个汉字的自然宽度不一样，
+   不定死的话每切一次语言，它左边的时钟就会整体挪一下位置。 */
 .lang-btn {
+  min-width: var(--ctl-h-sm, 30px);
   font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.02em;

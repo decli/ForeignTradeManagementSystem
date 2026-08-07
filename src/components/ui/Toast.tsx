@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/Icon";
+import { tr } from "@/i18n";
 
 /**
  * 提示条。带撤销的那种会画一圈倒计时 —— 与其写「5 秒内可撤销」，
@@ -82,7 +83,7 @@ function Toast({ item, onDone }: { item: ToastItem; onDone: () => void }) {
               setTimeout(() => done.current(), 200);
             }}
           >
-            撤销
+            {tr("撤销")}
           </button>
         </>
       ) : null}

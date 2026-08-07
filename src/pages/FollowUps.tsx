@@ -9,7 +9,7 @@ import { toast, toastError } from "@/components/ui/Toast";
 import { Chip, EmptyState, Field, Pill, SearchInput, Segmented } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
-import { useT } from "@/i18n";
+import { tr, useT } from "@/i18n";
 import { listSalesNames, listShipments, type ShipmentRow } from "@/data/queries";
 import { archiveShipment, bulkUpdate, createShipment, restoreShipment, revertBulk, toggleTodo, updateNote } from "@/data/mutations";
 import { deleteView, saveView } from "@/data/mutations";
@@ -160,7 +160,7 @@ export default function FollowUps() {
           <>
             <div>{r.mode}</div>
             <div style={{ marginTop: 3 }}>
-              <Pill tone={RELEASE_TONE[r.releaseState] ?? "mute"}>{r.releaseState}</Pill>
+              <Pill tone={RELEASE_TONE[r.releaseState] ?? "mute"}>{t(r.releaseState)}</Pill>
             </div>
           </>
         ),
@@ -182,7 +182,7 @@ export default function FollowUps() {
             </button>
             {r.stalledDays || r.hasTodo ? (
               <div className="row" style={{ gap: 5, marginTop: 5 }}>
-                {r.stalledDays ? <Pill tone="coral">停滞 {r.stalledDays} 天</Pill> : null}
+                {r.stalledDays ? <Pill tone="coral">{t("停滞 {n} 天", { n: r.stalledDays })}</Pill> : null}
                 {r.hasTodo ? <Pill tone="amber">{t("有待办")}</Pill> : null}
                 {r.latestNoteOn ? <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{humanDate(r.latestNoteOn)}</span> : null}
               </div>
@@ -349,7 +349,7 @@ export default function FollowUps() {
           <option value="">{t("放行：全部")}</option>
           {RELEASE_STATES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {t(s)}
             </option>
           ))}
         </select>
@@ -367,7 +367,7 @@ export default function FollowUps() {
           <option value="">{t("走货：全部")}</option>
           {MODES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {t(s)}
             </option>
           ))}
         </select>
@@ -422,10 +422,10 @@ export default function FollowUps() {
               {t("本页")} <b className="num">{rows.length}</b> {t("条")}
             </span>
             <Pill tone="jade" dot={false}>
-              进行中 {rows.filter((r) => !r.stalledDays && !r.hasLate).length}
+              {t("进行中 {n}", { n: rows.filter((r) => !r.stalledDays && !r.hasLate).length })}
             </Pill>
             <Pill tone={rows.some((r) => r.stalledDays || r.hasLate) ? "coral" : "mute"} dot={false}>
-              停滞 / 超期 {rows.filter((r) => r.stalledDays || r.hasLate).length}
+              {t("停滞 / 超期 {n}", { n: rows.filter((r) => r.stalledDays || r.hasLate).length })}
             </Pill>
           </>
         }
@@ -453,7 +453,7 @@ export default function FollowUps() {
               <span className="cell-main truncate">{r.batchNo}</span>
               {r.batchLabel ? <span className="badge-batch">{r.batchLabel}</span> : null}
               <span className="spacer" />
-              <Pill tone={RELEASE_TONE[r.releaseState] ?? "mute"}>{r.releaseState}</Pill>
+              <Pill tone={RELEASE_TONE[r.releaseState] ?? "mute"}>{t(r.releaseState)}</Pill>
             </div>
             <div className="rcard-meta">
               <span>
@@ -465,7 +465,7 @@ export default function FollowUps() {
             <div className="rcard-note clamp-2">{r.latestNote ?? t("还没有动态")}</div>
             {r.stalledDays || r.hasTodo ? (
               <div className="row" style={{ gap: 5 }}>
-                {r.stalledDays ? <Pill tone="coral">停滞 {r.stalledDays} 天</Pill> : null}
+                {r.stalledDays ? <Pill tone="coral">{t("停滞 {n} 天", { n: r.stalledDays })}</Pill> : null}
                 {r.hasTodo ? <Pill tone="amber">{t("有待办")}</Pill> : null}
               </div>
             ) : null}
@@ -553,7 +553,7 @@ function SavedViews({
       trigger={(p) => (
         <button className="btn btn-sm" {...p} ref={p.ref}>
           <Icon name="star" />
-          视图
+          {t("视图")}
           {views.length ? <span className="muted">{views.length}</span> : null}
         </button>
       )}
@@ -731,7 +731,7 @@ function BulkBar({
           <option value="">{t("放行状态不变")}</option>
           {RELEASE_STATES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {t(s)}
             </option>
           ))}
         </select>
@@ -776,7 +776,7 @@ function NewShipmentModal({ open, onClose, onCreated }: { open: boolean; onClose
     if (!pi) return;
     const n = db.shipments.filter((s) => s.piId === pi.id).length + 1;
     setBatchNo(`${pi.piNo}-${n}`);
-    setLabel(n > 1 ? `第${n}批` : "");
+    setLabel(n > 1 ? tr("第{n}批", { n }) : "");
   }, [pi, db.shipments]);
 
   if (!open) return null;

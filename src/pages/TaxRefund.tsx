@@ -82,7 +82,7 @@ export default function TaxRefund() {
             <div className="cell-main">{r.invoiceNo}</div>
             <div className="cell-sub">
               <span className="num">{r.declareMonth}</span>
-              <span>· 第 {r.batch} 批</span>
+              <span>{t("· 第 {n} 批", { n: r.batch })}</span>
             </div>
           </>
         ),
@@ -194,7 +194,7 @@ export default function TaxRefund() {
             {t("{y} 年退税额", { y: kpi.year })}
           </span>
           <span className="kpi-v">{formatCompact(kpi.yearTax, "¥")}</span>
-          <span className="kpi-s">{entity || "全部主体"} · 已开票口径</span>
+          <span className="kpi-s">{t("{e} · 已开票口径", { e: entity || t("全部主体") })}</span>
         </div>
         <div className="kpi">
           <span className="kpi-k">
@@ -273,13 +273,13 @@ export default function TaxRefund() {
               {t("本页")} <b className="num">{rows.length}</b> {t("行")}
             </span>
             <Pill tone="jade" dot={false}>
-              税额合计 ¥{sums.tax.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+              {t("税额合计 ¥{v}", { v: sums.tax.toLocaleString("en-US", { maximumFractionDigits: 2 }) })}
             </Pill>
             <Pill tone="mute" dot={false}>
-              价税合计 ¥{Math.round(sums.gross).toLocaleString("en-US")}
+              {t("价税合计 ¥{v}", { v: Math.round(sums.gross).toLocaleString("en-US") })}
             </Pill>
             <Pill tone="mute" dot={false}>
-              报关 ${Math.round(sums.usd).toLocaleString("en-US")}
+              {t("报关 ${v}", { v: Math.round(sums.usd).toLocaleString("en-US") })}
             </Pill>
           </>
         }
@@ -408,7 +408,7 @@ function LinkWizard({ row, onClose, onLink }: { row: TaxRow; onClose: () => void
                 </div>
                 <div className="cell-sub">
                   <span>
-                    {c.customerName} · {c.product ?? "—"} · 签约 {c.signedOn}
+                    {t("{cust} · {prod} · 签约 {d}", { cust: c.customerName, prod: c.product ?? "—", d: c.signedOn })}
                   </span>
                 </div>
               </button>

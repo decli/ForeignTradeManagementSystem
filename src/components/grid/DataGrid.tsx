@@ -264,7 +264,7 @@ export function DataGrid<T extends { id: string }>({
                 <input type="checkbox" className="check" checked={on} readOnly tabIndex={-1} />
                 <span>{c.title}</span>
                 {locked ? <span className="spacer" /> : null}
-                {locked ? <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>固定</span> : null}
+                {locked ? <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{t("固定")}</span> : null}
               </button>
             );
           })}
@@ -365,7 +365,7 @@ export function DataGrid<T extends { id: string }>({
                         className="grid-sort"
                         data-dir={prefs.sortKey === c.key ? prefs.sortDir : ""}
                         onClick={() => toggleSort(c.key)}
-                        title={c.tip ?? `按${c.title}排序`}
+                        title={c.tip ?? t("按{col}排序", { col: c.title })}
                       >
                         <span className="truncate">{c.title}</span>
                         <Icon name="arrowUp" />
@@ -403,7 +403,7 @@ export function DataGrid<T extends { id: string }>({
                         type="checkbox"
                         className="check"
                         checked={selected.has(row.id)}
-                        aria-label={`选择 ${getRowLabel?.(row) ?? row.id}`}
+                        aria-label={t("选择 {row}", { row: getRowLabel?.(row) ?? row.id })}
                         onChange={() => undefined}
                         onClick={(e) => pick(row, i, e)}
                       />

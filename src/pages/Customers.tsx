@@ -95,7 +95,7 @@ export default function Customers() {
                   </div>
                   <div className="cell-sub">
                     <span>
-                      {c.country} · {c.salesName} · {c.orderCount} 单
+                      {t("{country} · {sales} · {n} 单", { country: c.country, sales: c.salesName, n: c.orderCount })}
                     </span>
                   </div>
                   <Bar value={c.used} max={c.limit} tone={sinosureTone(c.used, c.limit)} />
@@ -109,7 +109,7 @@ export default function Customers() {
               <section className="card">
                 <div className="card-head">
                   <h3>{active.name}</h3>
-                  <Pill tone={CREDIT_TONE[active.creditLevel] ?? "mute"}>信用 {active.creditLevel}</Pill>
+                  <Pill tone={CREDIT_TONE[active.creditLevel] ?? "mute"}>{t("信用 {lv}", { lv: active.creditLevel })}</Pill>
                   <span className="spacer" />
                   {clock ? (
                     <span className="clock" data-working={clock.working ? "1" : "0"} title={clock.working ? t("对方在上班时间") : t("对方多半不在")}>

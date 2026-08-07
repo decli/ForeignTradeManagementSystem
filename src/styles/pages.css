@@ -1364,31 +1364,97 @@ a.link:hover,
    反馈是为了确认「我指的是这个」，不是为了表演。
    位移一律 ≤2px，时长走 --dur-1（110ms），比人眼察觉动画的阈值略短。 */
 
-/* KPI 卡：原来只有可点的卡（a/button）有悬停态，静态卡毫无反应，
-   同一排里有的会动有的不动，看着像坏了。现在统一给反馈，
-   可点的那几张再多一层「抬起来」暗示它能点。 */
+/* KPI 卡。
+   之前只改了边框色，2px 的位移在一排六张卡里根本看不出来 —— 反馈弱到等于没有。
+   现在四件事一起发生，但每件都很轻，叠起来才「有质感」而不是「在乱动」：
+     1. 抬起 3px + 放大 1.5% —— 卡片朝你迎上来
+     2. 外圈一道 accent 光晕（两层 box-shadow：近处紧实、远处扩散）
+     3. 顶边一条 accent 渐变线从中间向两侧拉开
+     4. 图标从灰变 accent，迷你趋势线从 0.42 提到 0.8
+   位移和缩放都用 --ease，收尾慢，手感才不廉价。 */
 .kpi {
-  transition: border-color var(--dur-1), box-shadow var(--dur-1), transform var(--dur-1);
+  position: relative;
+  transition:
+    border-color var(--dur-2) var(--ease),
+    box-shadow var(--dur-2) var(--ease),
+    transform var(--dur-2) var(--ease);
+}
+/* 顶边那条线。卡片本身 overflow: hidden（要裁住迷你趋势线），
+   所以贴 top: 0 画在里面，别用负值，会被切掉。 */
+.kpi::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-hi), transparent);
+  transform: translateX(-50%);
+  transition: width var(--dur-3) var(--ease), opacity var(--dur-2);
+  opacity: 0;
+  z-index: 2;
 }
 .kpi:hover {
-  border-color: var(--line-strong);
+  transform: translateY(-3px) scale(1.015);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent),
+    0 10px 26px -6px color-mix(in srgb, var(--accent) 30%, transparent),
+    var(--shadow-2);
 }
-a.kpi:hover,
-button.kpi:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-2);
+.kpi:hover::after {
+  width: 62%;
+  opacity: 1;
 }
+/* 可点的那几张再多一层暗示：按下去有回弹 */
 a.kpi:active,
 button.kpi:active {
-  transform: translateY(0);
+  transform: translateY(-1px) scale(1.005);
+  transition-duration: var(--dur-1);
+}
+a.kpi:focus-visible,
+button.kpi:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-2);
+}
+.kpi .kpi-k svg {
+  transition: color var(--dur-2), transform var(--dur-2) var(--ease);
+}
+.kpi:hover .kpi-k svg {
+  color: var(--accent);
+  transform: scale(1.12);
 }
 /* 迷你趋势线平时压得很淡，悬停时提上来 —— 想看趋势的人自然会把鼠标放上去 */
 .kpi .kpi-spark {
   transition: opacity var(--dur-2);
 }
 .kpi:hover .kpi-spark {
-  opacity: 0.72;
+  opacity: 0.8;
 }
+/* 带色调的卡（预警 / 达标）光晕跟着它自己的颜色走，不然红色卡亮出一圈蓝边 */
+.kpi[data-tone="coral"]:hover {
+  border-color: color-mix(in srgb, var(--coral) 45%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 12%, transparent),
+    0 10px 26px -6px color-mix(in srgb, var(--coral) 28%, transparent), var(--shadow-2);
+}
+.kpi[data-tone="coral"]:hover::after { background: linear-gradient(90deg, transparent, var(--coral), transparent); }
+.kpi[data-tone="coral"]:hover .kpi-k svg { color: var(--coral); }
+.kpi[data-tone="amber"]:hover {
+  border-color: color-mix(in srgb, var(--amber) 45%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 12%, transparent),
+    0 10px 26px -6px color-mix(in srgb, var(--amber) 28%, transparent), var(--shadow-2);
+}
+.kpi[data-tone="amber"]:hover::after { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+.kpi[data-tone="amber"]:hover .kpi-k svg { color: var(--amber); }
+.kpi[data-tone="jade"]:hover {
+  border-color: color-mix(in srgb, var(--jade) 45%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jade) 12%, transparent),
+    0 10px 26px -6px color-mix(in srgb, var(--jade) 28%, transparent), var(--shadow-2);
+}
+.kpi[data-tone="jade"]:hover::after { background: linear-gradient(90deg, transparent, var(--jade), transparent); }
+.kpi[data-tone="jade"]:hover .kpi-k svg { color: var(--jade); }
 
 /* 卡片容器：列表页那些 .card 也给一档，跟 KPI 一个语言 */
 .card {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import { Menu } from "@/components/ui/Menu";
+import { StickyXScroll } from "@/components/grid/StickyXScroll";
 import { useDragResize, useIsNarrow, useStored } from "@/lib/hooks";
 import { useT } from "@/i18n";
 
@@ -297,6 +298,7 @@ export function DataGrid<T extends { id: string }>({
   }
 
   return (
+    <>
     <div className="grid-wrap">
       <div className="grid-bar">
         {onSelectedChange && selected ? null : null}
@@ -430,6 +432,9 @@ export function DataGrid<T extends { id: string }>({
 
       {pageRows.length > 0 ? footer : null}
     </div>
+    {/* fixed 定位，得挂在 .grid-wrap 的 overflow: hidden 之外，不然会被裁掉 */}
+    <StickyXScroll targetRef={scrollRef} />
+    </>
   );
 }
 

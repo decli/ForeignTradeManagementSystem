@@ -122,41 +122,120 @@
 .rail-group + .rail-group {
   margin-top: 2px;
 }
+
+/* ── 分组头 ──
+   问题：一二级菜单混在一起，用户分不清「我在哪一级」「这组是开是关」。
+   三件事解决：
+     1. 三角挪到最左边，跟子项的图标错开一档 —— 层级从缩进就读得出来，
+        不用先看内容再猜。放右边时它离标题太远，扫视时根本注意不到。
+     2. 右侧常驻一个模块数，折叠着也知道这组里有多少东西。
+     3. 分组头本身有悬停底色，明确「这一行是可点的开关」，而不是一个标题。 */
 .rail-group-h {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   width: 100%;
-  padding: 9px 8px 5px;
+  padding: 7px 8px 7px 5px;
   border: 0;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--rail-text-2);
   font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 650;
+  letter-spacing: 0.06em;
   text-align: left;
+  transition: background var(--dur-1), color var(--dur-1);
 }
-.rail-group-h:hover {
-  color: var(--rail-text);
+button.rail-group-h:hover {
+  background: var(--rail-hover);
+  color: var(--rail-strong);
 }
-.rail-group-h > svg:first-child {
+.rail-group-ico {
   width: 14px;
   height: 14px;
   flex: none;
   opacity: 0.85;
 }
 .rail-group-h .chev {
-  width: 12px;
-  height: 12px;
-  margin-left: auto;
-  transition: transform var(--dur-2) var(--ease);
-  opacity: 0.6;
+  width: 13px;
+  height: 13px;
+  flex: none;
+  opacity: 0.55;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-1);
+}
+button.rail-group-h:hover .chev {
+  opacity: 1;
 }
 .rail-group[data-open="0"] .chev {
   transform: rotate(-90deg);
 }
 .rail-group[data-open="0"] .rail-items {
   display: none;
+}
+/* 置顶区没有折叠，别留一个空的三角位 */
+.rail-group[data-pins="1"] .rail-group-h {
+  padding-left: 9px;
+}
+.rail-group-n {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--rail-text-2);
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+button.rail-group-h:hover .rail-group-n {
+  opacity: 0.85;
+}
+
+/* ── 「当前页在这一组里」 ──
+   折叠之后那个链接压根没渲染，aria-current 帮不上忙，
+   用户会彻底失去方位感。所以分组头自己要说话。 */
+.rail-group[data-holds-current="1"] .rail-group-h {
+  color: var(--rail-strong);
+}
+.rail-group[data-holds-current="1"] .rail-group-ico {
+  opacity: 1;
+  color: var(--accent-hi);
+}
+.rail-here {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-radius: var(--r-full);
+  background: var(--accent-hi);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* 折叠着且当前页在里面：整行淡淡地点亮，跟展开态的选中条同一个语言 */
+.rail-group[data-holds-current="1"][data-open="0"] .rail-group-h {
+  background: var(--rail-active);
+}
+
+/* ── 层级导线 ──
+   子项左边一条竖线挂在分组头的图标下面。
+   有了这条线，「哪些项属于哪一组」是看出来的，不是数缩进算出来的；
+   选中条也长在这条线上，「你在这一支」一眼到底。 */
+.rail-group:not([data-pins="1"]) .rail-items {
+  position: relative;
+  margin-left: 11px;
+  padding-left: 9px;
+}
+.rail-group:not([data-pins="1"]) .rail-items::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 1.5px;
+  border-radius: 2px;
+  background: var(--rail-line, color-mix(in srgb, currentColor 12%, transparent));
+  transition: background var(--dur-2);
+}
+.rail-group[data-holds-current="1"] .rail-items::before {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
 .rail-item {
@@ -181,15 +260,29 @@
   color: var(--accent-ink);
   font-weight: 600;
 }
+/* 选中条正好落在导线上，把那一段染成 accent —— 从分组头一路看到当前项 */
 .rail-item[aria-current="page"]::before {
   content: "";
   position: absolute;
-  left: -8px;
-  top: 7px;
-  bottom: 7px;
+  left: -9px;
+  top: 5px;
+  bottom: 5px;
   width: 2.5px;
-  border-radius: 0 2px 2px 0;
+  border-radius: 2px;
   background: var(--accent-hi);
+}
+/* 置顶区是快捷方式，不是位置：给淡一档的选中样式，
+   同一个页面才不会看起来像同时待在两个地方。 */
+.rail-item[data-shortcut="1"][aria-current="page"] {
+  background: transparent;
+  color: var(--accent-ink);
+}
+.rail-item[data-shortcut="1"][aria-current="page"]::before {
+  display: none;
+}
+.rail-item[data-shortcut="1"][aria-current="page"] .rail-ico {
+  color: var(--accent-hi);
+  opacity: 1;
 }
 .rail-ico {
   flex: none;

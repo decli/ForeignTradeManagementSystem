@@ -560,3 +560,52 @@ table.grid thead th[data-hot] .grid-th {
 table.grid thead th[data-hot] {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
+
+/* ── 贴视口底的横向滚动条 ──
+   逻辑在 StickyXScroll.tsx。这里只管长相：它要能被一眼认出是滚动条，
+   又不能盖住表格最后一行的内容，所以是一条 14px 的浮层，带模糊底和上边线。 */
+.grid-xbar {
+  position: fixed;
+  bottom: 0;
+  z-index: 40;
+  height: 15px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -6px 18px -8px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity var(--dur-2), transform var(--dur-2) var(--ease);
+  pointer-events: none;
+}
+.grid-xbar[data-on="1"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.grid-xbar > div {
+  height: 1px;
+}
+/* 这条是给人拖的，滚动条要比站内默认的更明显一点 */
+.grid-xbar::-webkit-scrollbar {
+  height: 9px;
+}
+.grid-xbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 46%, var(--line-strong));
+  border-radius: var(--r-full);
+}
+.grid-xbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+.grid-xbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .grid-xbar {
+    transition: none;
+    transform: none;
+  }
+}

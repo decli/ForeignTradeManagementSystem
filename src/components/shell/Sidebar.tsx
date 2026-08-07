@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { Wordmark } from "@/components/Brand";
 import { Avatar } from "@/components/ui/bits";
@@ -34,6 +34,7 @@ export function Sidebar({
   onWidth: (w: number) => void;
 }) {
   const db = useDb();
+  const { pathname } = useLocation();
   const { user, viewer, displayName, picture } = useAuth();
   const { t, lang } = useT();
   const [closedGroups, setClosedGroups] = useStored<string[]>("mt.rail.closed", []);
@@ -55,6 +56,20 @@ export function Sidebar({
     [pinned],
   );
 
+  /* 当前页属于哪个模块、哪个分组。
+     不能只靠 NavLink 的 aria-current —— 分组一折叠，那个链接根本没渲染，
+     用户就完全看不出自己在哪儿了。所以路径要在这里自己解一次。 */
+  const currentSlug = useMemo(() => {
+    const seg = pathname.replace(/^\//, "").split("/")[0] || "dashboard";
+    const key = seg === "m" ? pathname.split("/")[2] : seg;
+    const all = NAV.flatMap((g) => g.items);
+    return all.find((i) => i.href === `/${key}`)?.slug ?? all.find((i) => i.slug === key)?.slug ?? "";
+  }, [pathname]);
+  const currentGroup = useMemo(
+    () => NAV.find((g) => g.items.some((i) => i.slug === currentSlug))?.title ?? "",
+    [currentSlug],
+  );
+
   const togglePin = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -69,6 +84,9 @@ export function Sidebar({
         <NavLink
           to={href}
           className="rail-item"
+          /* 置顶区是快捷方式，不是「位置」。同一页在这儿和它本来的分组里各出现一次，
+             两处都画成实心选中，用户会以为这是两个不同的地方。 */
+          data-shortcut={inPinned ? "1" : undefined}
           data-tip={collapsed ? navTitle(item, lang) : undefined}
           onClick={onNavigate}
           end={href === "/dashboard"}
@@ -113,10 +131,11 @@ export function Sidebar({
 
       <nav className="rail-nav">
         {pinnedItems.length && !collapsed ? (
-          <div className="rail-group" data-open="1">
+          <div className="rail-group" data-pins="1" data-open="1">
             <div className="rail-group-h">
-              <Icon name="star" />
-              <span>{t("常用")}</span>
+              <Icon name="star" className="rail-group-ico" />
+              <span className="truncate">{t("常用")}</span>
+              <span className="rail-group-n">{pinnedItems.length}</span>
             </div>
             <ul className="rail-items">{pinnedItems.map((i) => renderItem(i, true))}</ul>
           </div>
@@ -124,16 +143,27 @@ export function Sidebar({
 
         {NAV.map((g) => {
           const open = !closedGroups.includes(g.title);
+          const holdsCurrent = g.title === currentGroup;
           return (
-            <div className="rail-group" key={g.title} data-open={open ? "1" : "0"}>
+            <div
+              className="rail-group"
+              key={g.title}
+              data-open={open ? "1" : "0"}
+              /* 折叠着但当前页在里面 —— 分组头亮起来并显示一个点，
+                 「你在这儿，只是收起来了」。少了这个标记，一折叠就彻底失去方位感。 */
+              data-holds-current={holdsCurrent ? "1" : undefined}
+            >
               <button
                 className="rail-group-h"
                 onClick={() => setClosedGroups((c) => (c.includes(g.title) ? c.filter((x) => x !== g.title) : [...c, g.title]))}
                 aria-expanded={open}
+                aria-label={`${t(g.title)} · ${t(open ? "已展开，点击收起" : "已收起，点击展开")}`}
               >
-                <Icon name={g.icon} />
-                <span>{t(g.title)}</span>
                 <Icon name="chevronDown" className="chev" />
+                <Icon name={g.icon} className="rail-group-ico" />
+                <span className="truncate">{t(g.title)}</span>
+                <span className="rail-group-n">{g.items.length}</span>
+                {holdsCurrent && !open ? <span className="rail-here" /> : null}
               </button>
               <ul className="rail-items">{g.items.map((i) => renderItem(i))}</ul>
             </div>

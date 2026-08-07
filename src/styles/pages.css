@@ -526,21 +526,26 @@ button.kpi:hover {
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 32px;
-  padding: 48px 56px;
-  background: linear-gradient(158deg, #0a1122 0%, #16233c 55%, #24365c 100%);
+  padding: 52px 60px;
+  background: linear-gradient(158deg, #050a17 0%, #0d1730 48%, #1b2a52 100%);
   color: #e8eefb;
   overflow: hidden;
+  isolation: isolate;
 }
-/* 两团极淡的光，让大块深色不至于死板；不用图片，省一个请求 */
+/* 两团极淡的光，让大块深色不至于死板；不用图片，省一个请求。
+   第三层是文字后面的压暗，保证流线从字上穿过时对比度不掉。 */
 .login-art::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(ellipse 60% 50% at 80% 12%, rgba(122, 150, 255, 0.28), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 8% 92%, rgba(63, 196, 147, 0.14), transparent 60%);
+  z-index: 0;
+  background-image: radial-gradient(ellipse 62% 52% at 84% 8%, rgba(84, 132, 255, 0.24), transparent 62%),
+    radial-gradient(ellipse 50% 40% at 4% 96%, rgba(52, 190, 168, 0.13), transparent 62%),
+    /* 文字全在左边一列，整列压暗一档，流线从字上穿过时对比度才稳 */
+    linear-gradient(100deg, rgba(4, 8, 18, 0.84) 0%, rgba(4, 8, 18, 0.4) 32%, transparent 60%);
   pointer-events: none;
 }
-.login-art > * {
+.login-art > *:not(.wind) {
   position: relative;
   z-index: 1;
 }
@@ -569,41 +574,170 @@ button.kpi:hover {
   align-self: center;
 }
 .login-art h1 {
-  /* 宽度用 em 跟着标题自己的字号走 —— 用 ch 会按父级字号算，
-     46px 的大标题会被压成一行两个字 */
-  max-width: 7em;
-  font-size: clamp(28px, 3.4vw, 44px);
+  font-size: clamp(30px, 3.6vw, 48px);
   font-weight: 680;
-  line-height: 1.28;
-  letter-spacing: -0.02em;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
   color: #fff;
+}
+/* 断行是手写的（见 BRAND.taglineZhLines），这里只负责把两行的轻重拉开：
+   第一行退半步，第二行是落点，亮度和字重都压上去。 */
+.login-art h1 .l1 {
+  display: block;
+  color: #a9bde0;
+  font-weight: 560;
+}
+.login-art h1 .l2 {
+  display: block;
+  color: #fff;
+}
+/* 口号底下一道短线，起收束作用；宽度做进场动画 */
+.login-rule {
+  width: 64px;
+  height: 2px;
+  margin: 28px 0 20px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #93aeff, rgba(147, 174, 255, 0));
 }
 .login-art p {
-  margin-top: 16px;
   font-size: var(--fs-lg);
-  color: #93a5c2;
-  letter-spacing: 0.02em;
+  color: #8fa3c4;
+  letter-spacing: 0.03em;
   max-width: none;
 }
-.login-stats {
-  display: flex;
-  gap: 40px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+/* ── 名字的来历 ──
+   字典条目的排法：词条 / 注音 / 词性，然后一行释义。
+   比一段品牌故事短，也比一句空口号有内容 —— 看完知道「信风」是什么。 */
+.login-lore {
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  max-width: 30em;
 }
-.login-stats b {
-  display: block;
-  font-family: var(--mono);
-  font-size: 24px;
-  font-weight: 650;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
+.login-lore p {
+  font-size: var(--fs-md);
+  line-height: 1.7;
+  color: #8195b4;
+  letter-spacing: 0.01em;
 }
-.login-stats span {
-  display: block;
-  margin-top: 2px;
-  font-size: var(--fs-sm);
-  color: #7d8ea9;
+/* 词条名领起整句，破折号是排出来的不是打出来的 */
+.login-lore b {
+  color: #d6e2f6;
+  font-weight: 640;
+  letter-spacing: 0.05em;
+}
+.login-lore b::after {
+  content: "—";
+  margin: 0 0.55em;
+  color: #4c5f80;
+  font-weight: 400;
+}
+
+/* ── 风场 ──
+   流线本体在 BrandWind.tsx，这里只定三层的样子和那一条位移动画。
+   pathLength=1000 把虚线单位归一化了，所以 -1000 正好是一整圈，无缝。 */
+.wind {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.wind path {
+  fill: none;
+}
+.wind-base {
+  stroke: rgba(148, 178, 236, 0.2);
+  stroke-width: 1;
+}
+.wind-gust {
+  stroke: rgba(178, 202, 255, 0.75);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 64 936;
+  animation: tw-flow var(--dur) linear var(--delay) infinite;
+}
+/* 零长度 + 圆头 = 一个圆点。跟着同一条路径跑的「货」。 */
+.wind-cargo {
+  stroke: #eaf1ff;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 999.99;
+  filter: drop-shadow(0 0 7px rgba(140, 175, 255, 0.95));
+  animation: tw-flow var(--dur) linear var(--delay) infinite;
+}
+@keyframes tw-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+/* 逐行入场。品牌页值得这几行代码 —— 一次性的，之后都是静态的。 */
+@keyframes tw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.login-art-top,
+.login-art h1 .l1,
+.login-art h1 .l2,
+.login-art p,
+.login-lore {
+  animation: tw-rise 0.75s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+.login-art h1 .l1 {
+  animation-delay: 0.1s;
+}
+.login-art h1 .l2 {
+  animation-delay: 0.2s;
+}
+.login-art p {
+  animation-delay: 0.32s;
+}
+.login-lore {
+  animation-delay: 0.44s;
+}
+.login-rule {
+  animation: tw-rule 0.85s cubic-bezier(0.22, 0.9, 0.3, 1) 0.3s both;
+}
+@keyframes tw-rule {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 56px;
+    opacity: 1;
+  }
+}
+
+/* 风照吹是气氛，位移是动效 —— 关掉后者，留一张静止的风场图。 */
+@media (prefers-reduced-motion: reduce) {
+  .wind-gust,
+  .wind-cargo,
+  .login-art-top,
+  .login-art h1 .l1,
+  .login-art h1 .l2,
+  .login-art p,
+  .login-rule,
+  .login-lore {
+    animation: none;
+  }
+  .wind-cargo {
+    stroke-dashoffset: -420;
+  }
+  .login-rule {
+    width: 56px;
+  }
 }
 
 .login-form {
@@ -819,21 +953,23 @@ button.kpi:hover {
   }
   .login-art {
     grid-template-rows: auto auto;
-    gap: 20px;
-    padding: 26px 22px 30px;
+    gap: 18px;
+    padding: 26px 22px 32px;
   }
   .login-art-mid {
     max-width: none;
   }
   .login-art h1 {
-    font-size: 26px;
+    font-size: 27px;
   }
   .login-art p {
-    margin-top: 8px;
     font-size: var(--fs-base);
   }
-  .login-stats {
-    display: none;
+  .login-rule {
+    margin: 16px 0 12px;
+  }
+  .login-lore {
+    padding-top: 16px;
   }
   .login-form {
     padding: 30px 22px 48px;
@@ -909,3 +1045,114 @@ button.kpi:hover {
   font-size: var(--fs-xs);
   color: var(--text-4);
 }
+
+/* ══════════════════ 财务模块 ══════════════════ */
+
+/* 表格里的文字色标。行级 tone 走 tr[data-tone]（见 grid.css），
+   这里是单个数字要变色的场合 —— 只染这一格，不惊动整行。 */
+[data-tone="coral"].mono,
+span[data-tone="coral"] { color: var(--coral); }
+span[data-tone="amber"] { color: var(--amber); }
+span[data-tone="jade"] { color: var(--jade); }
+.t-jade { color: var(--jade); }
+
+a.link,
+.link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-1);
+}
+a.link:hover,
+.link:hover { border-bottom-color: currentColor; }
+
+/* 卡片标题右边的一句补充，比副标题轻 */
+.card-sub {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.panel-note {
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.card + .card,
+.card + .grid-2,
+.grid-2 + .card { margin-top: 14px; }
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+/* ── 轻量表格 ──
+   DataGrid 是给「几百行、要排序要冻结要导出」的台账用的，
+   资金池、科目表这种十来行的固定清单用不上那套机器，这里给一张素表。 */
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-md);
+}
+.mini-table th {
+  padding: 0 10px 9px;
+  text-align: left;
+  font-weight: 550;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.mini-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--line-2);
+  vertical-align: middle;
+}
+.mini-table tbody tr:last-child td { border-bottom: 0; }
+.mini-table tbody tr { transition: background var(--dur-1); }
+.mini-table tbody tr:hover { background: var(--surface-2); }
+.mini-table tbody tr[data-tone="coral"] td:first-child { box-shadow: inset 2px 0 0 var(--coral); }
+.mini-table .r { text-align: right; }
+.mini-table .ledger-bar { width: 140px; }
+
+/* 中信保占用率：条 + 数字并排，一眼看得出松紧 */
+.pct-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pct-cell .bar { flex: 1; }
+.pct-cell .mono {
+  flex: none;
+  width: 38px;
+  text-align: right;
+  font-size: var(--fs-sm);
+}
+
+/* 日记账里「这笔流水匹配上了哪张单」 */
+.match-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--jade);
+}
+.match-ok svg { flex: none; }
+.journal-trend {
+  width: 120px;
+  height: 24px;
+  display: block;
+}
+
+/* 资金池：一个币种一块，条形是它在总盘子里的分量 */
+.fund-cur { display: grid; gap: 16px; }
+.fund-cur-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.fund-cur-h b { font-size: var(--fs-lg); letter-spacing: 0.04em; }
+.fund-cur-h .spacer { flex: 1; }
+.fund-cur-v { font-size: var(--fs-lg); font-weight: 600; }
+.fund-cur-f { margin-top: 6px; font-size: var(--fs-sm); }

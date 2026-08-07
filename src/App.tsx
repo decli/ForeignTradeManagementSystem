@@ -21,6 +21,13 @@ const Rfqs = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Rfq
 const Contracts = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Contracts })));
 const Productions = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Productions })));
 
+const Payments = lazy(() => import("./pages/finance").then((m) => ({ default: m.Payments })));
+const Funds = lazy(() => import("./pages/finance").then((m) => ({ default: m.Funds })));
+const BankJournal = lazy(() => import("./pages/finance").then((m) => ({ default: m.BankJournal })));
+const AccountsPage = lazy(() => import("./pages/finance").then((m) => ({ default: m.Accounts })));
+const Expenses = lazy(() => import("./pages/finance").then((m) => ({ default: m.Expenses })));
+const Sinosure = lazy(() => import("./pages/finance").then((m) => ({ default: m.Sinosure })));
+
 function PageFallback() {
   return (
     <div className="page">
@@ -63,6 +70,12 @@ export default function App() {
           <Route path="/rfq" element={<Rfqs />} />
           <Route path="/purchase-contract" element={<Contracts />} />
           <Route path="/production" element={<Productions />} />
+          <Route path="/payments" element={<Payments />} />
+          <Route path="/funds" element={<Funds />} />
+          <Route path="/bank-journal" element={<BankJournal />} />
+          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/sinosure" element={<Sinosure />} />
           <Route path="/audit" element={<Audit />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/m/:slug" element={<ModulePlaceholder />} />

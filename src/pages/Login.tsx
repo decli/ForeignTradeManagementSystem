@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
 import { BRAND, Logomark } from "@/components/Brand";
+import { BrandWind } from "@/components/BrandWind";
 import { Avatar } from "@/components/ui/bits";
 import { DEMO_ACCOUNTS, signInWithPassword } from "@/auth/accounts";
 import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
@@ -46,8 +47,13 @@ export default function Login() {
 
   return (
     <div className="login">
-      {/* ── 左：一句话 + 三个数字。不堆功能清单，堆了也没人读 ── */}
+      {/* ── 左：一句口号 + 名字的来历，背景是一张会流动的风场图 ──
+          原来这里摆过「28 个模块 / 5 个节点 / 0 次上传」三个数字。撤掉了：
+          模块数量是我们的内部事实，不是用户的收益，登录页上没人关心。
+          换成名字的出处 —— 同样占三行，但看完记得住这个产品叫什么、为什么。 */}
       <section className="login-art">
+        <BrandWind />
+
         <div className="login-art-top">
           <Logomark size={34} />
           <span className="login-brand">
@@ -57,23 +63,22 @@ export default function Login() {
         </div>
 
         <div className="login-art-mid">
-          <h1>{lang === "zh" ? BRAND.taglineZh : BRAND.taglineEn}</h1>
+          <h1>
+            {(lang === "zh" ? BRAND.taglineZhLines : BRAND.taglineEnLines).map((line, i) => (
+              <span key={i} className={i === 0 ? "l1" : "l2"}>
+                {line}
+              </span>
+            ))}
+          </h1>
+          <div className="login-rule" />
           <p>{t("外贸全流程管理")}</p>
         </div>
 
-        <div className="login-stats">
-          <div>
-            <b>28</b>
-            <span>{lang === "zh" ? "业务模块" : "Modules"}</span>
-          </div>
-          <div>
-            <b>5</b>
-            <span>{lang === "zh" ? "里程碑节点" : "Milestones"}</span>
-          </div>
-          <div>
-            <b>0</b>
-            <span>{lang === "zh" ? "数据上传" : "Uploads"}</span>
-          </div>
+        <div className="login-lore">
+          <p>
+            <b>{BRAND.zh}</b>
+            {lang === "zh" ? BRAND.loreZh : BRAND.loreEn}
+          </p>
         </div>
       </section>
 

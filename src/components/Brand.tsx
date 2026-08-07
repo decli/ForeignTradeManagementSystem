@@ -14,6 +14,18 @@ export const BRAND = {
   wordmark: "TRADEWIND",
   taglineZh: "每一票货，都看得见",
   taglineEn: "Every shipment, in plain sight.",
+
+  /* 大标题手动断行。
+     交给浏览器断，「每一票货，都看得见」会在 44px 字号下折成
+     「每一票货，都看 / 得见」—— 断在词中间，一眼就看得出没人排过版。
+     口号只有一句，值得手动指定断点。第二行是重音，样式上也更亮。 */
+  taglineZhLines: ["每一票货，", "都看得见"],
+  taglineEnLines: ["Every shipment,", "in plain sight."],
+
+  /* 名字的来历，一句话。不是营销文案，是词源 ——
+     看完知道这产品为什么叫信风，比任何一句「赋能」都管用。 */
+  loreZh: "大航海时代，整条欧亚航线都靠这股常年不改向的风。",
+  loreEn: "The one wind that never changed its mind — and carried every ship of the Age of Sail.",
 } as const;
 
 export function Logomark({ size = 30, className }: { size?: number; className?: string }) {

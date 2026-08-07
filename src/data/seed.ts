@@ -180,10 +180,15 @@ export function buildSeed(): Database {
       id: id("cst"),
       piId,
       purchaseCostCents: yuan(p.cost),
-      freightCents: yuan(p.amt * 0.42 * 6.7),
-      customsCents: yuan(p.amt * 0.12 * 6.7),
-      bankCents: yuan(p.amt * 0.08 * 6.7),
-      otherCents: yuan(p.amt * 0.03 * 6.7),
+      /* 期间费用按占售价的比例摊，比例是照实际外贸口径给的：
+         海运及本地费 5.5%、报关报检 0.9%、银行手续费 1.1%、其他 0.6%，合计约 8%。
+         原来这四项分别是 42% / 12% / 8% / 3%，加起来 65% —— 在订单页看成本构成
+         堆叠条看不出问题（没人拿它跟应收比），一到费用明细报表算「费用率」
+         就变成 775%。金额单位也要留意：这四项是人民币，receivableCents 是美元。 */
+      freightCents: yuan(p.amt * 0.055 * 6.7),
+      customsCents: yuan(p.amt * 0.009 * 6.7),
+      bankCents: yuan(p.amt * 0.011 * 6.7),
+      otherCents: yuan(p.amt * 0.006 * 6.7),
       receivableCents: usd(p.ar),
       payableCents: yuan(p.ap),
       profitRateBp: p.bp,

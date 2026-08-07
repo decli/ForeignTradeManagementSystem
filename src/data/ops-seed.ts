@@ -81,7 +81,7 @@ export function buildOpsSeed(db: Database): OpsData {
   // ───────────── 银行账户 ─────────────
   const accounts: BankAccount[] = [
     { id: id("acc"), name: "美元结算户", bank: "中国银行厦门分行", accountNo: "4001****8821", currency: "USD", openingCents: 128_400_00, active: true },
-    { id: id("acc"), name: "人民币基本户", bank: "中国银行厦门分行", accountNo: "4001****8809", currency: "CNY", openingCents: 3_820_000_00, active: true },
+    { id: id("acc"), name: "人民币基本户", bank: "中国银行厦门分行", accountNo: "4001****8809", currency: "CNY", openingCents: 9_260_000_00, active: true },
     { id: id("acc"), name: "供应链美元户", bank: "招商银行厦门分行", accountNo: "5919****3302", currency: "USD", openingCents: 46_200_00, active: true },
   ];
 
@@ -135,8 +135,15 @@ export function buildOpsSeed(db: Database): OpsData {
   openPis.slice(0, 34).forEach((pi, i) => {
     const product = products.find((p) => pi.product?.includes(p.name.slice(0, 4))) ?? pick(products);
     const supplier = pick(suppliers.filter((s) => s.category === product.category)) ?? pick(suppliers);
-    const qty = Math.round(between(3_000, 200_000) / 100) * 100;
+    /* 采购金额必须从它挂的那张 PI 推出来，不能自己随机。
+       否则会出现「卖 5 万美金的单子，采购合同签了 700 万人民币」这种账 ——
+       单看采购页看不出问题，一到资金汇总就是净流出 6 倍收汇，整个演示就假了。
+       口径：采购成本占售价 62%~82%，剩下的是毛利和期间费用。 */
+    const fx = pi.currency === "CNY" ? 1 : pi.currency === "EUR" ? 7.9 : 6.7;
     const unit = Math.round(product.lastCostCents * between(0.95, 1.1));
+    const targetCny = Math.round(pi.amountCents * fx * between(0.62, 0.82));
+    // 数量取整到百，再用数量反算金额，保证明细页上「单价 × 数量 = 合同额」对得上
+    const qty = Math.max(500, Math.round(targetCny / unit / 100) * 100);
     const amount = qty * unit;
     const signedOff = -Math.floor(between(5, 120));
     const status = signedOff < -80 ? "closed" : signedOff < -35 ? "executing" : rand() < 0.8 ? "signed" : "draft";
@@ -222,7 +229,7 @@ export function buildOpsSeed(db: Database): OpsData {
       cnyCents: Math.round(c.receivableCents * rate),
       rateE6: Math.round(rate * 1e6),
       paidOn: iso(off),
-      accountId: accounts[0].id,
+      accountId: i % 3 === 2 ? accounts[2].id : accounts[0].id,
       status: off < -20 ? "reconciled" : rand() < 0.7 ? "confirmed" : "pending",
       voucherNo: `SWIFT${Math.floor(between(100000, 999999))}`,
       note: null,
@@ -251,6 +258,32 @@ export function buildOpsSeed(db: Database): OpsData {
       note: null,
     });
   });
+  /* ── 挂不上单据的收汇 ──
+     真实场景：客户付款时电汇附言只写了个抬头，或者一笔钱付了两张 PI 的尾款，
+     财务收到银行回单但不知道该冲哪一单。这是收付款模块每个月最花时间的活，
+     所以演示数据里必须有几笔 —— 不然「待认领」永远是 0，功能等于不存在。 */
+  const strayNames = ["MEDLINE INDUSTRIES LP", "PT. SEJAHTERA MEDIKA", "Al Faris Trading LLC", "OOO MEDTEKHNIKA"];
+  strayNames.forEach((name, i) => {
+    payments.push({
+      id: id("pay"),
+      paymentNo: `RC${String(now.getFullYear()).slice(2)}${String(4900 + i)}`,
+      direction: "in",
+      piId: null,
+      contractId: null,
+      counterparty: name,
+      currency: "USD",
+      amountCents: Math.round(between(4_000_00, 38_000_00)),
+      cnyCents: 0,
+      rateE6: Math.round(rate * 1e6),
+      paidOn: iso(-Math.floor(between(1, 26))),
+      accountId: accounts[0].id,
+      status: "pending",
+      voucherNo: `SWIFT${Math.floor(between(100000, 999999))}`,
+      note: "汇入附言无法对应到具体 PI，待业务确认",
+    });
+  });
+  for (const p of payments) if (p.cnyCents === 0) p.cnyCents = Math.round(p.amountCents * rate);
+
   payments.sort((a, b) => b.paidOn.localeCompare(a.paidOn));
 
   return { suppliers, products, rfqs, rfqQuotes, contracts, productions, payments, accounts };

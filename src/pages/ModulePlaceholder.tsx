@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { findNavItem, groupOf, NAV, navHref } from "@/lib/nav";
+import { useT } from "@/i18n";
 
 /**
  * 未开发模块的占位页。
@@ -9,6 +10,7 @@ import { findNavItem, groupOf, NAV, navHref } from "@/lib/nav";
  * 有用得多 —— 演示给客户看的时候，这 25 个页面本身就是产品范围说明书。
  */
 export default function ModulePlaceholder() {
+  const { t } = useT();
   const { slug = "" } = useParams();
   const item = findNavItem(slug);
   const group = groupOf(slug);
@@ -20,10 +22,10 @@ export default function ModulePlaceholder() {
           <span className="empty-mark">
             <Icon name="search" />
           </span>
-          <h3>没有这个模块</h3>
+          <h3>{t("没有这个模块")}</h3>
           <p>地址里的 {slug} 不在模块清单里。</p>
           <Link className="btn" to="/dashboard">
-            回到数据看板
+            {t("回到数据看板")}
           </Link>
         </div>
       </div>
@@ -38,7 +40,7 @@ export default function ModulePlaceholder() {
         <div>
           <div className="row" style={{ gap: 8, marginBottom: 6 }}>
             <span className="tag">{group?.title}</span>
-            <span className="pill amber">规划中</span>
+            <span className="pill amber">{t("规划中")}</span>
           </div>
           <h1>{item.title}</h1>
         </div>
@@ -47,13 +49,13 @@ export default function ModulePlaceholder() {
       <div className="placeholder">
         <section className="card">
           <div className="card-body" style={{ display: "grid", gap: 16 }}>
-            <p style={{ fontSize: "var(--fs-lg)", lineHeight: 1.7 }}>{item.desc ?? "这个模块的定位还在梳理中。"}</p>
+            <p style={{ fontSize: "var(--fs-lg)", lineHeight: 1.7 }}>{item.desc ?? t("这个模块的定位还在梳理中。")}</p>
 
             {item.scope?.length ? (
               <div>
                 <div className="sect-h" style={{ marginBottom: 8 }}>
                   <Icon name="target" size={14} />
-                  功能范围
+                  {t("功能范围")}
                 </div>
                 <div className="ph-scope">
                   {item.scope.map((s) => (
@@ -76,7 +78,7 @@ export default function ModulePlaceholder() {
             >
               <Icon name="info" size={16} style={{ color: "var(--text-3)", marginTop: 2, flex: "none" }} />
               <span>
-                当前演示版已把<b>跟单表、订单核算、退税管理、客户管理、PI 取号、数据看板、审计日志</b>接上了真实数据流；
+                {t("当前演示版已把")}<b>{t("跟单表、订单核算、退税管理、客户管理、PI 取号、数据看板、审计日志")}</b>接上了真实数据流；
                 这个模块的数据模型已经在 schema 里预留，界面按排期推进。
               </span>
             </div>
@@ -97,7 +99,7 @@ export default function ModulePlaceholder() {
                   style={{ padding: "9px 0", borderBottom: "1px solid var(--line-2)", color: "inherit" }}
                 >
                   <b style={{ fontSize: "var(--fs-md)", fontWeight: 550 }}>{s.title}</b>
-                  {s.built ? <span className="pill jade">已接数据</span> : null}
+                  {s.built ? <span className="pill jade">{t("已接数据")}</span> : null}
                   <span className="spacer" />
                   <span className="muted truncate" style={{ fontSize: "var(--fs-sm)", maxWidth: 340 }}>
                     {s.desc ?? ""}
@@ -111,7 +113,7 @@ export default function ModulePlaceholder() {
 
         <section className="card">
           <div className="card-head">
-            <h3>已经能用的模块</h3>
+            <h3>{t("已经能用的模块")}</h3>
           </div>
           <div className="card-body" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {NAV.flatMap((g) => g.items)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Icon } from "@/components/Icon";
 import { Menu } from "@/components/ui/Menu";
 import { useDragResize, useIsNarrow, useStored } from "@/lib/hooks";
+import { useT } from "@/i18n";
 
 export type Column<T> = {
   key: string;
@@ -56,6 +57,7 @@ export function DataGrid<T extends { id: string }>({
   maxHeight?: string;
   getRowLabel?: (row: T) => string;
 }) {
+  const { t } = useT();
   const [prefs, setPrefs] = useStored<GridPrefs>(`mt.grid.${gridId}`, DEFAULT_PREFS);
   const [pageSize, setPageSize] = useStored(`mt.grid.${gridId}.size`, initialPageSize);
   const [page, setPage] = useState(1);
@@ -163,11 +165,11 @@ export function DataGrid<T extends { id: string }>({
   const footer = (
     <div className="grid-foot">
       <span>
-        共 <b className="num">{sorted.length}</b> 条
+        {t("共")} <b className="num">{sorted.length}</b> {t("条")}
         {sorted.length > pageSize ? (
           <>
-            {" · 第 "}
-            <b className="num">{safePage}</b>/{totalPages} 页
+            {` · ${t("第")} `}
+            <b className="num">{safePage}</b>/{totalPages} {t("页")}
           </>
         ) : null}
       </span>
@@ -176,20 +178,20 @@ export function DataGrid<T extends { id: string }>({
         style={{ height: 26, fontSize: "var(--fs-sm)" }}
         value={pageSize}
         onChange={(e) => setPageSize(Number(e.target.value))}
-        aria-label="每页行数"
+        aria-label={t("每页行数")}
       >
         {[25, 50, 100, 200].map((n) => (
           <option key={n} value={n}>
-            每页 {n} 行
+            {t("每页 {n} 行", { n })}
           </option>
         ))}
       </select>
       {totalPages > 1 ? (
         <div className="pager">
-          <button onClick={() => setPage(1)} disabled={safePage === 1} aria-label="第一页">
+          <button onClick={() => setPage(1)} disabled={safePage === 1} aria-label={t("第一页")}>
             <Icon name="chevronsLeft" />
           </button>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} aria-label="上一页">
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} aria-label={t("上一页")}>
             <Icon name="chevronLeft" />
           </button>
           {pageNumbers(safePage, totalPages).map((n, i) =>
@@ -203,7 +205,7 @@ export function DataGrid<T extends { id: string }>({
               </button>
             ),
           )}
-          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} aria-label="下一页">
+          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} aria-label={t("下一页")}>
             <Icon name="chevronRight" />
           </button>
         </div>
@@ -218,13 +220,13 @@ export function DataGrid<T extends { id: string }>({
       trigger={(p) => (
         <button className="btn btn-sm" {...p} ref={p.ref}>
           <Icon name="columns" />
-          列
+          {t("列")}
         </button>
       )}
     >
       {() => (
         <>
-          <div className="pop-title">显示的列</div>
+          <div className="pop-title">{t("显示的列")}</div>
           {columns.map((c) => {
             const on = !prefs.hidden.includes(c.key);
             const locked = c.hideable === false;
@@ -248,7 +250,7 @@ export function DataGrid<T extends { id: string }>({
           <div className="pop-sep" />
           <button className="pop-item" onClick={() => setPrefs(DEFAULT_PREFS)}>
             <Icon name="refresh" />
-            恢复默认列宽与排序
+            {t("恢复默认列宽与排序")}
           </button>
         </>
       )}
@@ -309,7 +311,7 @@ export function DataGrid<T extends { id: string }>({
                     <input
                       type="checkbox"
                       className="check"
-                      aria-label="全选本页"
+                      aria-label={t("全选本页")}
                       checked={allChecked}
                       ref={(el) => {
                         if (el) el.indeterminate = someChecked;
@@ -410,6 +412,7 @@ export function DataGrid<T extends { id: string }>({
 }
 
 function ColGrip({ width, min, onChange }: { width: number; min: number; onChange: (w: number) => void }) {
+  const { t } = useT();
   const get = useCallback(() => width, [width]);
   const { dragging, onPointerDown } = useDragResize(get, onChange, { min, max: 720 });
   return (
@@ -420,8 +423,8 @@ function ColGrip({ width, min, onChange }: { width: number; min: number; onChang
       onDoubleClick={() => onChange(min)}
       role="separator"
       aria-orientation="vertical"
-      aria-label="拖动调整列宽"
-      title="拖动调整列宽，双击还原到最窄"
+      aria-label={t("拖动调整列宽")}
+      title={t("拖动调整列宽，双击还原到最窄")}
     />
   );
 }

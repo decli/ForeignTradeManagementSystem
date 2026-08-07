@@ -47,6 +47,9 @@ const interpolate = (s: string, vars?: Vars) =>
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(detect);
 
+  // 组件外的 tr() 读模块级变量，这里保持同步
+  primeLang(lang);
+
   useEffect(() => {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
     try {

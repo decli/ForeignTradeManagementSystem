@@ -5,12 +5,14 @@ import { Ring } from "@/components/charts";
 import { Bar, EmptyState, KV, Pill, SearchInput } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { useT } from "@/i18n";
 import { listCustomers, listOrders } from "@/data/queries";
 import { formatCompact, formatMoney, formatPct, localClock } from "@/lib/format";
 import { useTick } from "@/lib/hooks";
 import { CREDIT_TONE, PROFIT_WARN_PCT, SINOSURE_WARN, sinosureTone } from "@/lib/rules";
 
 export default function Customers() {
+  const { t } = useT();
   const db = useDb();
   const { viewer } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -48,23 +50,23 @@ export default function Customers() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>客户管理</h1>
+          <h1>{t("客户管理")}</h1>
           <p>
-            客户主档、跟进记录与中信保额度占用 · 共 {rows.length} 家
-            {overLimit.length ? ` · ${overLimit.length} 家额度占用超 ${Math.round(SINOSURE_WARN * 100)}%` : ""}
+            {t("客户主档、跟进记录与中信保额度占用 · 共 {n} 家", { n: rows.length })}
+            {overLimit.length ? t(" · {n} 家额度占用超 {p}%", { n: overLimit.length, p: Math.round(SINOSURE_WARN * 100) }) : ""}
           </p>
         </div>
       </div>
 
       <div className="toolbar">
-        <SearchInput value={q} onChange={setQ} placeholder="搜客户名 / 编号 / 国家 / 联系人…" />
+        <SearchInput value={q} onChange={setQ} placeholder={t("搜客户名 / 编号 / 国家 / 联系人…")} />
         <span className="spacer" />
-        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>按累计订单额排序</span>
+        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("按累计订单额排序")}</span>
       </div>
 
       {rows.length === 0 ? (
         <div className="card">
-          <EmptyState icon="users" title="没有匹配的客户" desc="换个关键词试试，或者清空搜索。" />
+          <EmptyState icon="users" title={t("没有匹配的客户")} desc={t("换个关键词试试，或者清空搜索。")} />
         </div>
       ) : (
         <div className="split">
@@ -110,26 +112,26 @@ export default function Customers() {
                   <Pill tone={CREDIT_TONE[active.creditLevel] ?? "mute"}>信用 {active.creditLevel}</Pill>
                   <span className="spacer" />
                   {clock ? (
-                    <span className="clock" data-working={clock.working ? "1" : "0"} title={clock.working ? "对方在上班时间" : "对方多半不在"}>
+                    <span className="clock" data-working={clock.working ? "1" : "0"} title={clock.working ? t("对方在上班时间") : t("对方多半不在")}>
                       <i />
-                      当地 <b>{clock.time}</b> {clock.weekday}
+                      {t("当地")} <b>{clock.time}</b> {clock.weekday}
                     </span>
                   ) : null}
                 </div>
                 <div className="card-body">
                   <div className="kv-grid">
-                    <KV k="客户编号" v={active.code} mono />
-                    <KV k="国家" v={active.country} />
-                    <KV k="联系人" v={active.contact ?? "—"} />
-                    <KV k="业务员" v={active.salesName} />
-                    <KV k="累计订单" v={`${active.orderCount} 单 · ${formatMoney(active.orderAmount)}`} mono />
-                    <KV k="最近签约" v={active.lastOrderOn ?? "—"} mono />
+                    <KV k={t("客户编号")} v={active.code} mono />
+                    <KV k={t("国家")} v={active.country} />
+                    <KV k={t("联系人")} v={active.contact ?? "—"} />
+                    <KV k={t("业务员")} v={active.salesName} />
+                    <KV k={t("累计订单")} v={t("{n} 单 · {v}", { n: active.orderCount, v: formatMoney(active.orderAmount) })} mono />
+                    <KV k={t("最近签约")} v={active.lastOrderOn ?? "—"} mono />
                   </div>
                   {active.note ? (
                     <div style={{ marginTop: 14, padding: 12, background: "var(--surface-2)", borderRadius: "var(--r-md)", fontSize: "var(--fs-md)", lineHeight: 1.6 }}>
                       <div className="row" style={{ marginBottom: 4, color: "var(--text-3)", fontSize: "var(--fs-sm)" }}>
                         <Icon name="info" size={13} />
-                        跟进备注
+                        {t("跟进备注")}
                       </div>
                       {active.note}
                     </div>
@@ -139,27 +141,27 @@ export default function Customers() {
 
               <section className="card">
                 <div className="card-head">
-                  <h3>中信保额度</h3>
+                  <h3>{t("中信保额度")}</h3>
                   <span className="spacer" />
-                  {active.usedRatio > SINOSURE_WARN ? <Pill tone="coral">接近上限，再下单前需先回款</Pill> : null}
+                  {active.usedRatio > SINOSURE_WARN ? <Pill tone="coral">{t("接近上限，再下单前需先回款")}</Pill> : null}
                 </div>
                 <div className="card-body">
                   <div className="row" style={{ gap: 20, alignItems: "center", flexWrap: "wrap" }}>
-                    <Ring value={active.used} max={active.limit} tone={sinosureTone(active.used, active.limit)} size={72} label="额度占用" />
+                    <Ring value={active.used} max={active.limit} tone={sinosureTone(active.used, active.limit)} size={72} label={t("额度占用")} />
                     <div style={{ flex: 1, minWidth: 200, display: "grid", gap: 8 }}>
                       <div className="row">
-                        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>已用</span>
+                        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("已用")}</span>
                         <span className="spacer" />
                         <b className="num">{formatMoney(active.used)}</b>
                       </div>
                       <Bar value={active.used} max={active.limit} tone={sinosureTone(active.used, active.limit)} />
                       <div className="row">
-                        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>额度</span>
+                        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("额度")}</span>
                         <span className="spacer" />
                         <span className="num muted">{formatMoney(active.limit)}</span>
                       </div>
                       <div className="row">
-                        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>剩余可用</span>
+                        <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("剩余可用")}</span>
                         <span className="spacer" />
                         <b className="num" style={{ color: active.limit - active.used > 0 ? "var(--jade)" : "var(--coral)" }}>
                           {formatMoney(Math.max(0, active.limit - active.used))}
@@ -172,16 +174,16 @@ export default function Customers() {
 
               <section className="card">
                 <div className="card-head">
-                  <h3>这家客户的订单</h3>
+                  <h3>{t("这家客户的订单")}</h3>
                   <span className="spacer" />
                   <Link className="btn btn-sm" to={`/orders?q=${encodeURIComponent(active.name)}`}>
-                    在订单核算里打开
+                    {t("在订单核算里打开")}
                     <Icon name="chevronRight" />
                   </Link>
                 </div>
                 <div className="card-body" style={{ paddingTop: 6, paddingBottom: 6 }}>
                   {orders.length === 0 ? (
-                    <p className="muted" style={{ fontSize: "var(--fs-md)" }}>这家客户还没有在跟订单。</p>
+                    <p className="muted" style={{ fontSize: "var(--fs-md)" }}>{t("这家客户还没有在跟订单。")}</p>
                   ) : (
                     <div style={{ display: "grid", gap: 0 }}>
                       {orders.slice(0, 8).map((o) => (

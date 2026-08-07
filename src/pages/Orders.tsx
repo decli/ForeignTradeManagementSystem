@@ -8,12 +8,14 @@ import { toast } from "@/components/ui/Toast";
 import { Bar, Chip, EmptyState, KV, Pill, SearchInput, Segmented } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { useT } from "@/i18n";
 import { customRate, getOrderDetail, listEntities, listOrders, listSalesNames, orderKpis, type OrderRow } from "@/data/queries";
 import { formatCompact, formatMoney, formatPct } from "@/lib/format";
 import { PROFIT_WARN_PCT, REVIEW_LABEL, RELEASE_TONE, profitTone } from "@/lib/rules";
 import { exportXlsx, stampName } from "@/lib/xlsx";
 
 export default function Orders({ mine = false }: { mine?: boolean }) {
+  const { t } = useT();
   const db = useDb();
   const { viewer, user } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -56,18 +58,18 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
   const openIndex = openId ? rows.findIndex((r) => r.id === openId) : -1;
 
   const chips = [
-    settle && { k: "结算", v: settle, clear: () => set({ settle: null }) },
-    !mine && sales && { k: "业务员", v: sales, clear: () => set({ sales: null }) },
-    entity && { k: "开票主体", v: entity, clear: () => set({ entity: null }) },
-    onlyRisk && { k: "只看", v: "利润率预警", clear: () => set({ risk: null }) },
-    q && { k: "搜索", v: q, clear: () => set({ q: null }) },
+    settle && { k: t("结算"), v: settle, clear: () => set({ settle: null }) },
+    !mine && sales && { k: t("业务员"), v: sales, clear: () => set({ sales: null }) },
+    entity && { k: t("开票主体"), v: entity, clear: () => set({ entity: null }) },
+    onlyRisk && { k: t("只看"), v: t("利润率预警"), clear: () => set({ risk: null }) },
+    q && { k: t("搜索"), v: q, clear: () => set({ q: null }) },
   ].filter(Boolean) as { k: string; v: string; clear: () => void }[];
 
   const columns: Column<OrderRow>[] = useMemo(
     () => [
       {
         key: "pi",
-        title: "PI 号 / 签约",
+        title: t("PI 号 / 签约"),
         width: 168,
         freeze: true,
         hideable: false,
@@ -84,7 +86,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "customer",
-        title: "客户 / 目的国",
+        title: t("客户 / 目的国"),
         width: 168,
         sort: (a, b) => a.customerName.localeCompare(b.customerName),
         render: (r) => (
@@ -98,7 +100,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "product",
-        title: "产品",
+        title: t("产品"),
         width: 200,
         render: (r) => (
           <span className="truncate" title={r.product ?? ""} style={{ display: "block" }}>
@@ -108,14 +110,14 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "sales",
-        title: "业务员",
+        title: t("业务员"),
         width: 88,
         sort: (a, b) => a.salesName.localeCompare(b.salesName),
         render: (r) => r.salesName,
       },
       {
         key: "amount",
-        title: "订单额",
+        title: t("订单额"),
         width: 118,
         align: "right",
         sort: (a, b) => a.amount - b.amount,
@@ -123,7 +125,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "cost",
-        title: "采购成本",
+        title: t("采购成本"),
         width: 118,
         align: "right",
         sort: (a, b) => a.purchaseCost - b.purchaseCost,
@@ -131,11 +133,11 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "rate",
-        title: "利润率",
+        title: t("利润率"),
         width: 116,
         align: "right",
         sort: (a, b) => a.profitRate - b.profitRate,
-        tip: `低于 ${PROFIT_WARN_PCT}% 进预警队列`,
+        tip: t("低于 {p}% 进预警队列", { p: PROFIT_WARN_PCT }),
         render: (r) => (
           <div style={{ display: "grid", gap: 3, justifyItems: "end" }}>
             <Pill tone={profitTone(r.profitRate)} dot={false}>
@@ -149,7 +151,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "settle",
-        title: "结算 / 复核",
+        title: t("结算 / 复核"),
         width: 122,
         sort: (a, b) => a.settleState.localeCompare(b.settleState),
         render: (r) => (
@@ -163,7 +165,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "flag",
-        title: "数据完整性",
+        title: t("数据完整性"),
         width: 126,
         render: (r) =>
           r.flag ? (
@@ -174,7 +176,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
       },
       {
         key: "ship",
-        title: "出运",
+        title: t("出运"),
         width: 78,
         align: "right",
         sort: (a, b) => a.shipmentCount - b.shipmentCount,
@@ -188,42 +190,43 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
     await exportXlsx<OrderRow>(
       stampName("订单核算"),
       [
-        { header: "PI 号", width: 18, value: (r) => r.piNo },
-        { header: "签约日", width: 12, type: "date", value: (r) => r.signedOn },
-        { header: "客户", width: 22, value: (r) => r.customerName },
-        { header: "目的国", width: 12, value: (r) => r.destination },
-        { header: "产品", width: 34, value: (r) => r.product },
-        { header: "业务员", width: 10, value: (r) => r.salesName },
-        { header: "开票主体", width: 14, value: (r) => r.sellerEntity },
-        { header: "币种", width: 8, value: (r) => r.currency },
-        { header: "订单额", width: 14, type: "number", value: (r) => r.amount },
-        { header: "采购成本(CNY)", width: 16, type: "number", value: (r) => r.purchaseCost },
-        { header: "应收", width: 14, type: "number", value: (r) => r.receivable },
-        { header: "应付(CNY)", width: 14, type: "number", value: (r) => r.payable },
-        { header: "利润率", width: 10, type: "number", format: "0.00%", value: (r) => r.profitRate / 100 },
-        { header: "毛利", width: 14, type: "number", value: (r) => r.grossProfit },
-        { header: "结算状态", width: 10, value: (r) => r.settleState },
-        { header: "复核状态", width: 10, value: (r) => REVIEW_LABEL[r.reviewState] ?? r.reviewState },
-        { header: "提醒", width: 14, value: (r) => r.flag },
+        { header: t("PI 号"), width: 18, value: (r) => r.piNo },
+        { header: t("签约日"), width: 12, type: "date", value: (r) => r.signedOn },
+        { header: t("客户"), width: 22, value: (r) => r.customerName },
+        { header: t("目的国"), width: 12, value: (r) => r.destination },
+        { header: t("产品"), width: 34, value: (r) => r.product },
+        { header: t("业务员"), width: 10, value: (r) => r.salesName },
+        { header: t("开票主体"), width: 14, value: (r) => r.sellerEntity },
+        { header: t("币种"), width: 8, value: (r) => r.currency },
+        { header: t("订单额"), width: 14, type: "number", value: (r) => r.amount },
+        { header: t("采购成本(CNY)"), width: 16, type: "number", value: (r) => r.purchaseCost },
+        { header: t("应收"), width: 14, type: "number", value: (r) => r.receivable },
+        { header: t("应付(CNY)"), width: 14, type: "number", value: (r) => r.payable },
+        { header: t("利润率"), width: 10, type: "number", format: "0.00%", value: (r) => r.profitRate / 100 },
+        { header: t("毛利"), width: 14, type: "number", value: (r) => r.grossProfit },
+        { header: t("结算状态"), width: 10, value: (r) => r.settleState },
+        { header: t("复核状态"), width: 10, value: (r) => REVIEW_LABEL[r.reviewState] ?? r.reviewState },
+        { header: t("提醒"), width: 14, value: (r) => r.flag },
       ],
       rows,
     );
-    toast(`已导出 ${rows.length} 行（跟随当前筛选）`);
+    toast(t("已导出 {n} 行（跟随当前筛选）", { n: rows.length }));
   };
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>{mine ? "我的订单" : "订单核算跟踪"}</h1>
+          <h1>{mine ? t("我的订单") : t("订单核算跟踪")}</h1>
           <p>
-            {mine ? `只看 ${user?.name} 名下的单` : "每个 PI 一行"} · 成本超支自动进入复核 · 点行下钻看成本构成与收付款
+            {mine ? t("只看 {who} 名下的单", { who: user?.name ?? "" }) : t("每个 PI 一行")}
+            {t(" · 成本超支自动进入复核 · 点行下钻看成本构成与收付款")}
           </p>
         </div>
         <div className="page-acts">
           <button className="btn" onClick={doExport}>
             <Icon name="download" />
-            导出 Excel
+            {t("导出 Excel")}
           </button>
         </div>
       </div>
@@ -232,7 +235,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         <div className="kpi">
           <span className="kpi-k">
             <Icon name="inbox" />
-            订单总数
+            {t("订单总数")}
           </span>
           <span className="kpi-v">{kpi.total}</span>
           <span className="kpi-s">未完结 {kpi.unsettled} 张</span>
@@ -240,15 +243,15 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         <div className="kpi">
           <span className="kpi-k">
             <Icon name="wallet" />
-            在跟订单额
+            {t("在跟订单额")}
           </span>
           <span className="kpi-v">{formatCompact(kpi.totalUsd)}</span>
-          <span className="kpi-s">人民币单按 {rate.toFixed(4)} 折算并入</span>
+          <span className="kpi-s">{t("人民币单按 {r} 折算并入", { r: rate.toFixed(4) })}</span>
         </div>
         <button className="kpi" data-tone={kpi.warn ? "amber" : undefined} onClick={() => set({ risk: onlyRisk ? null : "1" })}>
           <span className="kpi-k">
             <Icon name="gauge" />
-            利润率预警
+            {t("利润率预警")}
           </span>
           <span className="kpi-v">{kpi.warn}</span>
           <span className="kpi-s">低于 {PROFIT_WARN_PCT}% · 点这里只看它们</span>
@@ -256,41 +259,41 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         <div className="kpi" data-tone={kpi.loss ? "coral" : undefined}>
           <span className="kpi-k">
             <Icon name="alert" />
-            负毛利
+            {t("负毛利")}
           </span>
           <span className="kpi-v">{kpi.loss}</span>
-          <span className="kpi-s">成本已超报价，需财务复核</span>
+          <span className="kpi-s">{t("成本已超报价，需财务复核")}</span>
         </div>
         <div className="kpi" data-tone={kpi.avgRate < PROFIT_WARN_PCT ? "amber" : "jade"}>
           <span className="kpi-k">
             <Icon name="target" />
-            平均利润率
+            {t("平均利润率")}
           </span>
           <span className="kpi-v">{formatPct(kpi.avgRate, 1)}</span>
-          <span className="kpi-s">当前数据范围内</span>
+          <span className="kpi-s">{t("当前数据范围内")}</span>
         </div>
       </div>
 
       <div className="toolbar">
-        <SearchInput value={q} onChange={(v) => set({ q: v })} placeholder="搜 PI 号 / 客户 / 产品…" />
+        <SearchInput value={q} onChange={(v) => set({ q: v })} placeholder={t("搜 PI 号 / 客户 / 产品…")} />
         <Segmented
           value={archived ? "archived" : "open"}
           onChange={(v) => set({ archived: v === "archived" ? "1" : null })}
           options={[
-            { value: "open", label: "在跟进" },
-            { value: "archived", label: "已归档" },
+            { value: "open", label: t("在跟进") },
+            { value: "archived", label: t("已归档") },
           ]}
-          label="订单状态"
+          label={t("订单状态")}
         />
         <span className="toolbar-sep" />
-        <select className="select" value={settle} onChange={(e) => set({ settle: e.target.value })} aria-label="结算状态">
-          <option value="">结算：全部</option>
-          <option value="未完结">未完结</option>
-          <option value="已完结">已完结</option>
+        <select className="select" value={settle} onChange={(e) => set({ settle: e.target.value })} aria-label={t("结算状态")}>
+          <option value="">{t("结算：全部")}</option>
+          <option value="未完结">{t("未完结")}</option>
+          <option value="已完结">{t("已完结")}</option>
         </select>
         {!mine ? (
-          <select className="select" value={sales} onChange={(e) => set({ sales: e.target.value })} aria-label="业务员">
-            <option value="">业务员：全部</option>
+          <select className="select" value={sales} onChange={(e) => set({ sales: e.target.value })} aria-label={t("业务员")}>
+            <option value="">{t("业务员：全部")}</option>
             {salesNames.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -298,8 +301,8 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
             ))}
           </select>
         ) : null}
-        <select className="select" value={entity} onChange={(e) => set({ entity: e.target.value })} aria-label="开票主体">
-          <option value="">开票主体：全部</option>
+        <select className="select" value={entity} onChange={(e) => set({ entity: e.target.value })} aria-label={t("开票主体")}>
+          <option value="">{t("开票主体：全部")}</option>
           {entities.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -308,7 +311,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         </select>
         <label className="switch">
           <input type="checkbox" checked={onlyRisk} onChange={(e) => set({ risk: e.target.checked ? "1" : null })} />
-          只看利润率预警
+          {t("只看利润率预警")}
         </label>
         <span className="spacer" />
         {chips.length ? (
@@ -329,7 +332,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         bar={
           <>
             <span>
-              本页 <b className="num">{rows.length}</b> 张订单
+              {t("本页")} <b className="num">{rows.length}</b> {t("张订单")}
             </span>
             <span className="hint" style={{ marginLeft: 0 }}>
               金额合计 {formatCompact(rows.reduce((s, r) => s + (r.currency === "CNY" ? r.amount / rate : r.amount), 0))}
@@ -339,8 +342,8 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         empty={
           <EmptyState
             icon="inbox"
-            title="当前筛选下没有订单"
-            desc={onlyRisk ? "没有利润率低于预警线的订单 —— 这是好事。" : "换个筛选条件试试，或者去「PI 取号」建第一张。"}
+            title={t("当前筛选下没有订单")}
+            desc={onlyRisk ? t("没有利润率低于预警线的订单 —— 这是好事。") : t("换个筛选条件试试，或者去「PI 取号」建第一张。")}
           />
         }
         renderCard={(r) => (
@@ -360,15 +363,15 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
             <div className="rcard-note clamp-2">{r.product ?? "—"}</div>
             <div className="rcard-kv">
               <div>
-                <span>订单额</span>
+                <span>{t("订单额")}</span>
                 <b>{formatMoney(r.amount, r.currency === "CNY" ? "¥" : "$")}</b>
               </div>
               <div>
-                <span>结算</span>
+                <span>{t("结算")}</span>
                 <b style={{ fontFamily: "var(--sans)", fontSize: "var(--fs-md)" }}>{r.settleState}</b>
               </div>
               <div>
-                <span>出运</span>
+                <span>{t("出运")}</span>
                 <b>{r.shipmentCount || "—"}</b>
               </div>
             </div>
@@ -389,6 +392,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
 }
 
 function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () => void; onPrev?: () => void; onNext?: () => void }) {
+  const { t } = useT();
   const db = useDb();
   const d = useMemo(() => getOrderDetail(db, id), [db, id]);
   if (!d) return null;
@@ -417,14 +421,14 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
             {d.customerName} · {d.destination}
           </span>
           <span>· 签约 {d.signedOn}</span>
-          <span>· {d.sellerEntity ?? "未指定主体"}</span>
+          <span>· {d.sellerEntity ?? t("未指定主体")}</span>
         </>
       }
       footer={
         <>
           <Link className="btn btn-sm" to={`/customers?id=${d.customerId ?? ""}`}>
             <Icon name="users" />
-            看客户档案
+            {t("看客户档案")}
           </Link>
           <span className="spacer" />
           <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>
@@ -436,17 +440,17 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
       <div className="sect">
         <div className="sect-h">
           <Icon name="wallet" size={14} />
-          金额
+          {t("金额")}
         </div>
         <div className="kv-grid">
-          <KV k="订单额" v={formatMoney(d.amount, d.currency === "CNY" ? "¥" : "$")} mono />
-          <KV k="预估毛利" v={formatMoney(d.grossProfit, d.currency === "CNY" ? "¥" : "$")} mono />
-          <KV k="已收" v={formatMoney(d.receivable)} mono />
-          <KV k="应付" v={formatMoney(d.payable, "¥")} mono />
+          <KV k={t("订单额")} v={formatMoney(d.amount, d.currency === "CNY" ? "¥" : "$")} mono />
+          <KV k={t("预估毛利")} v={formatMoney(d.grossProfit, d.currency === "CNY" ? "¥" : "$")} mono />
+          <KV k={t("已收")} v={formatMoney(d.receivable)} mono />
+          <KV k={t("应付")} v={formatMoney(d.payable, "¥")} mono />
         </div>
         <div style={{ marginTop: 12 }}>
           <div className="row" style={{ marginBottom: 6, fontSize: "var(--fs-sm)", color: "var(--text-3)" }}>
-            <span>收款进度</span>
+            <span>{t("收款进度")}</span>
             <span className="spacer" />
             <span className="num">
               {d.amount ? Math.round((d.receivable / d.amount) * 100) : 0}%
@@ -460,7 +464,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
         <div className="sect">
           <div className="sect-h">
             <Icon name="pie" size={14} />
-            成本构成
+            {t("成本构成")}
             <span className="spacer" />
             <span className="num" style={{ fontWeight: 400 }}>合计 ¥{Math.round(totalCost).toLocaleString("en-US")}</span>
           </div>
@@ -468,7 +472,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
         </div>
       ) : (
         <div className="sect">
-          <EmptyState icon="pie" title="还没有录成本" desc="采购成本、海运费、报关费录进来之后，这里会出现成本构成。" />
+          <EmptyState icon="pie" title={t("还没有录成本")} desc={t("采购成本、海运费、报关费录进来之后，这里会出现成本构成。")} />
         </div>
       )}
 
@@ -478,7 +482,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
           关联出运批次 {d.shipments.length ? `（${d.shipments.length}）` : ""}
         </div>
         {d.shipments.length === 0 ? (
-          <p className="muted" style={{ fontSize: "var(--fs-md)" }}>这张 PI 还没有出运批次。</p>
+          <p className="muted" style={{ fontSize: "var(--fs-md)" }}>{t("这张 PI 还没有出运批次。")}</p>
         ) : (
           <div style={{ display: "grid", gap: 2 }}>
             {d.shipments.map((s) => (
@@ -493,7 +497,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
                   {s.batchLabel ? <span className="badge-batch">{s.batchLabel}</span> : null}
                 </span>
                 <span className="spacer" />
-                <span className="num muted" style={{ fontSize: "var(--fs-sm)" }}>{s.containerNo ?? "待订舱"}</span>
+                <span className="num muted" style={{ fontSize: "var(--fs-sm)" }}>{s.containerNo ?? t("待订舱")}</span>
                 <Pill tone={RELEASE_TONE[s.releaseState] ?? "mute"}>{s.releaseState}</Pill>
                 <Icon name="chevronRight" size={14} style={{ color: "var(--text-4)" }} />
               </Link>
@@ -508,7 +512,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
           关联退税发票 {d.taxInvoices.length ? `（${d.taxInvoices.length}）` : ""}
         </div>
         {d.taxInvoices.length === 0 ? (
-          <p className="muted" style={{ fontSize: "var(--fs-md)" }}>还没有发票挂到这张 PI 上。</p>
+          <p className="muted" style={{ fontSize: "var(--fs-md)" }}>{t("还没有发票挂到这张 PI 上。")}</p>
         ) : (
           <>
             {d.taxInvoices.map((t) => (
@@ -519,7 +523,7 @@ function OrderDrawer({ id, onClose, onPrev, onNext }: { id: string; onClose: () 
               </div>
             ))}
             <div className="row" style={{ paddingTop: 8 }}>
-              <b>退税额合计</b>
+              <b>{t("退税额合计")}</b>
               <span className="spacer" />
               <b className="num" style={{ color: "var(--jade)" }}>
                 ¥{d.taxInvoices.reduce((s, t) => s + t.tax, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}

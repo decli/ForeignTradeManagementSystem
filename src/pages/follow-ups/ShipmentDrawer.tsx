@@ -7,6 +7,7 @@ import { toast } from "@/components/ui/Toast";
 import { KV, Pill } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { tr, useT } from "@/i18n";
 import { getShipmentDetail } from "@/data/queries";
 import { setMilestone, setRelease, toggleTodo, updateNote } from "@/data/mutations";
 import { formatMoney, humanDate, localClock, todayIso } from "@/lib/format";
@@ -17,11 +18,11 @@ function docChecklist(d: NonNullable<ReturnType<typeof getShipmentDetail>>) {
   const shipped = d.milestones.some((m) => m.kind === "ATD" && m.state === "done");
   const loaded = d.milestones.some((m) => m.kind === "装柜" && m.state === "done");
   return [
-    { name: "商业发票 / 装箱单", done: loaded, note: "装柜后出具" },
-    { name: "提单 BL", done: shipped, note: shipped ? "已出正本" : "开船后由货代签发" },
-    { name: "报关单", done: d.releaseState !== "未放行", note: d.releaseState === "未放行" ? "尚未报关" : "已报关放行" },
-    { name: "原产地证 / FORM", done: shipped && d.country !== "美国", note: d.country === "美国" ? "美国线不需要" : "随正本一起寄出" },
-    { name: "熏蒸 / 检疫证明", done: d.country === "澳大利亚" ? loaded : true, note: d.country === "澳大利亚" ? "澳洲木托必须处理" : "本线不强制" },
+    { name: tr("商业发票 / 装箱单"), done: loaded, note: tr("装柜后出具") },
+    { name: tr("提单 BL"), done: shipped, note: shipped ? tr("已出正本") : tr("开船后由货代签发") },
+    { name: tr("报关单"), done: d.releaseState !== "未放行", note: d.releaseState === "未放行" ? tr("尚未报关") : tr("已报关放行") },
+    { name: tr("原产地证 / FORM"), done: shipped && d.country !== "美国", note: d.country === "美国" ? tr("美国线不需要") : tr("随正本一起寄出") },
+    { name: tr("熏蒸 / 检疫证明"), done: d.country === "澳大利亚" ? loaded : true, note: d.country === "澳大利亚" ? tr("澳洲木托必须处理") : tr("本线不强制") },
   ];
 }
 
@@ -36,6 +37,7 @@ export function ShipmentDrawer({
   onPrev?: () => void;
   onNext?: () => void;
 }) {
+  const { t } = useT();
   const db = useDb();
   const { user, can } = useAuth();
   const [tab, setTab] = useState("overview");
@@ -67,27 +69,27 @@ export function ShipmentDrawer({
           <span className="num">{detail.batchNo}</span>
           {detail.batchLabel ? <span className="badge-batch">{detail.batchLabel}</span> : null}
           <Pill tone={RELEASE_TONE[detail.releaseState] ?? "mute"}>{detail.releaseState}</Pill>
-          {detail.hasTodo ? <Pill tone="amber">有待办</Pill> : null}
+          {detail.hasTodo ? <Pill tone="amber">{t("有待办")}</Pill> : null}
         </>
       }
       subtitle={
         <>
           <span>
-            {detail.country} · {detail.term} · {detail.mode} · {detail.fcl ? "整柜" : "拼柜"}
+            {detail.country} · {detail.term} · {detail.mode} · {detail.fcl ? t("整柜") : t("拼柜")}
           </span>
           {detail.customerName ? <span>· {detail.customerName}</span> : null}
           {clock ? (
             <span>
               · 客户当地 {clock.time}
-              {clock.working ? "（在上班）" : "（多半不在）"}
+              {clock.working ? t("（在上班）") : t("（多半不在）")}
             </span>
           ) : null}
         </>
       }
       tabs={[
-        { key: "overview", label: "概览" },
+        { key: "overview", label: t("概览") },
         { key: "notes", label: `动态流水 ${detail.notes.length}` },
-        { key: "docs", label: "单证齐套" },
+        { key: "docs", label: t("单证齐套") },
       ]}
       tab={tab}
       onTab={setTab}
@@ -102,7 +104,7 @@ export function ShipmentDrawer({
             }}
           >
             <Icon name="flag" />
-            {detail.hasTodo ? "销掉待办" : "标为待办"}
+            {detail.hasTodo ? t("销掉待办") : t("标为待办")}
           </button>
           <select
             className="select"
@@ -113,7 +115,7 @@ export function ShipmentDrawer({
               setRelease(actor, detail.id, e.target.value as (typeof RELEASE_STATES)[number]);
               toast(`${detail.batchNo} 改为「${e.target.value}」`);
             }}
-            aria-label="放行状态"
+            aria-label={t("放行状态")}
           >
             {RELEASE_STATES.map((s) => (
               <option key={s} value={s}>
@@ -124,7 +126,7 @@ export function ShipmentDrawer({
           <span className="spacer" />
           {detail.piId ? (
             <Link className="btn btn-sm" to={`/orders?id=${detail.piId}`}>
-              看这张 PI 的核算
+              {t("看这张 PI 的核算")}
               <Icon name="chevronRight" />
             </Link>
           ) : null}
@@ -136,9 +138,9 @@ export function ShipmentDrawer({
           <div className="sect">
             <div className="sect-h">
               <Icon name="ship" size={14} />
-              进度里程碑
+              {t("进度里程碑")}
               <span className="spacer" />
-              <span className="muted" style={{ fontWeight: 400 }}>点日期可以就地改</span>
+              <span className="muted" style={{ fontWeight: 400 }}>{t("点日期可以就地改")}</span>
             </div>
             <div style={{ padding: "6px 4px 14px" }}>
               <MilestoneRail milestones={detail.milestones} />
@@ -148,7 +150,7 @@ export function ShipmentDrawer({
                 <div className="row" key={m.kind} style={{ gap: 10 }}>
                   <span style={{ width: 42, fontSize: "var(--fs-sm)", color: "var(--text-2)" }}>{m.kind}</span>
                   <label className="row" style={{ gap: 5 }}>
-                    <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>计划</span>
+                    <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{t("计划")}</span>
                     <input
                       type="date"
                       className="input num"
@@ -160,7 +162,7 @@ export function ShipmentDrawer({
                     />
                   </label>
                   <label className="row" style={{ gap: 5 }}>
-                    <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>实际</span>
+                    <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{t("实际")}</span>
                     <input
                       type="date"
                       className="input num"
@@ -171,7 +173,7 @@ export function ShipmentDrawer({
                       aria-label={`${m.kind} 实际日期`}
                     />
                   </label>
-                  {m.state === "late" ? <Pill tone="coral">超期</Pill> : m.state === "now" ? <Pill tone="accent">进行中</Pill> : null}
+                  {m.state === "late" ? <Pill tone="coral">{t("超期")}</Pill> : m.state === "now" ? <Pill tone="accent">{t("进行中")}</Pill> : null}
                 </div>
               ))}
             </div>
@@ -180,14 +182,14 @@ export function ShipmentDrawer({
           <div className="sect">
             <div className="sect-h">
               <Icon name="info" size={14} />
-              批次信息
+              {t("批次信息")}
             </div>
             <div className="kv-grid">
               <KV k="柜号" v={detail.containerNo ?? "—"} mono />
               <KV k="船司" v={detail.carrier ?? "—"} />
               <KV k="目的港" v={detail.pod ?? "—"} />
               <KV k="贸易条款" v={detail.term} />
-              <KV k="关联 PI" v={detail.piNo ?? "未关联"} mono />
+              <KV k="关联 PI" v={detail.piNo ?? t("未关联")} mono />
               <KV k="订单额" v={detail.amount ? formatMoney(detail.amount) : "—"} mono />
               <KV k="业务员" v={`${detail.salesName} · ${detail.team ?? "—"}`} />
               <KV k="产品" v={detail.product ?? "—"} />
@@ -197,7 +199,7 @@ export function ShipmentDrawer({
           <div className="sect">
             <div className="sect-h">
               <Icon name="edit" size={14} />
-              记一条动态
+              {t("记一条动态")}
             </div>
             <textarea
               className="input"
@@ -208,7 +210,7 @@ export function ShipmentDrawer({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) addNote();
               }}
-              placeholder={readOnly ? "只读身份不能写入" : "今天跟这票有关的进展… ⌘↵ 保存"}
+              placeholder={readOnly ? t("只读身份不能写入") : t("今天跟这票有关的进展… ⌘↵ 保存")}
               style={{ width: "100%" }}
             />
             <div className="row wrap" style={{ marginTop: 8 }}>
@@ -221,7 +223,7 @@ export function ShipmentDrawer({
               </div>
               <span className="spacer" />
               <button className="btn btn-primary btn-sm" onClick={addNote} disabled={readOnly || !draft.trim()}>
-                保存
+                {t("保存")}
               </button>
             </div>
           </div>
@@ -231,7 +233,7 @@ export function ShipmentDrawer({
       {tab === "notes" ? (
         <div className="feed">
           {detail.notes.length === 0 ? (
-            <p className="muted">这票还没有任何动态。回到「概览」写第一条。</p>
+            <p className="muted">{t("这票还没有任何动态。回到「概览」写第一条。")}</p>
           ) : (
             detail.notes.map((n) => (
               <div className="feed-item" key={n.id}>
@@ -252,7 +254,7 @@ export function ShipmentDrawer({
       {tab === "docs" ? (
         <div>
           <p className="muted" style={{ fontSize: "var(--fs-md)", marginBottom: 12 }}>
-            按这票的目的国、贸易条款和当前进度推出来的应备单证。真实项目里这份清单来自「单证备案」模块。
+            {t("按这票的目的国、贸易条款和当前进度推出来的应备单证。真实项目里这份清单来自「单证备案」模块。")}
           </p>
           <div style={{ display: "grid", gap: 2 }}>
             {docs.map((doc) => (

@@ -7,6 +7,7 @@ import { toast, toastError } from "@/components/ui/Toast";
 import { EmptyState, Field, Pill, SearchInput } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { useT } from "@/i18n";
 import { listOrders, type OrderRow } from "@/data/queries";
 import { createPi, nextPiNo } from "@/data/mutations";
 import { formatMoney, todayIso } from "@/lib/format";
@@ -16,6 +17,7 @@ import { formatMoney, todayIso } from "@/lib/format";
  * 后续跟单 / 核算 / 退税全靠这个号串联，所以这一步必须挡住重号。
  */
 export default function PiRegistry() {
+  const { t } = useT();
   const db = useDb();
   const { viewer, user, can } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -31,21 +33,21 @@ export default function PiRegistry() {
     () => [
       {
         key: "pi",
-        title: "PI 号",
+        title: t("PI 号"),
         width: 156,
         freeze: true,
         hideable: false,
         sort: (a, b) => a.piNo.localeCompare(b.piNo),
         render: (r) => <span className="cell-main">{r.piNo}</span>,
       },
-      { key: "signed", title: "签约日", width: 110, sort: (a, b) => a.signedOn.localeCompare(b.signedOn), render: (r) => <span className="num">{r.signedOn}</span> },
-      { key: "customer", title: "客户", width: 180, sort: (a, b) => a.customerName.localeCompare(b.customerName), render: (r) => <span className="truncate" style={{ display: "block" }}>{r.customerName}</span> },
-      { key: "product", title: "产品", width: 260, render: (r) => <span className="truncate" style={{ display: "block" }} title={r.product ?? ""}>{r.product ?? "—"}</span> },
-      { key: "amount", title: "金额", width: 128, align: "right", sort: (a, b) => a.amount - b.amount, render: (r) => <span className="cell-num">{formatMoney(r.amount, r.currency === "CNY" ? "¥" : "$")}</span> },
-      { key: "sales", title: "取号人", width: 92, render: (r) => r.salesName },
-      { key: "entity", title: "开票主体", width: 110, render: (r) => <Pill tone={r.sellerEntity === "供应链" ? "violet" : "accent"}>{r.sellerEntity ?? "—"}</Pill> },
-      { key: "status", title: "状态", width: 96, render: (r) => <Pill tone={r.status === "closed" ? "jade" : r.status === "archived" ? "mute" : "accent"}>{r.status === "closed" ? "已完结" : r.status === "archived" ? "已归档" : "进行中"}</Pill> },
-      { key: "ship", title: "出运批次", width: 92, align: "right", sort: (a, b) => a.shipmentCount - b.shipmentCount, render: (r) => <span className="cell-num">{r.shipmentCount || "—"}</span> },
+      { key: "signed", title: t("签约日"), width: 110, sort: (a, b) => a.signedOn.localeCompare(b.signedOn), render: (r) => <span className="num">{r.signedOn}</span> },
+      { key: "customer", title: t("客户"), width: 180, sort: (a, b) => a.customerName.localeCompare(b.customerName), render: (r) => <span className="truncate" style={{ display: "block" }}>{r.customerName}</span> },
+      { key: "product", title: t("产品"), width: 260, render: (r) => <span className="truncate" style={{ display: "block" }} title={r.product ?? ""}>{r.product ?? "—"}</span> },
+      { key: "amount", title: t("金额"), width: 128, align: "right", sort: (a, b) => a.amount - b.amount, render: (r) => <span className="cell-num">{formatMoney(r.amount, r.currency === "CNY" ? "¥" : "$")}</span> },
+      { key: "sales", title: t("取号人"), width: 92, render: (r) => r.salesName },
+      { key: "entity", title: t("开票主体"), width: 110, render: (r) => <Pill tone={r.sellerEntity === "供应链" ? "violet" : "accent"}>{r.sellerEntity ?? "—"}</Pill> },
+      { key: "status", title: t("状态"), width: 96, render: (r) => <Pill tone={r.status === "closed" ? "jade" : r.status === "archived" ? "mute" : "accent"}>{r.status === "closed" ? t("已完结") : r.status === "archived" ? t("已归档") : t("进行中")}</Pill> },
+      { key: "ship", title: t("出运批次"), width: 92, align: "right", sort: (a, b) => a.shipmentCount - b.shipmentCount, render: (r) => <span className="cell-num">{r.shipmentCount || "—"}</span> },
     ],
     [],
   );
@@ -54,15 +56,16 @@ export default function PiRegistry() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>PI 取号</h1>
+          <h1>{t("PI 取号")}</h1>
           <p>
-            号段规则 <code className="num">MT{thisYear.slice(2)}X#####</code> · 取号即建档 · {thisYear} 年已取 {yearCount} 号
+            {t("号段规则")} <code className="num">MT{thisYear.slice(2)}X#####</code>
+            {t(" · 取号即建档 · {y} 年已取 {n} 号", { y: thisYear, n: yearCount })}
           </p>
         </div>
         <div className="page-acts">
           <button className="btn btn-primary" onClick={() => setOpen(true)} disabled={readOnly}>
             <Icon name="plus" />
-            取下一个号
+            {t("取下一个号")}
           </button>
         </div>
       </div>
@@ -78,11 +81,11 @@ export default function PiRegistry() {
               return next;
             }, { replace: true })
           }
-          placeholder="搜 PI 号 / 客户 / 产品…"
+          placeholder={t("搜 PI 号 / 客户 / 产品…")}
         />
         <span className="spacer" />
         <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>
-          下一个可用号：<b className="num">{nextPiNo(db)}</b>
+          {t("下一个可用号：")}<b className="num">{nextPiNo(db)}</b>
         </span>
       </div>
 
@@ -90,7 +93,7 @@ export default function PiRegistry() {
         gridId="pi"
         rows={rows}
         columns={columns}
-        empty={<EmptyState icon="tag" title="还没有取过号" desc="点右上角「取下一个号」建第一张 PI。" />}
+        empty={<EmptyState icon="tag" title={t("还没有取过号")} desc={t("点右上角「取下一个号」建第一张 PI。")} />}
         renderCard={(r) => (
           <div className="rcard" key={r.id}>
             <div className="rcard-top">
@@ -126,6 +129,7 @@ export default function PiRegistry() {
 }
 
 function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultSalesId: string | null }) {
+  const { t } = useT();
   const db = useDb();
   const { user } = useAuth();
   const [piNo, setPiNo] = useState(() => nextPiNo(db));
@@ -153,29 +157,29 @@ function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultS
       toastError(res.error);
       return;
     }
-    toast(`已取号 ${piNo}，同时建了一张空核算`);
+    toast(t("已取号 {no}，同时建了一张空核算", { no: piNo }));
     onClose();
   };
 
   return (
     <Modal
       open
-      title="PI 取号"
+      title={t("PI 取号")}
       onClose={onClose}
       width={540}
       footer={
         <>
           <button className="btn" onClick={onClose}>
-            取消
+            {t("取消")}
           </button>
           <button className="btn btn-primary" onClick={submit} disabled={dup || !piNo.trim() || !customerId}>
-            取号并建档
+            {t("取号并建档")}
           </button>
         </>
       }
     >
       <div style={{ display: "grid", gap: 12, paddingBottom: 6 }}>
-        <Field label="PI 号" hint={dup ? "" : "按号段规则自动生成，也可以手改"}>
+        <Field label={t("PI 号")} hint={dup ? "" : t("按号段规则自动生成，也可以手改")}>
           <input className="input num" value={piNo} onChange={(e) => setPiNo(e.target.value)} />
         </Field>
         {dup ? (
@@ -185,7 +189,7 @@ function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultS
           </div>
         ) : null}
 
-        <Field label="客户">
+        <Field label={t("客户")}>
           <select className="select" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
             {db.customers.map((c) => (
               <option key={c.id} value={c.id}>
@@ -196,7 +200,7 @@ function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultS
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <Field label="业务员">
+          <Field label={t("业务员")}>
             <select className="select" value={salesId} onChange={(e) => setSalesId(e.target.value)}>
               {db.users.filter((u) => u.active).map((u) => (
                 <option key={u.id} value={u.id}>
@@ -205,7 +209,7 @@ function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultS
               ))}
             </select>
           </Field>
-          <Field label="开票主体">
+          <Field label={t("开票主体")}>
             <select className="select" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
               {db.sellerEntities.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -217,23 +221,23 @@ function NewPiModal({ onClose, defaultSalesId }: { onClose: () => void; defaultS
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.4fr 0.8fr 1fr", gap: 10 }}>
-          <Field label="订单金额">
+          <Field label={t("订单金额")}>
             <input className="input num" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="19224.00" />
           </Field>
-          <Field label="币种">
+          <Field label={t("币种")}>
             <select className="select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
               <option value="USD">USD</option>
               <option value="CNY">CNY</option>
               <option value="EUR">EUR</option>
             </select>
           </Field>
-          <Field label="签约日">
+          <Field label={t("签约日")}>
             <input type="date" className="input num" value={signedOn} onChange={(e) => setSignedOn(e.target.value)} />
           </Field>
         </div>
 
-        <Field label="产品">
-          <input className="input" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="一次性防护服（L 码）" />
+        <Field label={t("产品")}>
+          <input className="input" value={product} onChange={(e) => setProduct(e.target.value)} placeholder={t("一次性防护服（L 码）")} />
         </Field>
       </div>
     </Modal>

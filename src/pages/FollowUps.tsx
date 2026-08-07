@@ -9,6 +9,7 @@ import { toast, toastError } from "@/components/ui/Toast";
 import { Chip, EmptyState, Field, Pill, SearchInput, Segmented } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { useT } from "@/i18n";
 import { listSalesNames, listShipments, type ShipmentRow } from "@/data/queries";
 import { archiveShipment, bulkUpdate, createShipment, restoreShipment, revertBulk, toggleTodo, updateNote } from "@/data/mutations";
 import { deleteView, saveView } from "@/data/mutations";
@@ -21,6 +22,7 @@ import { ShipmentDrawer } from "./follow-ups/ShipmentDrawer";
 const MODULE = "follow-ups";
 
 export default function FollowUps() {
+  const { t } = useT();
   const db = useDb();
   const { user, viewer, can } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -80,19 +82,19 @@ export default function FollowUps() {
   const openIndex = openId ? rows.findIndex((r) => r.id === openId) : -1;
 
   const activeChips = [
-    release && { k: "放行状态", v: release, clear: () => set({ release: null }) },
-    sales && { k: "业务员", v: sales, clear: () => set({ sales: null }) },
-    mode && { k: "走货方式", v: mode, clear: () => set({ mode: null }) },
-    onlyRisk && { k: "只看", v: "停滞 / 超期", clear: () => set({ risk: null }) },
-    onlyTodo && { k: "只看", v: "有待办", clear: () => set({ todo: null }) },
-    q && { k: "搜索", v: q, clear: () => set({ q: null }) },
+    release && { k: t("放行状态"), v: release, clear: () => set({ release: null }) },
+    sales && { k: t("业务员"), v: sales, clear: () => set({ sales: null }) },
+    mode && { k: t("走货方式"), v: mode, clear: () => set({ mode: null }) },
+    onlyRisk && { k: t("只看"), v: t("停滞 / 超期"), clear: () => set({ risk: null }) },
+    onlyTodo && { k: t("只看"), v: t("有待办"), clear: () => set({ todo: null }) },
+    q && { k: t("搜索"), v: q, clear: () => set({ q: null }) },
   ].filter(Boolean) as { k: string; v: string; clear: () => void }[];
 
   const columns: Column<ShipmentRow>[] = useMemo(
     () => [
       {
         key: "batch",
-        title: "批次号 / 国家",
+        title: t("批次号 / 国家"),
         width: 210,
         minWidth: 150,
         freeze: true,
@@ -110,10 +112,10 @@ export default function FollowUps() {
             <div className="cell-sub">
               <span>
                 {r.country} · {r.term}
-                {r.fcl ? "" : " · 拼柜"}
+                {r.fcl ? "" : t(" · 拼柜")}
               </span>
               {r.piNo ? (
-                <span className="num" title={`关联 PI ${r.piNo}`}>
+                <span className="num" title={t("关联 PI {no}", { no: r.piNo })}>
                   · {r.piNo}
                 </span>
               ) : null}
@@ -123,7 +125,7 @@ export default function FollowUps() {
       },
       {
         key: "customer",
-        title: "客户",
+        title: t("客户"),
         width: 150,
         sort: (a, b) => (a.customerName ?? "").localeCompare(b.customerName ?? ""),
         render: (r) => (
@@ -137,7 +139,7 @@ export default function FollowUps() {
       },
       {
         key: "sales",
-        title: "业务员 / 小组",
+        title: t("业务员 / 小组"),
         width: 116,
         sort: (a, b) => a.salesName.localeCompare(b.salesName),
         render: (r) => (
@@ -151,7 +153,7 @@ export default function FollowUps() {
       },
       {
         key: "mode",
-        title: "走货",
+        title: t("走货"),
         width: 96,
         sort: (a, b) => a.releaseState.localeCompare(b.releaseState),
         render: (r) => (
@@ -165,15 +167,15 @@ export default function FollowUps() {
       },
       {
         key: "note",
-        title: "最新动态",
+        title: t("最新动态"),
         width: 300,
         minWidth: 180,
         sort: (a, b) => (a.latestNoteOn ?? "").localeCompare(b.latestNoteOn ?? ""),
-        tip: "点一下就能改，不必进详情页",
+        tip: t("点一下就能改，不必进详情页"),
         render: (r) => (
           <>
             <button className="note-btn" onClick={() => setEditing(r)} disabled={readOnly} title={r.latestNote ?? undefined}>
-              <span className={`txt${r.latestNote ? "" : " note-empty"}`}>{r.latestNote ?? "点这里写第一条动态"}</span>
+              <span className={`txt${r.latestNote ? "" : " note-empty"}`}>{r.latestNote ?? t("点这里写第一条动态")}</span>
               <span className="caret">
                 <Icon name="edit" size={13} />
               </span>
@@ -181,7 +183,7 @@ export default function FollowUps() {
             {r.stalledDays || r.hasTodo ? (
               <div className="row" style={{ gap: 5, marginTop: 5 }}>
                 {r.stalledDays ? <Pill tone="coral">停滞 {r.stalledDays} 天</Pill> : null}
-                {r.hasTodo ? <Pill tone="amber">有待办</Pill> : null}
+                {r.hasTodo ? <Pill tone="amber">{t("有待办")}</Pill> : null}
                 {r.latestNoteOn ? <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{humanDate(r.latestNoteOn)}</span> : null}
               </div>
             ) : null}
@@ -190,7 +192,7 @@ export default function FollowUps() {
       },
       {
         key: "container",
-        title: "柜号 / 船司",
+        title: t("柜号 / 船司"),
         width: 148,
         sort: (a, b) => (a.containerNo ?? "").localeCompare(b.containerNo ?? ""),
         render: (r) =>
@@ -209,53 +211,53 @@ export default function FollowUps() {
             <>
               <div className="muted">—</div>
               <div className="cell-sub">
-                <span>{r.pod ?? "待订舱"}</span>
+                <span>{r.pod ?? t("待订舱")}</span>
               </div>
             </>
           ),
       },
       {
         key: "milestones",
-        title: "进度里程碑",
+        title: t("进度里程碑"),
         width: 300,
         minWidth: 210,
         sort: (a, b) => (a.nextDate ?? "9999").localeCompare(b.nextDate ?? "9999"),
-        tip: "按下一个待办节点的日期排序",
+        tip: t("按下一个待办节点的日期排序"),
         render: (r) => <MilestoneRail milestones={r.milestones} />,
       },
       {
         key: "acts",
-        title: "操作",
+        title: t("操作"),
         width: 104,
         hideable: false,
         align: "right",
         render: (r) => (
           <div className="row-acts">
-            <button className="icon-btn" title="查看详情" aria-label={`查看 ${r.batchNo} 详情`} onClick={() => set({ id: r.id })}>
+            <button className="icon-btn" title={t("查看详情")} aria-label={t("查看 {no} 详情", { no: r.batchNo })} onClick={() => set({ id: r.id })}>
               <Icon name="eye" />
             </button>
             <button
               className="icon-btn"
               data-on={r.hasTodo ? "1" : "0"}
-              title={r.hasTodo ? "销掉待办" : "标为待办"}
-              aria-label={`${r.hasTodo ? "销掉" : "标记"} ${r.batchNo} 的待办`}
+              title={r.hasTodo ? t("销掉待办") : t("标为待办")}
+              aria-label={t("{act} {no} 的待办", { act: r.hasTodo ? t("销掉") : t("标记"), no: r.batchNo })}
               disabled={readOnly}
               onClick={() => {
                 toggleTodo(actor, r.id, !r.hasTodo);
-                toast(r.hasTodo ? `已销掉 ${r.batchNo} 的待办` : `已给 ${r.batchNo} 加待办`);
+                toast(r.hasTodo ? t("已销掉 {no} 的待办", { no: r.batchNo }) : t("已给 {no} 加待办", { no: r.batchNo }));
               }}
             >
               <Icon name="flag" />
             </button>
             <button
               className="icon-btn"
-              title="删除批次"
-              aria-label={`删除 ${r.batchNo}`}
+              title={t("删除批次")}
+              aria-label={t("删除 {no}", { no: r.batchNo })}
               disabled={readOnly}
               style={{ color: "var(--coral)" }}
               onClick={() => {
                 const res = archiveShipment(actor, r.id);
-                toast(`已删除 ${res.batchNo}`, () => {
+                toast(t("已删除 {no}", { no: res.batchNo }), () => {
                   restoreShipment(r.id);
                   toast("已恢复");
                 });
@@ -276,23 +278,23 @@ export default function FollowUps() {
     await exportXlsx<ShipmentRow>(
       stampName("跟单表"),
       [
-        { header: "批次号", width: 20, value: (r) => r.batchNo },
-        { header: "分批", width: 8, value: (r) => r.batchLabel },
-        { header: "国家", width: 12, value: (r) => r.country },
-        { header: "客户", width: 20, value: (r) => r.customerName },
-        { header: "关联 PI", width: 16, value: (r) => r.piNo },
-        { header: "条款", width: 10, value: (r) => r.term },
-        { header: "走货", width: 8, value: (r) => r.mode },
-        { header: "整柜/拼柜", width: 10, value: (r) => (r.fcl ? "整柜" : "拼柜") },
-        { header: "柜号", width: 18, value: (r) => r.containerNo },
-        { header: "船司", width: 10, value: (r) => r.carrier },
-        { header: "目的港", width: 14, value: (r) => r.pod },
-        { header: "放行状态", width: 10, value: (r) => r.releaseState },
-        { header: "业务员", width: 10, value: (r) => r.salesName },
-        { header: "小组", width: 10, value: (r) => r.team },
-        { header: "最新动态", width: 42, value: (r) => r.latestNote },
-        { header: "动态日期", width: 12, type: "date", value: (r) => r.latestNoteOn },
-        { header: "停滞天数", width: 10, type: "number", format: "0", value: (r) => r.stalledDays || null },
+        { header: t("批次号"), width: 20, value: (r) => r.batchNo },
+        { header: t("分批"), width: 8, value: (r) => r.batchLabel },
+        { header: t("国家"), width: 12, value: (r) => r.country },
+        { header: t("客户"), width: 20, value: (r) => r.customerName },
+        { header: t("关联 PI"), width: 16, value: (r) => r.piNo },
+        { header: t("条款"), width: 10, value: (r) => r.term },
+        { header: t("走货"), width: 8, value: (r) => r.mode },
+        { header: t("整柜/拼柜"), width: 10, value: (r) => (r.fcl ? t("整柜") : t("拼柜")) },
+        { header: t("柜号"), width: 18, value: (r) => r.containerNo },
+        { header: t("船司"), width: 10, value: (r) => r.carrier },
+        { header: t("目的港"), width: 14, value: (r) => r.pod },
+        { header: t("放行状态"), width: 10, value: (r) => r.releaseState },
+        { header: t("业务员"), width: 10, value: (r) => r.salesName },
+        { header: t("小组"), width: 10, value: (r) => r.team },
+        { header: t("最新动态"), width: 42, value: (r) => r.latestNote },
+        { header: t("动态日期"), width: 12, type: "date", value: (r) => r.latestNoteOn },
+        { header: t("停滞天数"), width: 10, type: "number", format: "0", value: (r) => r.stalledDays || null },
         ...(["交期", "装柜", "进仓", "ATD", "ETA"] as const).map((kind) => ({
           header: kind,
           width: 12,
@@ -305,46 +307,46 @@ export default function FollowUps() {
       ],
       rows,
     );
-    toast(`已导出 ${rows.length} 行（跟随当前筛选）`);
+    toast(t("已导出 {n} 行（跟随当前筛选）", { n: rows.length }));
   };
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>跟单表</h1>
-          <p>出运跟踪台账 · 一行一个出运批次 · 点动态即可直改，勾选多行可批量</p>
+          <h1>{t("跟单表")}</h1>
+          <p>{t("出运跟踪台账 · 一行一个出运批次 · 点动态即可直改，勾选多行可批量")}</p>
         </div>
         <div className="page-acts">
           <button className="btn" onClick={doExport}>
             <Icon name="download" />
-            导出 Excel
+            {t("导出 Excel")}
           </button>
-          <button className="btn btn-primary" onClick={() => setNewOpen(true)} disabled={readOnly} title="新增批次 · N">
+          <button className="btn btn-primary" onClick={() => setNewOpen(true)} disabled={readOnly} title={t("新增批次 · N")}>
             <Icon name="plus" />
-            新增批次
+            {t("新增批次")}
           </button>
         </div>
       </div>
 
       <div className="toolbar">
-        <SearchInput value={q} onChange={(v) => set({ q: v })} placeholder="搜批次号 / 柜号 / 客户 / 目的港…" />
+        <SearchInput value={q} onChange={(v) => set({ q: v })} placeholder={t("搜批次号 / 柜号 / 客户 / 目的港…")} />
 
         <Segmented
           value={onlyRisk ? "risk" : onlyTodo ? "todo" : "all"}
           onChange={(v) => set({ risk: v === "risk" ? "1" : null, todo: v === "todo" ? "1" : null })}
           options={[
-            { value: "all", label: "全部", count: undefined },
-            { value: "risk", label: "有风险", count: rows.length && onlyRisk ? undefined : undefined },
-            { value: "todo", label: "有待办" },
+            { value: "all", label: t("全部"), count: undefined },
+            { value: "risk", label: t("有风险"), count: rows.length && onlyRisk ? undefined : undefined },
+            { value: "todo", label: t("有待办") },
           ]}
-          label="快速视图"
+          label={t("快速视图")}
         />
 
         <span className="toolbar-sep" />
 
-        <select className="select" value={release} onChange={(e) => set({ release: e.target.value })} aria-label="放行状态">
-          <option value="">放行：全部</option>
+        <select className="select" value={release} onChange={(e) => set({ release: e.target.value })} aria-label={t("放行状态")}>
+          <option value="">{t("放行：全部")}</option>
           {RELEASE_STATES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -352,8 +354,8 @@ export default function FollowUps() {
           ))}
         </select>
 
-        <select className="select" value={sales} onChange={(e) => set({ sales: e.target.value })} aria-label="业务员">
-          <option value="">业务员：全部</option>
+        <select className="select" value={sales} onChange={(e) => set({ sales: e.target.value })} aria-label={t("业务员")}>
+          <option value="">{t("业务员：全部")}</option>
           {salesNames.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -361,8 +363,8 @@ export default function FollowUps() {
           ))}
         </select>
 
-        <select className="select" value={mode} onChange={(e) => set({ mode: e.target.value })} aria-label="走货方式">
-          <option value="">走货：全部</option>
+        <select className="select" value={mode} onChange={(e) => set({ mode: e.target.value })} aria-label={t("走货方式")}>
+          <option value="">{t("走货：全部")}</option>
           {MODES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -372,7 +374,7 @@ export default function FollowUps() {
 
         <label className="switch">
           <input type="checkbox" checked={onlyActive} onChange={(e) => set({ active: e.target.checked ? null : "0" })} />
-          仅进行中
+          {t("仅进行中")}
         </label>
 
         <SavedViews
@@ -382,11 +384,11 @@ export default function FollowUps() {
             const name = prompt("给这个视图起个名字", "我的视图");
             if (!name) return;
             saveView(MODULE, name, params.toString());
-            toast(`已保存视图「${name}」`);
+            toast(t("已保存视图「{name}」", { name }));
           }}
           onDelete={(id, name) => {
             deleteView(id);
-            toast(`已删除视图「${name}」`);
+            toast(t("已删除视图「{name}」", { name }));
           }}
         />
 
@@ -398,7 +400,7 @@ export default function FollowUps() {
                 <Chip key={`${c.k}${c.v}`} label={c.k} value={c.v} onClear={c.clear} />
               ))}
               <button className="btn btn-ghost btn-sm" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
-                全部清除
+                {t("全部清除")}
               </button>
             </div>
           </>
@@ -417,7 +419,7 @@ export default function FollowUps() {
         bar={
           <>
             <span>
-              本页 <b className="num">{rows.length}</b> 条
+              {t("本页")} <b className="num">{rows.length}</b> {t("条")}
             </span>
             <Pill tone="jade" dot={false}>
               进行中 {rows.filter((r) => !r.stalledDays && !r.hasLate).length}
@@ -430,16 +432,16 @@ export default function FollowUps() {
         empty={
           <EmptyState
             icon="ship"
-            title={q || activeChips.length ? "当前筛选下没有批次" : "还没有出运批次"}
+            title={q || activeChips.length ? t("当前筛选下没有批次") : t("还没有出运批次")}
             desc={
               q || activeChips.length
-                ? "试试关掉「仅进行中」，或者清掉上面的筛选条件。"
-                : "点右上角「新增批次」建第一票，或者先去 PI 取号。"
+                ? t("试试关掉「仅进行中」，或者清掉上面的筛选条件。")
+                : t("点右上角「新增批次」建第一票，或者先去 PI 取号。")
             }
             action={
               activeChips.length ? (
                 <button className="btn btn-sm" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
-                  清除全部筛选
+                  {t("清除全部筛选")}
                 </button>
               ) : null
             }
@@ -460,11 +462,11 @@ export default function FollowUps() {
               <span>{r.customerName ?? "—"}</span>
               <span>{r.salesName}</span>
             </div>
-            <div className="rcard-note clamp-2">{r.latestNote ?? "还没有动态"}</div>
+            <div className="rcard-note clamp-2">{r.latestNote ?? t("还没有动态")}</div>
             {r.stalledDays || r.hasTodo ? (
               <div className="row" style={{ gap: 5 }}>
                 {r.stalledDays ? <Pill tone="coral">停滞 {r.stalledDays} 天</Pill> : null}
-                {r.hasTodo ? <Pill tone="amber">有待办</Pill> : null}
+                {r.hasTodo ? <Pill tone="amber">{t("有待办")}</Pill> : null}
               </div>
             ) : null}
             <div style={{ paddingTop: 4 }}>
@@ -486,7 +488,7 @@ export default function FollowUps() {
             return false;
           }
           setSelected(new Set());
-          toast(`已更新 ${res.count} 行`, () => {
+          toast(t("已更新 {n} 行", { n: res.count }), () => {
             revertBulk(res.undo);
             toast("已撤销");
           });
@@ -501,7 +503,7 @@ export default function FollowUps() {
           if (!editing) return;
           const res = updateNote(actor, editing.id, text, date);
           if (!res.ok) toastError(res.error);
-          else toast(`已更新 ${editing.batchNo} 的动态`);
+          else toast(t("已更新 {no} 的动态", { no: editing.batchNo }));
           setEditing(null);
         }}
       />
@@ -543,6 +545,7 @@ function SavedViews({
   onSave: () => void;
   onDelete: (id: string, name: string) => void;
 }) {
+  const { t } = useT();
   return (
     <Menu
       align="end"
@@ -557,10 +560,10 @@ function SavedViews({
     >
       {(close) => (
         <>
-          <div className="pop-title">保存的筛选组合</div>
+          <div className="pop-title">{t("保存的筛选组合")}</div>
           {views.length === 0 ? (
             <div style={{ padding: "6px 10px 10px", fontSize: "var(--fs-sm)", color: "var(--text-3)" }}>
-              还没有保存的视图。筛好之后点下面「保存当前筛选」。
+              {t("还没有保存的视图。筛好之后点下面「保存当前筛选」。")}
             </div>
           ) : (
             views.map((v) => (
@@ -576,7 +579,7 @@ function SavedViews({
                     {v.name}
                   </span>
                 </button>
-                <button className="icon-btn" aria-label={`删除视图 ${v.name}`} onClick={() => onDelete(v.id, v.name)}>
+                <button className="icon-btn" aria-label={t("删除视图 {name}", { name: v.name })} onClick={() => onDelete(v.id, v.name)}>
                   <Icon name="trash" size={13} />
                 </button>
               </div>
@@ -591,7 +594,7 @@ function SavedViews({
             }}
           >
             <Icon name="plus" />
-            保存当前筛选
+            {t("保存当前筛选")}
           </button>
         </>
       )}
@@ -610,6 +613,7 @@ function NoteEditor({
   onClose: () => void;
   onSave: (text: string, date: string) => void;
 }) {
+  const { t } = useT();
   const [text, setText] = useState("");
   const [date, setDate] = useState(todayIso);
 
@@ -625,19 +629,19 @@ function NoteEditor({
   return (
     <Modal
       open
-      title={`更新最新动态 · ${row.batchNo}`}
+      title={t("更新最新动态 · {no}", { no: row.batchNo })}
       onClose={onClose}
       width={520}
       footer={
         <>
           <span className="muted" style={{ fontSize: "var(--fs-sm)", marginRight: "auto" }}>
-            <kbd>⌘</kbd> + <kbd>↵</kbd> 保存
+            <kbd>⌘</kbd> + <kbd>↵</kbd> {t("保存")}
           </span>
           <button className="btn" onClick={onClose}>
-            取消
+            {t("取消")}
           </button>
           <button className="btn btn-primary" onClick={() => onSave(text, date)} disabled={!text.trim()}>
-            保存
+            {t("保存")}
           </button>
         </>
       }
@@ -652,7 +656,7 @@ function NoteEditor({
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onSave(text, date);
           }}
-          placeholder="这票现在是什么状态？"
+          placeholder={t("这票现在是什么状态？")}
         />
         <div className="phrase-wrap">
           {PHRASES.map((p) => (
@@ -661,7 +665,7 @@ function NoteEditor({
             </button>
           ))}
         </div>
-        <Field label="动态日期">
+        <Field label={t("动态日期")}>
           <input type="date" className="input num" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 170 }} />
         </Field>
       </div>
@@ -682,6 +686,7 @@ function BulkBar({
   onClear: () => void;
   onApply: (patch: { body?: string; happenedOn?: string; releaseState?: string }) => boolean;
 }) {
+  const { t } = useT();
   const [note, setNote] = useState("");
   const [date, setDate] = useState(todayIso);
   const [rel, setRel] = useState("");
@@ -691,7 +696,7 @@ function BulkBar({
     <div className="bulkbar" data-on={selected.size ? "1" : "0"} aria-hidden={selected.size === 0}>
       <div className="bb-top">
         <span className="bb-n">
-          <b className="num">{selected.size}</b> 行已选
+          <b className="num">{selected.size}</b> {t("行已选")}
         </span>
         <div className="sel-list">
           {picked.slice(0, 5).map((r) => (
@@ -710,7 +715,7 @@ function BulkBar({
           ))}
         </div>
         <button className="btn btn-ghost btn-sm" onClick={onClear}>
-          取消选择
+          {t("取消选择")}
         </button>
       </div>
       <div className="bb-main">
@@ -718,12 +723,12 @@ function BulkBar({
           className="input grow"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="写一条动态，一次应用到所选批次…"
-          aria-label="批量动态"
+          placeholder={t("写一条动态，一次应用到所选批次…")}
+          aria-label={t("批量动态")}
         />
-        <input type="date" className="input num" value={date} onChange={(e) => setDate(e.target.value)} aria-label="动态日期" style={{ width: 150 }} />
-        <select className="select" value={rel} onChange={(e) => setRel(e.target.value)} aria-label="批量设置放行状态">
-          <option value="">放行状态不变</option>
+        <input type="date" className="input num" value={date} onChange={(e) => setDate(e.target.value)} aria-label={t("动态日期")} style={{ width: 150 }} />
+        <select className="select" value={rel} onChange={(e) => setRel(e.target.value)} aria-label={t("批量设置放行状态")}>
+          <option value="">{t("放行状态不变")}</option>
           {RELEASE_STATES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -739,7 +744,7 @@ function BulkBar({
             }
           }}
         >
-          应用到所选
+          {t("应用到所选")}
         </button>
       </div>
     </div>
@@ -749,6 +754,7 @@ function BulkBar({
 /* ───────────────── 新增批次 ───────────────── */
 
 function NewShipmentModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (id: string) => void }) {
+  const { t } = useT();
   const db = useDb();
   const { user } = useAuth();
   const [piId, setPiId] = useState("");
@@ -797,31 +803,31 @@ function NewShipmentModal({ open, onClose, onCreated }: { open: boolean; onClose
       toastError(res.error);
       return;
     }
-    toast(`已建 ${batchNo}`);
+    toast(t("已建 {no}", { no: batchNo }));
     onCreated(res.id);
   };
 
   return (
     <Modal
       open
-      title="新增出运批次"
+      title={t("新增出运批次")}
       onClose={onClose}
       width={560}
       footer={
         <>
           <button className="btn" onClick={onClose}>
-            取消
+            {t("取消")}
           </button>
           <button className="btn btn-primary" onClick={submit} disabled={!batchNo.trim()}>
-            建这一票
+            {t("建这一票")}
           </button>
         </>
       }
     >
       <div style={{ display: "grid", gap: 12, paddingBottom: 6 }}>
-        <Field label="关联 PI" hint="选了之后批次号、国家、业务员会自动带出来">
+        <Field label={t("关联 PI")} hint={t("选了之后批次号、国家、业务员会自动带出来")}>
           <select className="select" value={piId} onChange={(e) => setPiId(e.target.value)}>
-            <option value="">暂不关联</option>
+            <option value="">{t("暂不关联")}</option>
             {openPis.map((p) => {
               const c = db.customers.find((x) => x.id === p.customerId);
               return (
@@ -834,19 +840,19 @@ function NewShipmentModal({ open, onClose, onCreated }: { open: boolean; onClose
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 10 }}>
-          <Field label="批次号">
+          <Field label={t("批次号")}>
             <input className="input num" value={batchNo} onChange={(e) => setBatchNo(e.target.value)} placeholder="MT26X05144-1" />
           </Field>
-          <Field label="分批标签">
-            <input className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="第1批" />
+          <Field label={t("分批标签")}>
+            <input className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t("第1批")} />
           </Field>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          <Field label="贸易条款">
+          <Field label={t("贸易条款")}>
             <input className="input" value={term} onChange={(e) => setTerm(e.target.value)} />
           </Field>
-          <Field label="走货方式">
+          <Field label={t("走货方式")}>
             <select className="select" value={mode} onChange={(e) => setMode(e.target.value as (typeof MODES)[number])}>
               {MODES.map((m) => (
                 <option key={m} value={m}>
@@ -855,25 +861,25 @@ function NewShipmentModal({ open, onClose, onCreated }: { open: boolean; onClose
               ))}
             </select>
           </Field>
-          <Field label="装箱方式" hint={fcl ? "整柜：4 个节点" : "拼柜：多一个进仓"}>
+          <Field label={t("装箱方式")} hint={fcl ? t("整柜：4 个节点") : t("拼柜：多一个进仓")}>
             <select className="select" value={fcl ? "1" : "0"} onChange={(e) => setFcl(e.target.value === "1")}>
-              <option value="1">整柜 FCL</option>
-              <option value="0">拼柜 LCL</option>
+              <option value="1">{t("整柜 FCL")}</option>
+              <option value="0">{t("拼柜 LCL")}</option>
             </select>
           </Field>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <Field label="目的港">
-            <input className="input" value={pod} onChange={(e) => setPod(e.target.value)} placeholder="洛杉矶" />
+          <Field label={t("目的港")}>
+            <input className="input" value={pod} onChange={(e) => setPod(e.target.value)} placeholder={t("洛杉矶")} />
           </Field>
-          <Field label="计划交期">
+          <Field label={t("计划交期")}>
             <input type="date" className="input num" value={delivery} onChange={(e) => setDelivery(e.target.value)} />
           </Field>
         </div>
 
-        <Field label="第一条动态" hint="可以留空，之后在表里点动态补">
-          <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="已下单工厂，等排产" />
+        <Field label={t("第一条动态")} hint={t("可以留空，之后在表里点动态补")}>
+          <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("已下单工厂，等排产")} />
         </Field>
       </div>
     </Modal>

@@ -6,17 +6,19 @@ import { MilestoneRail } from "@/components/MilestoneRail";
 import { EmptyState, Pill } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { useT } from "@/i18n";
 import { dashboardData } from "@/data/queries";
 import { formatCompact, formatPct, humanDate } from "@/lib/format";
 import { PROFIT_WARN_PCT } from "@/lib/rules";
 
 export default function Dashboard() {
+  const { t } = useT();
   const db = useDb();
   const { viewer, displayName } = useAuth();
   const d = useMemo(() => dashboardData(db, viewer), [db, viewer]);
 
   const hour = new Date().getHours();
-  const greeting = hour < 6 ? "还没睡" : hour < 11 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好";
+  const greeting = hour < 6 ? t("还没睡") : hour < 11 ? t("早上好") : hour < 14 ? t("中午好") : hour < 18 ? t("下午好") : t("晚上好");
 
   return (
     <div className="page">
@@ -26,8 +28,8 @@ export default function Dashboard() {
             {greeting}，{displayName}
           </h1>
           <p>
-            截至 {d.asOf} · 数据范围内 {d.kpi.orders} 张在跟订单
-            {d.risks.length ? ` · ${d.risks.length} 件事等你处理` : " · 今天没有需要处理的异常"}
+            {t("截至 {d} · 数据范围内 {n} 张在跟订单", { d: d.asOf, n: d.kpi.orders })}
+            {d.risks.length ? t(" · {n} 件事等你处理", { n: d.risks.length }) : t(" · 今天没有需要处理的异常")}
           </p>
         </div>
       </div>
@@ -35,42 +37,42 @@ export default function Dashboard() {
       <div className="kpis">
         <Kpi
           icon="wallet"
-          k="在跟订单额"
+          k={t("在跟订单额")}
           v={formatCompact(d.kpi.totalUsd)}
-          s={`${d.kpi.orders} 张订单 · 人民币单按自定汇率折算`}
+          s={t("{n} 张订单 · 人民币单按自定汇率折算", { n: d.kpi.orders })}
           spark={d.monthly.map((m) => m.amount)}
         />
-        <Kpi icon="ship" k="本月出运" v={String(d.kpi.shippedThisMonth)} s={`在途 ${d.kpi.inTransit} 票`} spark={d.monthly.map((m) => m.count)} />
+        <Kpi icon="ship" k={t("本月出运")} v={String(d.kpi.shippedThisMonth)} s={t("在途 {n} 票", { n: d.kpi.inTransit })} spark={d.monthly.map((m) => m.count)} />
         <Kpi
           icon="alert"
-          k="停滞 / 超期"
+          k={t("停滞 / 超期")}
           v={String(d.kpi.troubled)}
-          s={d.kpi.stalledMax ? `最久一票停滞 ${d.kpi.stalledMax} 天` : "没有停滞的批次"}
+          s={d.kpi.stalledMax ? t("最久一票停滞 {n} 天", { n: d.kpi.stalledMax }) : t("没有停滞的批次")}
           tone={d.kpi.troubled ? "coral" : undefined}
           to="/follow-ups?risk=1"
         />
         <Kpi
           icon="gauge"
-          k="利润率预警"
+          k={t("利润率预警")}
           v={String(d.kpi.warn)}
-          s={d.kpi.loss ? `其中 ${d.kpi.loss} 单为负毛利` : `低于 ${PROFIT_WARN_PCT}% 的订单`}
+          s={d.kpi.loss ? t("其中 {n} 单为负毛利", { n: d.kpi.loss }) : t("低于 {p}% 的订单", { p: PROFIT_WARN_PCT })}
           tone={d.kpi.loss ? "coral" : d.kpi.warn ? "amber" : undefined}
           to="/orders?risk=1"
         />
-        <Kpi icon="file" k={`${d.kpi.year} 年退税`} v={formatCompact(d.kpi.yearTax, "¥")} s="已开票口径累计" to="/tax-refund" />
-        <Kpi icon="target" k="平均利润率" v={formatPct(d.kpi.avgRate, 1)} s="数据范围内所有在跟订单" tone={d.kpi.avgRate < PROFIT_WARN_PCT ? "amber" : "jade"} />
+        <Kpi icon="file" k={t("{y} 年退税", { y: d.kpi.year })} v={formatCompact(d.kpi.yearTax, "¥")} s={t("已开票口径累计")} to="/tax-refund" />
+        <Kpi icon="target" k={t("平均利润率")} v={formatPct(d.kpi.avgRate, 1)} s={t("数据范围内所有在跟订单")} tone={d.kpi.avgRate < PROFIT_WARN_PCT ? "amber" : "jade"} />
       </div>
 
       <div className="dash">
         <div className="dash-2">
           <section className="card">
             <div className="card-head">
-              <h3>今天要处理什么</h3>
+              <h3>{t("今天要处理什么")}</h3>
               <span className="spacer" />
-              <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>每条都能点进去处理</span>
+              <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("每条都能点进去处理")}</span>
             </div>
             {d.risks.length === 0 ? (
-              <EmptyState icon="check" title="没有需要处理的异常" desc="停滞、超期、负毛利、退税未关联、额度超限，现在都是干净的。" />
+              <EmptyState icon="check" title={t("没有需要处理的异常")} desc={t("停滞、超期、负毛利、退税未关联、额度超限，现在都是干净的。")} />
             ) : (
               <div>
                 {d.risks.map((r) => (
@@ -94,11 +96,11 @@ export default function Dashboard() {
 
           <section className="card">
             <div className="card-head">
-              <h3>接下来十天的节点</h3>
+              <h3>{t("接下来十天的节点")}</h3>
             </div>
             <div className="card-body" style={{ paddingTop: 4, paddingBottom: 6 }}>
               {d.upcoming.length === 0 ? (
-                <EmptyState icon="calendar" title="近十天没有计划节点" desc="所有批次的下一个节点都不在这个窗口里。" />
+                <EmptyState icon="calendar" title={t("近十天没有计划节点")} desc={t("所有批次的下一个节点都不在这个窗口里。")} />
               ) : (
                 <div className="timeline">
                   {d.upcoming.map((s) => (
@@ -125,9 +127,9 @@ export default function Dashboard() {
 
         <section className="card">
           <div className="card-head">
-            <h3>月度出运与签约额</h3>
+            <h3>{t("月度出运与签约额")}</h3>
             <span className="spacer" />
-            <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>近 8 个月</span>
+            <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{t("近 8 个月")}</span>
           </div>
           <div className="card-body">
             <MonthlyChart data={d.monthly} />
@@ -137,7 +139,7 @@ export default function Dashboard() {
         <div className="dash-3">
           <section className="card">
             <div className="card-head">
-              <h3>目的国 TOP</h3>
+              <h3>{t("目的国 TOP")}</h3>
             </div>
             <div className="card-body">
               <BarList data={d.countries.map((c) => ({ name: c.name, value: c.value }))} format={(v) => formatCompact(v)} />
@@ -146,7 +148,7 @@ export default function Dashboard() {
 
           <section className="card">
             <div className="card-head">
-              <h3>业务员业绩</h3>
+              <h3>{t("业务员业绩")}</h3>
             </div>
             <div className="card-body">
               <div className="rank">
@@ -170,20 +172,20 @@ export default function Dashboard() {
 
           <section className="card">
             <div className="card-head">
-              <h3>利润率分布</h3>
+              <h3>{t("利润率分布")}</h3>
             </div>
             <div className="card-body">
-              <BarList data={d.buckets.map((b) => ({ name: b.label, value: b.count, tone: b.tone }))} format={(v) => `${v} 单`} />
+              <BarList data={d.buckets.map((b) => ({ name: b.label, value: b.count, tone: b.tone }))} format={(v) => t("{n} 单", { n: v })} />
             </div>
           </section>
         </div>
 
         <section className="card">
           <div className="card-head">
-            <h3>在途批次一览</h3>
+            <h3>{t("在途批次一览")}</h3>
             <span className="spacer" />
             <Link to="/follow-ups" className="btn btn-sm">
-              打开跟单表
+              {t("打开跟单表")}
               <Icon name="chevronRight" />
             </Link>
           </div>
@@ -196,17 +198,17 @@ export default function Dashboard() {
                     {s.batchLabel ? <span className="badge-batch">{s.batchLabel}</span> : null}
                   </span>
                   <span className="cell-sub" style={{ margin: 0 }}>
-                    {s.country} · {s.carrier ?? "待订舱"}
+                    {s.country} · {s.carrier ?? t("待订舱")}
                   </span>
                   <span className="spacer" />
                   <span className="muted truncate" style={{ fontSize: "var(--fs-sm)", maxWidth: 300 }}>
-                    {s.latestNote ?? "还没有动态"}
+                    {s.latestNote ?? t("还没有动态")}
                   </span>
                 </div>
                 <MilestoneRail milestones={s.milestones} />
               </div>
             ))}
-            {d.upcoming.length === 0 ? <p className="muted">近期没有在途批次。</p> : null}
+            {d.upcoming.length === 0 ? <p className="muted">{t("近期没有在途批次。")}</p> : null}
           </div>
         </section>
       </div>

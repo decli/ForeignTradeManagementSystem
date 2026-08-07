@@ -8,6 +8,7 @@
 import { centsToYuan, daysBetween, isoDate, rateFromE6, shortDate } from "@/lib/format";
 import { PROFIT_WARN_PCT, SINOSURE_WARN, STALL_DAYS } from "@/lib/rules";
 import type { Database, Scope, ShipmentMilestone, User } from "./types";
+import { tr } from "@/i18n";
 
 // ───────────────────────── 数据范围 ─────────────────────────
 
@@ -383,11 +384,11 @@ export function getOrderDetail(db: Database, id: string) {
     receivable: c ? centsToYuan(c.receivableCents) : 0,
     payable: c ? centsToYuan(c.payableCents) : 0,
     costs: [
-      { label: "采购成本", value: c ? centsToYuan(c.purchaseCostCents) : 0, tone: "accent" },
-      { label: "海运及本地费", value: c ? centsToYuan(c.freightCents) : 0, tone: "violet" },
-      { label: "报关与单证", value: c ? centsToYuan(c.customsCents) : 0, tone: "amber" },
-      { label: "银行及汇兑", value: c ? centsToYuan(c.bankCents) : 0, tone: "mute" },
-      { label: "其他", value: c ? centsToYuan(c.otherCents) : 0, tone: "jade" },
+      { label: tr("采购成本"), value: c ? centsToYuan(c.purchaseCostCents) : 0, tone: "accent" },
+      { label: tr("海运及本地费"), value: c ? centsToYuan(c.freightCents) : 0, tone: "violet" },
+      { label: tr("报关与单证"), value: c ? centsToYuan(c.customsCents) : 0, tone: "amber" },
+      { label: tr("银行及汇兑"), value: c ? centsToYuan(c.bankCents) : 0, tone: "mute" },
+      { label: tr("其他"), value: c ? centsToYuan(c.otherCents) : 0, tone: "jade" },
     ].filter((x) => x.value > 0),
     shipments: db.shipments
       .filter((s) => s.piId === id && !s.archived)
@@ -615,7 +616,7 @@ export function dashboardData(db: Database, viewer: Viewer) {
     const dt = new Date(year, now.getMonth() - 7 + i, 1);
     const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
     return {
-      label: `${dt.getMonth() + 1}月`,
+      label: tr("{m}月", { m: dt.getMonth() + 1 }),
       key,
       count: shipments.filter((s) => s.atdDate?.startsWith(key)).length,
       amount: orders.filter((o) => o.signedOn.startsWith(key)).reduce((s, o) => s + usdOf(o), 0),
@@ -655,67 +656,67 @@ export function dashboardData(db: Database, viewer: Viewer) {
     const worst = [...stalled].sort((a, b) => b.stalledDays - a.stalledDays)[0];
     risks.push({
       tone: "coral",
-      title: `${stalled.length} 个批次停滞超过 ${STALL_DAYS} 天`,
-      detail: `${worst.batchNo} 已停滞 ${worst.stalledDays} 天，最久没有新动态`,
+      title: tr("{n} 个批次停滞超过 {d} 天", { n: stalled.length, d: STALL_DAYS }),
+      detail: tr("{no} 已停滞 {d} 天，最久没有新动态", { no: worst.batchNo, d: worst.stalledDays }),
       href: "/follow-ups?risk=1",
-      action: "去跟单表处理",
+      action: tr("去跟单表处理"),
     });
   }
   if (loss) {
     const one = orders.find((o) => o.profitRate < 0);
     risks.push({
       tone: "coral",
-      title: `${loss} 单预估为负毛利`,
-      detail: one ? `${one.piNo} 利润率 ${one.profitRate.toFixed(2)}%，成本已超报价` : "需财务复核",
+      title: tr("{n} 单预估为负毛利", { n: loss }),
+      detail: one ? tr("{no} 利润率 {p}%，成本已超报价", { no: one.piNo, p: one.profitRate.toFixed(2) }) : tr("需财务复核"),
       href: "/orders?risk=1",
-      action: "去核算复核",
+      action: tr("去核算复核"),
     });
   }
   if (overdue.length) {
     risks.push({
       tone: "coral",
-      title: `${overdue.length} 个批次里程碑超期`,
-      detail: "计划日已过但还没确认实际发生，需要跟货代确认",
+      title: tr("{n} 个批次里程碑超期", { n: overdue.length }),
+      detail: tr("计划日已过但还没确认实际发生，需要跟货代确认"),
       href: "/follow-ups?risk=1",
-      action: "去确认节点",
+      action: tr("去确认节点"),
     });
   }
   if (unlinkedTax) {
     risks.push({
       tone: "amber",
-      title: `${unlinkedTax} 行退税发票未关联订单`,
-      detail: "影响本期退税申报进度",
+      title: tr("{n} 行退税发票未关联订单", { n: unlinkedTax }),
+      detail: tr("影响本期退税申报进度"),
       href: "/tax-refund?unlinked=1",
-      action: "去关联订单",
+      action: tr("去关联订单"),
     });
   }
   if (warn - loss > 0) {
     risks.push({
       tone: "amber",
-      title: `${warn - loss} 单利润率低于 ${PROFIT_WARN_PCT}%`,
-      detail: "已自动进入财务复核队列",
+      title: tr("{n} 单利润率低于 {p}%", { n: warn - loss, p: PROFIT_WARN_PCT }),
+      detail: tr("已自动进入财务复核队列"),
       href: "/orders?risk=1",
-      action: "查看预警单",
+      action: tr("查看预警单"),
     });
   }
   const overLimit = customers.filter((c) => c.limit > 0 && c.usedRatio > SINOSURE_WARN);
   if (overLimit.length) {
     risks.push({
       tone: "amber",
-      title: `${overLimit.length} 家客户中信保额度占用超 ${Math.round(SINOSURE_WARN * 100)}%`,
-      detail: `${overLimit[0].name} 额度接近上限，再下单前需先回款`,
+      title: tr("{n} 家客户中信保额度占用超 {p}%", { n: overLimit.length, p: Math.round(SINOSURE_WARN * 100) }),
+      detail: tr("{name} 额度接近上限，再下单前需先回款", { name: overLimit[0].name }),
       href: "/customers",
-      action: "查看额度",
+      action: tr("查看额度"),
     });
   }
   const todo = shipments.filter((s) => s.hasTodo).length;
   if (todo) {
     risks.push({
       tone: "accent",
-      title: `${todo} 个批次有未完成待办`,
-      detail: "在跟单表里标了待办，还没销掉",
+      title: tr("{n} 个批次有未完成待办", { n: todo }),
+      detail: tr("在跟单表里标了待办，还没销掉"),
       href: "/follow-ups?todo=1",
-      action: "去销待办",
+      action: tr("去销待办"),
     });
   }
 
@@ -775,26 +776,26 @@ export function spotlightSearch(db: Database, viewer: Viewer, q: string, limit =
     if (hits.length >= limit * 3) break;
     if (s.archived || !inScope(viewer, s.salesId, s.team)) continue;
     if (`${s.batchNo} ${s.containerNo ?? ""} ${s.country}`.toLowerCase().includes(key)) {
-      hits.push({ kind: "出运批次", label: s.batchNo, sub: `${s.country} · ${s.containerNo ?? "待订舱"}`, href: `/follow-ups?id=${s.id}` });
+      hits.push({ kind: tr("出运批次"), label: s.batchNo, sub: `${s.country} · ${s.containerNo ?? tr("待订舱")}`, href: `/follow-ups?id=${s.id}` });
     }
   }
   for (const p of db.pis) {
     if (hits.length >= limit * 3) break;
     const cust = db.customers.find((c) => c.id === p.customerId);
     if (`${p.piNo} ${p.product ?? ""} ${cust?.name ?? ""}`.toLowerCase().includes(key)) {
-      hits.push({ kind: "订单 / PI", label: p.piNo, sub: `${cust?.name ?? "—"} · ${p.product ?? "—"}`, href: `/orders?id=${p.id}` });
+      hits.push({ kind: tr("订单 / PI"), label: p.piNo, sub: `${cust?.name ?? "—"} · ${p.product ?? "—"}`, href: `/orders?id=${p.id}` });
     }
   }
   for (const c of db.customers) {
     if (hits.length >= limit * 3) break;
     if (`${c.code} ${c.name} ${c.country}`.toLowerCase().includes(key)) {
-      hits.push({ kind: "客户", label: c.name, sub: `${c.code} · ${c.country}`, href: `/customers?id=${c.id}` });
+      hits.push({ kind: tr("客户"), label: c.name, sub: `${c.code} · ${c.country}`, href: `/customers?id=${c.id}` });
     }
   }
   for (const t of db.taxInvoices) {
     if (hits.length >= limit * 3) break;
     if (`${t.invoiceNo} ${t.customsNo ?? ""}`.toLowerCase().includes(key)) {
-      hits.push({ kind: "退税发票", label: t.invoiceNo, sub: `${t.sellerName}`, href: `/tax-refund?q=${t.invoiceNo}` });
+      hits.push({ kind: tr("退税发票"), label: t.invoiceNo, sub: `${t.sellerName}`, href: `/tax-refund?q=${t.invoiceNo}` });
     }
   }
   return hits.slice(0, limit * 2);

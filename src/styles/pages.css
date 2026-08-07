@@ -1365,13 +1365,13 @@ a.link:hover,
    位移一律 ≤2px，时长走 --dur-1（110ms），比人眼察觉动画的阈值略短。 */
 
 /* KPI 卡。
-   之前只改了边框色，2px 的位移在一排六张卡里根本看不出来 —— 反馈弱到等于没有。
-   现在四件事一起发生，但每件都很轻，叠起来才「有质感」而不是「在乱动」：
-     1. 抬起 3px + 放大 1.5% —— 卡片朝你迎上来
-     2. 外圈一道 accent 光晕（两层 box-shadow：近处紧实、远处扩散）
-     3. 顶边一条 accent 渐变线从中间向两侧拉开
-     4. 图标从灰变 accent，迷你趋势线从 0.42 提到 0.8
-   位移和缩放都用 --ease，收尾慢，手感才不廉价。 */
+   之前只改边框色 + 2px 位移，一排六张卡里根本看不出来，反馈弱到等于没有。
+   现在是一组会跟着鼠标走的效果，但每一层都压得很轻 ——
+   位移 3px、倾斜 3.2°、光晕不到 30% 不透明度。叠起来是「有质感」，
+   任何一层单独放大都会变成「在乱动」，这是商业软件不是游戏 UI。
+
+   跟随的位置由 lib/spotlight.ts 写进 --mx / --my / --tx / --ty，
+   一个委托监听覆盖全站，页面里不需要写任何东西。 */
 .kpi {
   position: relative;
   transition:
@@ -1379,35 +1379,65 @@ a.link:hover,
     box-shadow var(--dur-2) var(--ease),
     transform var(--dur-2) var(--ease);
 }
-/* 顶边那条线。卡片本身 overflow: hidden（要裁住迷你趋势线），
-   所以贴 top: 0 画在里面，别用负值，会被切掉。 */
+
+/* 第一层：聚光。一团跟着指针走的柔光，卡片内部的「被照亮」感就靠它 */
+.kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 0%),
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent 68%
+  );
+  opacity: 0;
+  transition: opacity var(--dur-2);
+  pointer-events: none;
+}
+.kpi:hover::before {
+  opacity: 1;
+}
+
+/* 第二层：边缘高光。同一个圆心，但用 mask 只留 1px 的描边 ——
+   于是「亮的那一段边框」始终朝着鼠标，指针绕一圈，高光跟着转一圈。 */
 .kpi::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent-hi), transparent);
-  transform: translateX(-50%);
-  transition: width var(--dur-3) var(--ease), opacity var(--dur-2);
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1.2px;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    var(--accent-hi),
+    color-mix(in srgb, var(--accent) 30%, transparent) 40%,
+    transparent 72%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   opacity: 0;
-  z-index: 2;
-}
-.kpi:hover {
-  transform: translateY(-3px) scale(1.015);
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent),
-    0 10px 26px -6px color-mix(in srgb, var(--accent) 30%, transparent),
-    var(--shadow-2);
+  transition: opacity var(--dur-2);
+  pointer-events: none;
 }
 .kpi:hover::after {
-  width: 62%;
   opacity: 1;
 }
-/* 可点的那几张再多一层暗示：按下去有回弹 */
+
+/* 第三层：整卡抬起 + 朝指针那一侧压下去 */
+.kpi:hover {
+  /* perspective() 必须写在 transform 链的**最前面**，而且得写在元素自己身上：
+     把 perspective 属性挂在 .kpi 上只会作用于它的子元素，卡片本身照样是平的，
+     rotateX/Y 出来的是「歪」不是「转」。 */
+  transform: perspective(900px) translateY(-3px) scale(1.015) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 14px 30px -8px color-mix(in srgb, var(--accent) 30%, transparent),
+    var(--shadow-2);
+}
 a.kpi:active,
 button.kpi:active {
   transform: translateY(-1px) scale(1.005);
@@ -1426,35 +1456,48 @@ button.kpi:focus-visible {
   color: var(--accent);
   transform: scale(1.12);
 }
-/* 迷你趋势线平时压得很淡，悬停时提上来 —— 想看趋势的人自然会把鼠标放上去 */
 .kpi .kpi-spark {
   transition: opacity var(--dur-2);
 }
 .kpi:hover .kpi-spark {
   opacity: 0.8;
 }
-/* 带色调的卡（预警 / 达标）光晕跟着它自己的颜色走，不然红色卡亮出一圈蓝边 */
-.kpi[data-tone="coral"]:hover {
-  border-color: color-mix(in srgb, var(--coral) 45%, var(--line));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 12%, transparent),
-    0 10px 26px -6px color-mix(in srgb, var(--coral) 28%, transparent), var(--shadow-2);
+
+/* 带色调的卡（预警红 / 达标绿）整套跟着自己的颜色走 ——
+   不然红色卡悬停时亮出一圈蓝边，那不是强调，是打架。 */
+.kpi[data-tone="coral"] { --glow: var(--coral); }
+.kpi[data-tone="amber"] { --glow: var(--amber); }
+.kpi[data-tone="jade"] { --glow: var(--jade); }
+.kpi[data-tone]::before {
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%),
+    color-mix(in srgb, var(--glow, var(--accent)) 16%, transparent), transparent 68%);
 }
-.kpi[data-tone="coral"]:hover::after { background: linear-gradient(90deg, transparent, var(--coral), transparent); }
-.kpi[data-tone="coral"]:hover .kpi-k svg { color: var(--coral); }
-.kpi[data-tone="amber"]:hover {
-  border-color: color-mix(in srgb, var(--amber) 45%, var(--line));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 12%, transparent),
-    0 10px 26px -6px color-mix(in srgb, var(--amber) 28%, transparent), var(--shadow-2);
+.kpi[data-tone]::after {
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%),
+    var(--glow, var(--accent-hi)),
+    color-mix(in srgb, var(--glow, var(--accent)) 30%, transparent) 40%, transparent 72%);
 }
-.kpi[data-tone="amber"]:hover::after { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
-.kpi[data-tone="amber"]:hover .kpi-k svg { color: var(--amber); }
-.kpi[data-tone="jade"]:hover {
-  border-color: color-mix(in srgb, var(--jade) 45%, var(--line));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jade) 12%, transparent),
-    0 10px 26px -6px color-mix(in srgb, var(--jade) 28%, transparent), var(--shadow-2);
+.kpi[data-tone]:hover {
+  border-color: color-mix(in srgb, var(--glow, var(--accent)) 34%, var(--line));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--glow, var(--accent)) 10%, transparent),
+    0 14px 30px -8px color-mix(in srgb, var(--glow, var(--accent)) 30%, transparent),
+    var(--shadow-2);
 }
-.kpi[data-tone="jade"]:hover::after { background: linear-gradient(90deg, transparent, var(--jade), transparent); }
-.kpi[data-tone="jade"]:hover .kpi-k svg { color: var(--jade); }
+.kpi[data-tone]:hover .kpi-k svg {
+  color: var(--glow, var(--accent));
+}
+
+/* 关掉动效之后只留一个边框反馈：不转、不移、不发光 */
+@media (prefers-reduced-motion: reduce) {
+  .kpi:hover {
+    transform: none;
+  }
+  .kpi::before,
+  .kpi::after {
+    display: none;
+  }
+}
 
 /* 卡片容器：列表页那些 .card 也给一档，跟 KPI 一个语言 */
 .card {

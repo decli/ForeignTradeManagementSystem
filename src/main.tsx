@@ -5,6 +5,7 @@ import App from "./App";
 import { DataProvider } from "./data/DataProvider";
 import { AuthProvider } from "./auth/AuthProvider";
 import { LangProvider } from "./i18n";
+import { initSpotlight } from "./lib/spotlight";
 import "./styles/index.css";
 
 /**
@@ -13,6 +14,9 @@ import "./styles/index.css";
  * 路由 basename 跟着走，两种部署共用一套代码。
  */
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// 卡片光晕跟随鼠标。委托一次就覆盖全站的 .kpi，页面里不用管
+initSpotlight();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

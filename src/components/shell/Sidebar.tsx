@@ -16,6 +16,9 @@ import { useT } from "@/i18n";
  * 展开态可以拖宽度（200–360，记住），可以整组折叠，可以把常用模块钉到顶上；
  * 收起态变成 64px 图标轨，hover 出气泡认路。窄屏由外层切成浮层。
  */
+/** 「常用」的折叠状态跟别的分组存在一起，用一个不会跟分组名撞车的键 */
+const PIN_KEY = "__pins__";
+
 export function Sidebar({
   collapsed,
   onToggle,
@@ -70,6 +73,8 @@ export function Sidebar({
     [currentSlug],
   );
 
+  const pinsOpen = !closedGroups.includes(PIN_KEY);
+
   const togglePin = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -79,6 +84,7 @@ export function Sidebar({
   const renderItem = (item: (typeof NAV)[number]["items"][number], inPinned = false) => {
     const href = navHref(item);
     const badge = counts[item.slug];
+    const isPinned = pinned.includes(item.slug);
     return (
       <li key={`${inPinned ? "p" : "g"}-${item.slug}`}>
         <NavLink
@@ -95,20 +101,27 @@ export function Sidebar({
           {item.icon ? <Icon name={item.icon} size={15} className="rail-ico" /> : <span className="rail-dot" />}
           <span className="label truncate">{navTitle(item, lang)}</span>
           {!item.built ? <span className="tag plan">{t("规划中")}</span> : null}
-          {badge ? (
-            <span className="badge" data-tone={item.slug === "follow-ups" ? "coral" : "amber"}>
-              {badge}
+          {/* 角标和置顶按钮共用最右边这一格，靠 CSS 交叉淡入淡出：
+              原来写成「有角标就不给置顶按钮」，结果跟单表（角标 10）永远取消不掉置顶。
+              不并排是因为 rail 最窄 200px，并排会把标题挤没；
+              而且「扫视时看角标、伸手时才要按钮」本来就是两个时刻。 */}
+          {item.built ? (
+            <span className="rail-slot">
+              {badge ? (
+                <span className="badge" data-tone={item.slug === "follow-ups" ? "coral" : "amber"}>
+                  {badge}
+                </span>
+              ) : null}
+              <button
+                className="pin"
+                data-on={isPinned ? "1" : "0"}
+                onClick={(e) => togglePin(item.slug, e)}
+                aria-label={`${t(isPinned ? "取消置顶" : "置顶到常用")} ${navTitle(item, lang)}`}
+                data-tip={t(isPinned ? "取消置顶" : "置顶到常用")}
+              >
+                <Icon name="pin" />
+              </button>
             </span>
-          ) : item.built ? (
-            <button
-              className="pin"
-              data-on={pinned.includes(item.slug) ? "1" : "0"}
-              onClick={(e) => togglePin(item.slug, e)}
-              aria-label={`${t(pinned.includes(item.slug) ? "取消置顶" : "置顶到常用")} ${navTitle(item, lang)}`}
-              data-tip={t(pinned.includes(item.slug) ? "取消置顶" : "置顶到常用")}
-            >
-              <Icon name="pin" />
-            </button>
           ) : null}
         </NavLink>
       </li>
@@ -130,13 +143,21 @@ export function Sidebar({
       </div>
 
       <nav className="rail-nav">
-        {pinnedItems.length && !collapsed ? (
-          <div className="rail-group" data-pins="1" data-open="1">
-            <div className="rail-group-h">
+        {/* 置顶多了会把下面的分组挤出屏幕，所以它跟别的分组一样能收起来。
+            一条也没置顶时整块不渲染 —— 留一个空的「常用」标题没有任何意义。 */}
+        {pinnedItems.length > 0 && !collapsed ? (
+          <div className="rail-group" data-pins="1" data-open={pinsOpen ? "1" : "0"}>
+            <button
+              className="rail-group-h"
+              onClick={() => setClosedGroups((c) => (c.includes(PIN_KEY) ? c.filter((x) => x !== PIN_KEY) : [...c, PIN_KEY]))}
+              aria-expanded={pinsOpen}
+              aria-label={`${t("常用")} · ${t(pinsOpen ? "已展开，点击收起" : "已收起，点击展开")}`}
+            >
+              <Icon name="chevronDown" className="chev" />
               <Icon name="star" className="rail-group-ico" />
               <span className="truncate">{t("常用")}</span>
               <span className="rail-group-n">{pinnedItems.length}</span>
-            </div>
+            </button>
             <ul className="rail-items">{pinnedItems.map((i) => renderItem(i, true))}</ul>
           </div>
         ) : null}

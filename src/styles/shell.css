@@ -172,10 +172,6 @@ button.rail-group-h:hover .chev {
 .rail-group[data-open="0"] .rail-items {
   display: none;
 }
-/* 置顶区没有折叠，别留一个空的三角位 */
-.rail-group[data-pins="1"] .rail-group-h {
-  padding-left: 9px;
-}
 .rail-group-n {
   margin-left: auto;
   flex: none;
@@ -1084,4 +1080,52 @@ button.rail-group-h:hover .rail-group-n {
     top: 6vh;
     max-height: 82vh;
   }
+}
+
+/* ── 角标 / 置顶按钮共用的那一格 ──
+   两者叠在同一个位置交叉淡入淡出：静止时看角标，手伸过来时换成按钮。
+   固定宽高，避免切换的瞬间标题被挤动一下。 */
+.rail-slot {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 18px;
+  margin-left: auto;
+}
+.rail-slot > * {
+  position: absolute;
+  inset: 0;
+  margin: 0 !important;
+  transition: opacity var(--dur-1);
+}
+.rail-slot .badge {
+  display: grid;
+  place-items: center;
+  opacity: 1;
+}
+.rail-slot .pin {
+  opacity: 0;
+  pointer-events: none;
+}
+.rail-item:hover .rail-slot .badge,
+.rail-item:focus-within .rail-slot .badge {
+  opacity: 0;
+}
+.rail-item:hover .rail-slot .pin,
+.rail-item:focus-within .rail-slot .pin,
+.rail-slot .pin:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* 已置顶的项，图钉常亮一档 —— 不用悬停也知道它为什么在常用里 */
+.rail-slot .pin[data-on="1"] {
+  opacity: 0.55;
+  pointer-events: auto;
+}
+.rail-item:hover .rail-slot .pin[data-on="1"] {
+  opacity: 1;
+}
+/* 有角标又已置顶：角标优先（它是要看的信息），图钉等悬停 */
+.rail-item:not(:hover) .rail-slot:has(.badge) .pin {
+  opacity: 0;
 }

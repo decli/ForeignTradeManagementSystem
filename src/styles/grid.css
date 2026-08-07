@@ -586,6 +586,23 @@ table.grid thead th[data-hot] {
   transform: none;
   pointer-events: auto;
 }
+/* 指针进了感应带：条子变粗、滑块转成 accent。
+   「现在滚轮是横着走的」必须看得出来，否则用户会以为页面卡住了。 */
+.grid-xbar[data-near="1"] {
+  height: 21px;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  box-shadow: 0 -8px 22px -8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.grid-xbar {
+  transition: opacity var(--dur-2), transform var(--dur-2) var(--ease), height var(--dur-2) var(--ease),
+    border-color var(--dur-2), box-shadow var(--dur-2);
+}
+.grid-xbar[data-near="1"]::-webkit-scrollbar {
+  height: 13px;
+}
+.grid-xbar[data-near="1"]::-webkit-scrollbar-thumb {
+  background: var(--accent);
+}
 .grid-xbar > div {
   height: 1px;
 }

@@ -14,6 +14,12 @@ const PiRegistry = lazy(() => import("./pages/PiRegistry"));
 const Audit = lazy(() => import("./pages/Audit"));
 const Settings = lazy(() => import("./pages/Settings"));
 const ModulePlaceholder = lazy(() => import("./pages/ModulePlaceholder"));
+// 采购协同五个模块打一个包：采购的人进来往往连着看
+const Suppliers = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Suppliers })));
+const Products = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Products })));
+const Rfqs = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Rfqs })));
+const Contracts = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Contracts })));
+const Productions = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Productions })));
 
 function PageFallback() {
   return (
@@ -52,6 +58,11 @@ export default function App() {
           <Route path="/tax-refund" element={<TaxRefund />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/pi" element={<PiRegistry />} />
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/rfq" element={<Rfqs />} />
+          <Route path="/purchase-contract" element={<Contracts />} />
+          <Route path="/production" element={<Productions />} />
           <Route path="/audit" element={<Audit />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/m/:slug" element={<ModulePlaceholder />} />

@@ -55,11 +55,11 @@ export const NAV: NavGroup[] = [
     title: "采购协同",
     icon: "cart",
     items: [
-      { slug: "rfq", title: "询价单", titleEn: "RFQ", icon: "search", desc: "一次询多家供应商，横向比价后一键转生产单。", scope: ["多供应商比价", "历史价对比", "转生产单"] },
-      { slug: "production", title: "生产单", titleEn: "Production Orders", icon: "play", desc: "下给工厂的生产指令，跟踪排产与交期。", scope: ["排产进度", "交期预警", "验货节点", "变更留痕"] },
-      { slug: "purchase-contract", title: "采购合同", titleEn: "Purchase Contracts", icon: "file", desc: "合同条款、付款节奏与实际付款的对账。", scope: ["条款模板", "付款计划", "执行对账", "盖章件归档"] },
-      { slug: "products", title: "产品管理", titleEn: "Products", icon: "tag", desc: "产品主档，HS 编码与退税率挂这里，退税计算直接取。", scope: ["HS 编码", "退税率", "规格包装", "历史成本"] },
-      { slug: "suppliers", title: "供应商管理", titleEn: "Suppliers", icon: "building", desc: "供应商档案、资质有效期与供货评分。", scope: ["资质到期提醒", "供货评分", "开票信息", "账期"] },
+      { slug: "rfq", title: "询价单", titleEn: "RFQ", built: true, href: "/rfq", icon: "search", desc: "一次询多家供应商，横向比价后一键转生产单。", scope: ["多供应商比价", "历史价对比", "转生产单"] },
+      { slug: "production", title: "生产单", titleEn: "Production Orders", built: true, href: "/production", icon: "play", desc: "下给工厂的生产指令，跟踪排产与交期。", scope: ["排产进度", "交期预警", "验货节点", "变更留痕"] },
+      { slug: "purchase-contract", title: "采购合同", titleEn: "Purchase Contracts", built: true, href: "/purchase-contract", icon: "file", desc: "合同条款、付款节奏与实际付款的对账。", scope: ["条款模板", "付款计划", "执行对账", "盖章件归档"] },
+      { slug: "products", title: "产品管理", titleEn: "Products", built: true, href: "/products", icon: "tag", desc: "产品主档，HS 编码与退税率挂这里，退税计算直接取。", scope: ["HS 编码", "退税率", "规格包装", "历史成本"] },
+      { slug: "suppliers", title: "供应商管理", titleEn: "Suppliers", built: true, href: "/suppliers", icon: "building", desc: "供应商档案、资质有效期与供货评分。", scope: ["资质到期提醒", "供货评分", "开票信息", "账期"] },
     ],
   },
   {

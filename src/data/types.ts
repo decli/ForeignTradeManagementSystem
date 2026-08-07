@@ -230,9 +230,11 @@ export type Database = {
   auditLogs: AuditLog[];
   savedViews: SavedView[];
   credentials: Credential[];
+  /** 采购协同与资金侧，见 ops-types.ts */
+  ops: import("./ops-types").OpsData;
 };
 
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 /** 演示口令：登录页会直接写出来，没什么好藏的 */
 export const DEMO_PASSWORD = "demo1234";

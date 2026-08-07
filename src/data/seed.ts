@@ -31,6 +31,7 @@ import type {
   User,
 } from "./types";
 import { DB_VERSION } from "./types";
+import { buildOpsSeed } from "./ops-seed";
 
 /** 原始台账的基准日 */
 const ANCHOR = "2026-08-07";
@@ -489,7 +490,7 @@ export function buildSeed(): Database {
   }
   auditLogs.sort((a, b) => b.at.localeCompare(a.at));
 
-  return {
+  const base: Database = {
     version: DB_VERSION,
     seededAt: now,
     users,
@@ -506,5 +507,9 @@ export function buildSeed(): Database {
     savedViews: [],
     // 口令摘要要跑 PBKDF2，是异步的；seed 保持同步，凭据在 db.load() 里补齐
     credentials: [],
+    ops: { suppliers: [], products: [], rfqs: [], rfqQuotes: [], contracts: [], productions: [], payments: [], accounts: [] },
   };
+  // 采购与资金要挂在已有的 PI / 客户上，所以得等主数据齐了再生成
+  base.ops = buildOpsSeed(base);
+  return base;
 }

@@ -850,3 +850,62 @@ button.kpi:hover {
     gap: 2px;
   }
 }
+
+/* ── 询价比价卡 ──
+   一屏之内把「便宜 / 快 / 靠谱」三件事摆在一起：单价最显眼，
+   交期、起订、账期、评分排成一行，选谁一眼有数。 */
+.quotes {
+  display: grid;
+  gap: 8px;
+}
+.quote {
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  transition: border-color var(--dur-1), box-shadow var(--dur-1);
+}
+.quote:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-1);
+}
+.quote[data-best="1"] {
+  border-color: var(--accent-soft-2);
+  background: var(--accent-soft);
+}
+.quote[data-awarded="1"] {
+  border-color: var(--jade);
+  box-shadow: 0 0 0 1px var(--jade);
+  background: var(--jade-soft);
+}
+.quote-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.quote-price {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  white-space: nowrap;
+}
+.quote-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.quote-meta b {
+  color: var(--text);
+  font-weight: 600;
+  margin-left: 2px;
+}
+.quote-valid {
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-4);
+}

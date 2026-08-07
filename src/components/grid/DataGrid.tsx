@@ -162,6 +162,26 @@ export function DataGrid<T extends { id: string }>({
     }
   };
 
+  /* 宽表横向滚过去之后很容易看串行 —— 悬停时把整列淡淡地点亮一下。
+     纯 CSS 办不到：同一列的格子不是兄弟节点，而且 CSS 也没法拿一个属性值
+     去匹配另一个属性（`[data-col=attr(data-hc)]` 不存在）。所以只能在换列时
+     给那一列的格子打个 data-hot。事件委托 + 只在列真的变了才写 DOM，
+     一页最多五十来个节点，比每格挂一个 onMouseEnter 便宜得多。 */
+  const hotCol = useRef("");
+  const trackCol = useCallback((e: React.MouseEvent<HTMLTableElement>) => {
+    const cell = (e.target as HTMLElement).closest?.("[data-col]") as HTMLElement | null;
+    const key = cell?.dataset.col ?? "";
+    if (key === hotCol.current) return;
+    const table = e.currentTarget;
+    table.querySelectorAll<HTMLElement>("[data-hot]").forEach((n) => n.removeAttribute("data-hot"));
+    if (key) table.querySelectorAll<HTMLElement>(`[data-col="${CSS.escape(key)}"]`).forEach((n) => (n.dataset.hot = ""));
+    hotCol.current = key;
+  }, []);
+  const clearCol = useCallback((e: React.MouseEvent<HTMLTableElement>) => {
+    e.currentTarget.querySelectorAll<HTMLElement>("[data-hot]").forEach((n) => n.removeAttribute("data-hot"));
+    hotCol.current = "";
+  }, []);
+
   const footer = (
     <div className="grid-foot">
       <span>
@@ -296,7 +316,7 @@ export function DataGrid<T extends { id: string }>({
         role="region"
         aria-label="数据表格，方向键移动，回车打开详情"
       >
-        <table className="grid" style={{ minWidth: visible.reduce((s, c) => s + widthOf(c), 0) }}>
+        <table className="grid" onMouseOver={trackCol} onMouseLeave={clearCol} style={{ minWidth: visible.reduce((s, c) => s + widthOf(c), 0) }}>
           <colgroup>
             {onSelectedChange ? <col style={{ width: 38 }} /> : null}
             {visible.map((c) => (
@@ -331,6 +351,7 @@ export function DataGrid<T extends { id: string }>({
               {visible.map((c) => (
                 <th
                   key={c.key}
+                  data-col={c.key}
                   data-freeze={c.freeze ? "" : undefined}
                   data-freeze-last={c.key === lastFreezeKey ? "" : undefined}
                   style={c.freeze ? { ["--fl" as string]: `${(freezeLefts[c.key] ?? 0) + (onSelectedChange ? 38 : 0)}px` } : undefined}
@@ -389,6 +410,7 @@ export function DataGrid<T extends { id: string }>({
                   {visible.map((c) => (
                     <td
                       key={c.key}
+                      data-col={c.key}
                       data-freeze={c.freeze ? "" : undefined}
                       data-freeze-last={c.key === lastFreezeKey ? "" : undefined}
                       style={{

@@ -7,6 +7,7 @@
  */
 
 import { formatCompact } from "@/lib/format";
+import { tr } from "@/i18n";
 
 /** KPI 卡背景上的那条趋势线 */
 export function Sparkline({ values, tone = "accent" }: { values: number[]; tone?: string }) {
@@ -58,9 +59,12 @@ export function MonthlyChart({ data }: { data: { label: string; count: number; a
           </g>
         ))}
         {data.map((d, i) => (
-          <g key={d.label}>
+          /* bar-hit 是一条贯穿全高的透明命中区：柱子矮的时候（比如只出运 1 票）
+             实际可悬停的高度只有几像素，鼠标很难对上。加了它，整列都能悬停。 */
+          <g key={d.label} className="bar-g">
+            <rect className="bar-hit" x={x(i) - bw} y={padT} width={bw * 2} height={ih} rx="4" />
             <rect className="bar-a" x={x(i) - bw / 2} y={yBar(d.count)} width={bw} height={Math.max(1, padT + ih - yBar(d.count))} rx="3">
-              <title>{`${d.label} 出运 ${d.count} 票 · 签约 ${formatCompact(d.amount)}`}</title>
+              <title>{tr("{m} 出运 {n} 票 · 签约 {v}", { m: d.label, n: d.count, v: formatCompact(d.amount) })}</title>
             </rect>
             <text x={x(i)} y={H - 6} textAnchor="middle">
               {d.label}
@@ -70,7 +74,7 @@ export function MonthlyChart({ data }: { data: { label: string; count: number; a
         <path className="line-a" d={line} />
         {data.map((d, i) => (
           <circle key={d.label} cx={x(i)} cy={yLine(d.amount)} r="2.8" fill="var(--surface)" stroke="var(--jade)" strokeWidth="2">
-            <title>{`${d.label} 签约 ${formatCompact(d.amount)}`}</title>
+            <title>{tr("{m} 签约 {v}", { m: d.label, v: formatCompact(d.amount) })}</title>
           </circle>
         ))}
         <text x={W - padR + 6} y={padT + 3} textAnchor="start" style={{ fill: "var(--jade)" }}>

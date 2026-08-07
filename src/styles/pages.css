@@ -1357,3 +1357,99 @@ a.link:hover,
   opacity: 1;
   transform: none;
 }
+
+/* ══════════════════ 悬停与选中的微反馈 ══════════════════
+   原则：**只在指针停在上面时给回应，动作要短、幅度要小**。
+   看板上同时摆着六张卡、几十行数据，任何一个元素动得太大都会把注意力抢走 ——
+   反馈是为了确认「我指的是这个」，不是为了表演。
+   位移一律 ≤2px，时长走 --dur-1（110ms），比人眼察觉动画的阈值略短。 */
+
+/* KPI 卡：原来只有可点的卡（a/button）有悬停态，静态卡毫无反应，
+   同一排里有的会动有的不动，看着像坏了。现在统一给反馈，
+   可点的那几张再多一层「抬起来」暗示它能点。 */
+.kpi {
+  transition: border-color var(--dur-1), box-shadow var(--dur-1), transform var(--dur-1);
+}
+.kpi:hover {
+  border-color: var(--line-strong);
+}
+a.kpi:hover,
+button.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+}
+a.kpi:active,
+button.kpi:active {
+  transform: translateY(0);
+}
+/* 迷你趋势线平时压得很淡，悬停时提上来 —— 想看趋势的人自然会把鼠标放上去 */
+.kpi .kpi-spark {
+  transition: opacity var(--dur-2);
+}
+.kpi:hover .kpi-spark {
+  opacity: 0.72;
+}
+
+/* 卡片容器：列表页那些 .card 也给一档，跟 KPI 一个语言 */
+.card {
+  transition: border-color var(--dur-1), box-shadow var(--dur-1);
+}
+.card:hover {
+  border-color: var(--line-strong);
+}
+
+/* 月度柱状图：悬停的那一组提亮，其余压暗。
+   不做 tooltip —— 图上本来就有数值轴，再弹一个框是重复信息。 */
+.chart-svg .bar-a,
+.chart-svg .bar-b {
+  transition: opacity var(--dur-1);
+}
+.chart-svg:hover .bar-a,
+.chart-svg:hover .bar-b {
+  opacity: 0.45;
+}
+.chart-svg .bar-g:hover .bar-a,
+.chart-svg .bar-g:hover .bar-b {
+  opacity: 1;
+}
+.chart-svg .bar-g:hover .bar-hit {
+  fill: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.bar-hit {
+  fill: transparent;
+  transition: fill var(--dur-1);
+}
+
+/* 排行条：悬停时条子本身亮一档，配合行文字 */
+.rank-row .bar > i {
+  transition: filter var(--dur-1), transform var(--dur-1);
+  transform-origin: left center;
+}
+.rank-row:hover .bar > i {
+  filter: saturate(1.25) brightness(1.06);
+}
+
+/* 成本构成堆叠条：悬停某一段时把它拎出来，其余退后 */
+.stack {
+  display: flex;
+}
+.stack > i {
+  transition: opacity var(--dur-1), filter var(--dur-1);
+}
+.stack:hover > i {
+  opacity: 0.4;
+}
+.stack > i:hover {
+  opacity: 1;
+  filter: brightness(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi,
+  a.kpi:hover,
+  button.kpi:hover,
+  .report:hover,
+  .rank-row:hover .bar > i {
+    transform: none;
+  }
+}

@@ -1125,4 +1125,6 @@ export const EN: Record<string, string> = {
   "{no} 利润率 {p}%，成本已超报价": "{no} at {p}% — cost has passed the quote",
   "需财务复核": "Needs finance review",
   "{m}月": "M{m}",
+  "{m} 出运 {n} 票 · 签约 {v}": "{m}: {n} shipments · {v} booked",
+  "{m} 签约 {v}": "{m}: {v} booked",
 };

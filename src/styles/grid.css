@@ -539,3 +539,24 @@ table.grid thead th > .grid-th {
     flex: 1;
   }
 }
+
+/* ── 交叉高亮 ──
+   行高亮已有（tr:hover），列高亮由 DataGrid 给当前列的格子打 data-hot。
+   两条线在鼠标那一格交汇，宽表横向滚过去也不容易看串行。
+   刻意做得很淡 —— 这是辅助定位，不是选中态，抢了 data-sel 的戏就本末倒置。 */
+table.grid th[data-col],
+table.grid td[data-col] {
+  transition: background var(--dur-1);
+}
+table.grid tbody tr:not([data-sel="1"]) td[data-hot] {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+table.grid tbody tr:hover:not([data-sel="1"]) td[data-hot] {
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-2));
+}
+table.grid thead th[data-hot] .grid-th {
+  color: var(--text);
+}
+table.grid thead th[data-hot] {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}

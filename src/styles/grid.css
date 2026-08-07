@@ -626,3 +626,16 @@ table.grid thead th[data-hot] {
     transform: none;
   }
 }
+
+/* 用的是原生滚动条时（代理条已隐退），指针进热区没有任何提示 ——
+   代理条那套加粗提亮此刻根本没显示。这里点亮表格的下边缘补上，
+   两种情况的反馈才是同一件事。 */
+.grid-scroll[data-xhot="1"] {
+  box-shadow: inset 0 -3px 0 -1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.grid-scroll[data-xhot="1"]::-webkit-scrollbar-thumb:horizontal {
+  background: var(--accent);
+}
+.grid-scroll {
+  transition: box-shadow var(--dur-2);
+}

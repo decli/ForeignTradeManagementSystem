@@ -214,12 +214,12 @@ button.rail-group-h:hover .rail-group-n {
    子项左边一条竖线挂在分组头的图标下面。
    有了这条线，「哪些项属于哪一组」是看出来的，不是数缩进算出来的；
    选中条也长在这条线上，「你在这一支」一眼到底。 */
-.rail-group:not([data-pins="1"]) .rail-items {
+.rail-group .rail-items {
   position: relative;
   margin-left: 11px;
   padding-left: 9px;
 }
-.rail-group:not([data-pins="1"]) .rail-items::before {
+.rail-group .rail-items::before {
   content: "";
   position: absolute;
   left: 0;
@@ -232,6 +232,12 @@ button.rail-group-h:hover .rail-group-n {
 }
 .rail-group[data-holds-current="1"] .rail-items::before {
   background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+/* 常用区的导线画成虚线：缩进要跟别的分组一样（不然它的子项看着像一级菜单），
+   但它装的是**快捷方式**不是一个真的分支 —— 虚线把这层意思留住。 */
+.rail-group[data-pins="1"] .rail-items::before {
+  background: none;
+  border-left: 1.5px dashed color-mix(in srgb, currentColor 20%, transparent);
 }
 
 .rail-item {

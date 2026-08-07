@@ -1,12 +1,14 @@
 import { useMemo } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { Icon } from "@/components/Icon";
+import { Wordmark } from "@/components/Brand";
 import { Avatar } from "@/components/ui/bits";
 import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
 import { listShipments } from "@/data/queries";
 import { useDragResize, useStored } from "@/lib/hooks";
-import { NAV, navHref } from "@/lib/nav";
+import { NAV, navHref, navTitle } from "@/lib/nav";
+import { useT } from "@/i18n";
 
 /**
  * 侧栏。
@@ -33,7 +35,7 @@ export function Sidebar({
 }) {
   const db = useDb();
   const { user, viewer, displayName, picture } = useAuth();
-  const { pathname } = useLocation();
+  const { t, lang } = useT();
   const [closedGroups, setClosedGroups] = useStored<string[]>("mt.rail.closed", []);
   const [pinned, setPinned] = useStored<string[]>("mt.rail.pinned", ["follow-ups", "dashboard"]);
   const { dragging, onPointerDown } = useDragResize(() => width, onWidth, { min: 200, max: 380 });
@@ -64,11 +66,17 @@ export function Sidebar({
     const badge = counts[item.slug];
     return (
       <li key={`${inPinned ? "p" : "g"}-${item.slug}`}>
-        <NavLink to={href} className="rail-item" data-label={item.title} onClick={onNavigate} end={href === "/dashboard"}>
+        <NavLink
+          to={href}
+          className="rail-item"
+          data-tip={collapsed ? navTitle(item, lang) : undefined}
+          onClick={onNavigate}
+          end={href === "/dashboard"}
+        >
           {/* 每个模块都有图标 —— 收成图标轨之后，一列没有区别的圆点等于没导航 */}
           {item.icon ? <Icon name={item.icon} size={15} className="rail-ico" /> : <span className="rail-dot" />}
-          <span className="label truncate">{item.title}</span>
-          {!item.built ? <span className="tag plan">规划中</span> : null}
+          <span className="label truncate">{navTitle(item, lang)}</span>
+          {!item.built ? <span className="tag plan">{t("规划中")}</span> : null}
           {badge ? (
             <span className="badge" data-tone={item.slug === "follow-ups" ? "coral" : "amber"}>
               {badge}
@@ -78,8 +86,8 @@ export function Sidebar({
               className="pin"
               data-on={pinned.includes(item.slug) ? "1" : "0"}
               onClick={(e) => togglePin(item.slug, e)}
-              aria-label={pinned.includes(item.slug) ? `取消置顶 ${item.title}` : `置顶 ${item.title}`}
-              title={pinned.includes(item.slug) ? "取消置顶" : "置顶到常用"}
+              aria-label={`${t(pinned.includes(item.slug) ? "取消置顶" : "置顶到常用")} ${navTitle(item, lang)}`}
+              data-tip={t(pinned.includes(item.slug) ? "取消置顶" : "置顶到常用")}
             >
               <Icon name="pin" />
             </button>
@@ -90,21 +98,15 @@ export function Sidebar({
   };
 
   return (
-    <aside className="rail" aria-label="模块导航">
+    <aside className="rail" aria-label={t("模块")}>
       <div className="rail-brand">
-        <span className="rail-mark">
-          <Icon name="ship" />
-        </span>
-        <span className="rail-name">
-          <b>MT 通商</b>
-          <span>MT TRADEFLOW</span>
-        </span>
+        <Wordmark />
       </div>
 
       <div className="rail-search">
-        <button onClick={onOpenPalette} title="搜索单据与模块 · ⌘K">
+        <button onClick={onOpenPalette} data-tip={t("搜索 / 跳转") + " · ⌘K"}>
           <Icon name="search" />
-          <span>搜索 / 跳转</span>
+          <span>{t("搜索 / 跳转")}</span>
           <kbd style={{ marginLeft: "auto" }}>⌘K</kbd>
         </button>
       </div>
@@ -114,7 +116,7 @@ export function Sidebar({
           <div className="rail-group" data-open="1">
             <div className="rail-group-h">
               <Icon name="star" />
-              <span>常用</span>
+              <span>{t("常用")}</span>
             </div>
             <ul className="rail-items">{pinnedItems.map((i) => renderItem(i, true))}</ul>
           </div>
@@ -122,16 +124,15 @@ export function Sidebar({
 
         {NAV.map((g) => {
           const open = !closedGroups.includes(g.title);
-          const hasCurrent = g.items.some((i) => navHref(i) === pathname);
           return (
-            <div className="rail-group" key={g.title} data-open={open || hasCurrent ? "1" : "0"}>
+            <div className="rail-group" key={g.title} data-open={open ? "1" : "0"}>
               <button
                 className="rail-group-h"
                 onClick={() => setClosedGroups((c) => (c.includes(g.title) ? c.filter((x) => x !== g.title) : [...c, g.title]))}
                 aria-expanded={open}
               >
                 <Icon name={g.icon} />
-                <span>{g.title}</span>
+                <span>{t(g.title)}</span>
                 <Icon name="chevronDown" className="chev" />
               </button>
               <ul className="rail-items">{g.items.map((i) => renderItem(i))}</ul>
@@ -141,22 +142,22 @@ export function Sidebar({
       </nav>
 
       <div className="rail-foot">
-        <button className="rail-user" onClick={(e) => onOpenUserMenu(e.currentTarget)} aria-label="账号菜单">
+        <button className="rail-user" onClick={(e) => onOpenUserMenu(e.currentTarget)} aria-label={t("账号菜单")}>
           <Avatar name={displayName} hue={user?.hue ?? 0} src={picture} />
           <span className="who">
             <b>{displayName}</b>
             <small>
-              {user ? ROLE_LABEL[user.role] : "未登录"} · {user ? SCOPE_LABEL[user.scope] : "—"}
+              {user ? t(ROLE_LABEL[user.role]) : "—"} · {user ? t(SCOPE_LABEL[user.scope]) : "—"}
             </small>
           </span>
           <Icon name="more" size={15} style={{ marginLeft: "auto", opacity: 0.6 }} />
         </button>
       </div>
 
-      <button className="rail-toggle" onClick={onToggle} aria-label={collapsed ? "展开侧栏" : "收起侧栏"} title={`${collapsed ? "展开" : "收起"}侧栏 · [`}>
+      <button className="rail-toggle" onClick={onToggle} aria-label={t(collapsed ? "展开侧栏" : "收起侧栏")} data-tip={`${t(collapsed ? "展开侧栏" : "收起侧栏")} · [`}>
         <Icon name="chevronsLeft" />
       </button>
-      <div className="rail-grip" onPointerDown={onPointerDown} data-dragging={dragging ? "1" : "0"} title="拖动调整侧栏宽度" />
+      <div className="rail-grip" onPointerDown={onPointerDown} data-dragging={dragging ? "1" : "0"} data-tip={t("拖动调整侧栏宽度")} />
     </aside>
   );
 }

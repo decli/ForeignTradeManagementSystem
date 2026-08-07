@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { DataProvider } from "./data/DataProvider";
 import { AuthProvider } from "./auth/AuthProvider";
+import { LangProvider } from "./i18n";
 import "./styles/index.css";
 
 /**
@@ -16,18 +17,20 @@ const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter basename={basename || undefined}>
-      <DataProvider
-        fallback={
-          <div className="boot">
-            <div className="boot-mark" aria-hidden="true" />
-            <p>正在装载账套…</p>
-          </div>
-        }
-      >
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </DataProvider>
+      <LangProvider>
+        <DataProvider
+          fallback={
+            <div className="boot">
+              <div className="boot-mark" aria-hidden="true" />
+              <p>正在装载账套…</p>
+            </div>
+          }
+        >
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </DataProvider>
+      </LangProvider>
     </BrowserRouter>
   </StrictMode>,
 );

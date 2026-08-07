@@ -698,8 +698,8 @@ kbd {
   gap: 12px;
   padding: 9px 10px 9px 14px;
   border-radius: var(--r-md);
-  background: var(--rail-bg-2);
-  color: #eaf0fb;
+  background: var(--tip-bg);
+  color: var(--tip-text);
   font-size: var(--fs-md);
   box-shadow: var(--shadow-4);
   pointer-events: auto;
@@ -790,35 +790,37 @@ kbd {
   max-width: 380px;
 }
 
-/* ── 提示气泡 ── */
-[data-tip] {
-  position: relative;
-}
-[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 7px);
-  left: 50%;
-  transform: translateX(-50%) translateY(3px);
-  padding: 5px 9px;
+/* ── 提示气泡 ──
+   整页只有这一个，由 TooltipLayer 渲染到 body 上。
+   不用伪元素是因为伪元素会被祖先的 overflow 裁掉（表格里的里程碑节点就中过招）。 */
+.tip-layer {
+  position: fixed;
+  z-index: 130;
+  transform: translate(-50%, -100%);
+  padding: 6px 10px;
+  /* max-content 才不会在贴近视口右边时被「压」成一列四个字：
+     fixed 定位的盒子仍然会按可用空间做 shrink-to-fit，光有 max-width 挡不住 */
+  width: max-content;
+  max-width: min(320px, calc(100vw - 24px));
   border-radius: var(--r-sm);
-  background: var(--rail-bg-2);
-  color: #e9eefa;
+  background: var(--tip-bg);
+  color: var(--tip-text);
+  font-family: var(--sans);
   font-size: var(--fs-xs);
   font-weight: 500;
-  white-space: pre;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-2), transform var(--dur-2);
-  z-index: 60;
-  box-shadow: var(--shadow-3);
-  font-family: var(--sans);
+  line-height: 1.5;
   letter-spacing: 0;
+  white-space: pre-wrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-3);
+  animation: tip-in var(--dur-2) var(--ease);
 }
-[data-tip]:hover::after,
-[data-tip]:focus-visible::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+.tip-layer[data-below="1"] {
+  transform: translate(-50%, 0);
+}
+@keyframes tip-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ── 进度条 ── */

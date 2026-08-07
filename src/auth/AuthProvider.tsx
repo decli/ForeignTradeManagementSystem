@@ -3,6 +3,7 @@ import { useDb } from "@/data/DataProvider";
 import { viewerOf, type Viewer } from "@/data/queries";
 import type { Role, Scope, User } from "@/data/types";
 import { googleSignOut, type GoogleProfile } from "./google";
+import { personName, useT } from "@/i18n";
 
 const KEY = "mt.session";
 
@@ -70,6 +71,7 @@ function readSession(): Session | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const db = useDb();
+  const { lang } = useT();
   const [session, setSession] = useState<Session | null>(readSession);
 
   useEffect(() => {
@@ -118,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       viewer,
-      displayName: session?.displayName ?? user?.name ?? "访客",
+      displayName: session?.displayName ?? personName(user, lang),
       picture: session?.picture ?? null,
       signInDemo,
       signInPassword,
@@ -127,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       impersonate,
       can: (p) => perms.includes(p),
     };
-  }, [session, user, signInDemo, signInPassword, signInGoogle, signOut, impersonate]);
+  }, [session, user, lang, signInDemo, signInPassword, signInGoogle, signOut, impersonate]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { Toaster } from "@/components/ui/Toast";
+import { TooltipLayer } from "@/components/ui/TooltipLayer";
 import { Avatar } from "@/components/ui/bits";
 import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
@@ -64,6 +65,7 @@ export function AppShell() {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {userMenu ? <UserMenu pos={userMenu} onClose={() => setUserMenu(null)} /> : null}
+      <TooltipLayer />
       <Toaster />
     </div>
   );

@@ -107,13 +107,13 @@ body {
   background: transparent;
 }
 
-/* 深色轨上的滚动条要跟着轨走，不然是一条亮线 */
+/* 侧栏底色比内容区浅一档，滚动条也跟着收一点，不然是一条突兀的深线 */
 .rail ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--rail-text-2) 45%, transparent);
   background-clip: content-box;
 }
 .rail {
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: color-mix(in srgb, var(--rail-text-2) 45%, transparent) transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -43,13 +43,23 @@
   --violet-soft: #eee8fb;
   --mute-soft: #eef1f6;
 
-  /* ── 导航轨：两个主题都是深色，作为品牌锚点 ── */
-  --rail-bg: #0b1220;
-  --rail-bg-2: #121c2e;
-  --rail-line: #1e2a40;
-  --rail-text: #c5d0e2;
-  --rail-text-2: #7386a1;
-  --rail-active: rgba(122, 150, 255, 0.16);
+  /* ── 导航轨 ──
+     以前两个主题都用深色作「品牌锚点」，结果浅色模式下左边一条深色竖条
+     跟右边的浅色内容区像两个应用拼起来的。现在跟着主题走，整屏一种风格。 */
+  --rail-bg: #f6f8fc;
+  --rail-bg-2: #eff3f9;
+  --rail-line: #e3e8f0;
+  --rail-text: #3d4a5f;
+  --rail-text-2: #8794a8;
+  --rail-strong: #111a29;
+  --rail-hover: rgba(17, 26, 41, 0.05);
+  --rail-active: #e8ecfd;
+  --rail-chip: rgba(17, 26, 41, 0.06);
+
+  /* 气泡与提示条在两个主题下都偏深 —— 它们是浮在内容之上的临时层，
+     跟表面同色反而看不出层次 */
+  --tip-bg: #1c2536;
+  --tip-text: #e9eefa;
 
   /* ── 层高 ── */
   --shadow-1: 0 1px 2px rgba(13, 22, 39, 0.05), 0 1px 3px rgba(13, 22, 39, 0.04);
@@ -149,11 +159,17 @@
     --violet-soft: #241d3e;
     --mute-soft: #1a2436;
 
-    --rail-bg: #060a12;
-    --rail-bg-2: #0d1420;
-    --rail-line: #18202f;
+    --rail-bg: #0b111c;
+    --rail-bg-2: #0e1522;
+    --rail-line: #1c2536;
     --rail-text: #b8c5da;
     --rail-text-2: #66768e;
+    --rail-strong: #ffffff;
+    --rail-hover: rgba(255, 255, 255, 0.06);
+    --rail-active: #1f2c53;
+    --rail-chip: rgba(255, 255, 255, 0.08);
+    --tip-bg: #26334a;
+    --tip-text: #e9eefa;
 
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.44);
     --shadow-2: 0 4px 12px -4px rgba(0, 0, 0, 0.56);
@@ -197,11 +213,17 @@
   --violet-soft: #241d3e;
   --mute-soft: #1a2436;
 
-  --rail-bg: #060a12;
-  --rail-bg-2: #0d1420;
-  --rail-line: #18202f;
+  --rail-bg: #0b111c;
+  --rail-bg-2: #0e1522;
+  --rail-line: #1c2536;
   --rail-text: #b8c5da;
   --rail-text-2: #66768e;
+  --rail-strong: #ffffff;
+  --rail-hover: rgba(255, 255, 255, 0.06);
+  --rail-active: #1f2c53;
+  --rail-chip: rgba(255, 255, 255, 0.08);
+  --tip-bg: #26334a;
+  --tip-text: #e9eefa;
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.44);
   --shadow-2: 0 4px 12px -4px rgba(0, 0, 0, 0.56);

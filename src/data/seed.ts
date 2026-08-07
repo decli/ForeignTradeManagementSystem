@@ -74,17 +74,17 @@ export function buildSeed(): Database {
 
   // ───────────────────────── 用户 ─────────────────────────
   const userSeed: Array<Omit<User, "id" | "createdAt">> = [
-    { username: "admin", name: "尤麒翔", role: "admin", team: null, scope: "all", active: true, hue: 0 },
+    { username: "admin", name: "理查德", nameEn: "Richard", role: "admin", team: null, scope: "all", active: true, hue: 0 },
     { username: "ada", name: "Ada", role: "sales", team: "PPE组", scope: "self", active: true, hue: 1 },
     { username: "sophie", name: "Sophie", role: "sales", team: "PPE组", scope: "self", active: true, hue: 2 },
     { username: "sunny", name: "Sunny", role: "sales", team: "PPE组", scope: "self", active: true, hue: 3 },
     { username: "summer", name: "Summer", role: "sales", team: "CCTV组", scope: "team", active: true, hue: 4 },
     { username: "leo", name: "Leo", role: "sales", team: "CCTV组", scope: "self", active: true, hue: 5 },
-    { username: "merch", name: "郑楠", role: "merchandiser", team: "PPE组", scope: "team", active: true, hue: 6 },
-    { username: "finance", name: "陈曦", role: "finance", team: null, scope: "all", active: true, hue: 7 },
-    { username: "huang", name: "黄媛媛", role: "purchaser", team: null, scope: "all", active: true, hue: 8 },
-    { username: "wei", name: "魏巍", role: "purchaser", team: null, scope: "all", active: true, hue: 9 },
-    { username: "viewer", name: "林珊", role: "viewer", team: null, scope: "all", active: true, hue: 10 },
+    { username: "merch", name: "郑楠", nameEn: "Nathan Zheng", role: "merchandiser", team: "PPE组", scope: "team", active: true, hue: 6 },
+    { username: "finance", name: "陈曦", nameEn: "Sherry Chen", role: "finance", team: null, scope: "all", active: true, hue: 7 },
+    { username: "huang", name: "黄媛媛", nameEn: "Yuan Huang", role: "purchaser", team: null, scope: "all", active: true, hue: 8 },
+    { username: "wei", name: "魏巍", nameEn: "Wei Wei", role: "purchaser", team: null, scope: "all", active: true, hue: 9 },
+    { username: "viewer", name: "林珊", nameEn: "Shan Lin", role: "viewer", team: null, scope: "all", active: true, hue: 10 },
   ];
   const users: User[] = userSeed.map((u) => ({ ...u, id: id("usr"), createdAt: now }));
   const by = (name: string) => users.find((u) => u.name === name)!;

@@ -17,6 +17,8 @@ export type User = {
   id: string;
   username: string;
   name: string;
+  /** 英文名。中文名在英文界面里读不出来，业务员一栏尤其明显 */
+  nameEn?: string;
   role: Role;
   team: string | null;
   scope: Scope;
@@ -230,7 +232,7 @@ export type Database = {
   credentials: Credential[];
 };
 
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 /** 演示口令：登录页会直接写出来，没什么好藏的 */
 export const DEMO_PASSWORD = "demo1234";

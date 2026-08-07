@@ -2,11 +2,16 @@
 
 外贸业务管理系统：跟单、订单核算、退税、资金。
 
-单进程单端口，一条命令跑起来；数据库默认是一个 SQLite 文件，拷走即备份，
-将来可平滑切到 MySQL。
+**在线体验 → <https://decli.github.io/>**（演示账号 `admin` / `demo1234`，或点「直接进」）
 
-- 设计与技术选型：[`docs/design-proposal.md`](docs/design-proposal.md)
-- 可点击原型（全模块，模拟数据）：[`docs/ui-prototype.html`](docs/ui-prototype.html)，浏览器直接打开
+这一版是**纯静态前端**：没有服务端，没有数据库进程，数据全部在你自己的浏览器里
+（IndexedDB）。构建产物是一堆静态文件，扔到 GitHub Pages / 对象存储 / 任何一个
+能发文件的地方就能跑，托管费用为零。
+
+- 架构与迁移说明：[`docs/architecture.md`](docs/architecture.md)
+- 设计规范（色板、字号、组件、交互约定）：[`docs/design-system.md`](docs/design-system.md)
+- 最初的界面与技术选型提案：[`docs/design-proposal.md`](docs/design-proposal.md)
+- 早期单文件原型：[`docs/ui-prototype.html`](docs/ui-prototype.html)
 
 ---
 
@@ -14,19 +19,61 @@
 
 ```bash
 npm install
-cp .env.example .env          # DATABASE_URL="file:./dev.db"
-npx prisma migrate dev        # 建库建表
-npx prisma db seed            # 灌一份演示数据
-npm run dev                   # http://localhost:3000
+npm run dev      # http://127.0.0.1:5173
 ```
 
-打开后默认进「跟单表」。演示账号 `admin / demo1234`（登录功能在 M1 排期，当前直接进入）。
+首次打开会自动灌一份演示数据（24 家客户 / 63 张 PI / 78 个出运批次 / 96 行退税发票）。
+数据落在浏览器的 IndexedDB 里，关掉页面还在；在「系统设置」里可以随时导出、导入或重灌。
 
-生产：
+生产构建：
 
 ```bash
-npm ci && npm run build && npm start   # 默认 3000 端口
+npm run build    # 产物在 dist/，纯静态
+npm run preview  # 本地预览构建产物
 ```
+
+---
+
+## 登录
+
+三种方式，都在浏览器本地完成：
+
+| 方式 | 说明 |
+| --- | --- |
+| **账密登录** | 口令用 PBKDF2-SHA256（12 万轮 + 随机盐）派生后存在本机，不存明文 |
+| **注册本地账号** | 自己建账号并选角色 / 数据范围，只存在这台设备上 |
+| **Google 单点登录** | 需要配 `VITE_GOOGLE_CLIENT_ID`，见下方 |
+
+演示账号（口令都是 `demo1234`），挑不同的进去能看出**数据范围**的差别：
+
+| 账号 | 角色 | 数据范围 |
+| --- | --- | --- |
+| `admin` | 管理员 | 全部数据 |
+| `ada` | 业务员 | 只看本人的单 |
+| `summer` | 业务员 | 看本组（CCTV 组）的单 |
+| `finance` | 财务 | 全部数据，可改汇率 |
+| `viewer` | 只读 | 任何写操作都被挡掉 |
+
+进去之后点左下角头像 →「切换身份」，可以随时换个人看，用来验证权限。
+
+> ⚠️ **纯静态站做不了真正的认证。** 没有服务端就没有服务端校验，改改前端代码就能绕过。
+> 这里的口令只解决「别让明文躺在别人电脑上」。真实业务请接后端 —— 见
+> [`docs/architecture.md`](docs/architecture.md) 的「接回真后端」一节，改一个文件就够。
+
+### 接 Google 登录
+
+1. 到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建一个
+   **OAuth 2.0 客户端 ID**，类型选「Web 应用」；
+2. 「已获授权的 JavaScript 来源」填上你的站点源，例如 `https://decli.github.io`
+   （本地开发再加一条 `http://127.0.0.1:5173`）；
+3. 把拿到的 Client ID 交给构建：
+
+```bash
+VITE_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com npm run build
+```
+
+没配的时候登录页会明说「Google 登录未配置」，账密登录照常可用 ——
+fork 下来什么都不配也能跑起来。
 
 ---
 
@@ -34,23 +81,27 @@ npm ci && npm run build && npm start   # 默认 3000 端口
 
 | 模块 | 路由 | 状态 |
 | --- | --- | --- |
-| 数据看板 | `/dashboard` | ✅ 接数据库 |
-| 客户管理 | `/customers` | ✅ 接数据库 |
-| 跟单表 | `/follow-ups` | ✅ 接数据库 |
-| 订单核算跟踪 | `/orders` | ✅ 接数据库 |
-| 退税管理 | `/tax-refund` | ✅ 接数据库 |
-| 审计日志 | `/audit` | ✅ 接数据库 |
-| 其余 22 个模块 | `/m/<slug>` | 占位页，说明该模块定位与功能范围 |
+| 数据看板 | `/dashboard` | ✅ |
+| 跟单表 | `/follow-ups` | ✅ |
+| 订单核算跟踪 | `/orders` | ✅ |
+| 我的订单 | `/my-orders` | ✅ |
+| 退税管理 | `/tax-refund` | ✅ |
+| 客户管理 | `/customers` | ✅ |
+| PI 取号 | `/pi` | ✅ |
+| 审计日志 | `/audit` | ✅ |
+| 系统设置 | `/settings` | ✅ |
+| 其余 19 个模块 | `/m/<slug>` | 占位页，写明该模块定位与功能范围 |
 
 ### 跟单表
 
 - **里程碑航程线** —— 交期 / 装柜 / 进仓 / ATD / ETA 连成一条带进度填充的线。
   已发生的实心，当前节点带光晕，计划日已过还没确认的转珊瑚红，悬停看「计划 vs 实际」。
-  整柜四个节点，拼柜多一个「进仓」。
-- **动态就地改** —— 点一下动态就能编辑，常用短语一键填入。动态写成流水（`ShipmentNote`），
+  整柜四个节点，拼柜多一个「进仓」。抽屉里两个日期都能就地改。
+- **动态就地改** —— 点一下动态就能编辑，常用短语一键填入。动态写成流水，
   同时冗余一份到批次上供列表读取，既有历史又不牺牲列表性能。
-- **批量更新** —— 勾选多行，底部升起操作条，一次写完动态 + 日期 + 放行状态，**带撤销**。
-- **详情抽屉** —— 概览 / 动态流水 / 单证齐套三个标签。
+- **批量更新** —— 勾选多行（支持 Shift 连选），底部升起操作条，一次写完动态 + 日期 +
+  放行状态，**带撤销**。
+- **详情抽屉** —— 概览 / 动态流水 / 单证齐套三个标签；宽度可拖并记住；`J` / `K` 上下换票。
 - **停滞与超期识别** —— 超过 7 天没有新动态标「停滞 N 天」，里程碑超期标红并计入表头统计。
 - **软删除 + 撤销** —— 「删除」置 `archived` 而不是真删；外贸单据要留痕，也才撤销得回来。
 
@@ -59,128 +110,116 @@ npm ci && npm run build && npm start   # 默认 3000 端口
 - KPI：订单总数 / 未完结 / 利润率预警 &lt;11% / 负毛利 / 在跟订单额（人民币单按自定汇率折算并入）
 - 在跟进 · 已归档、结算状态分段筛选，「只看利润率预警」一键聚焦
 - 利润率按语义色分档；数据不全的行标「费用估算未填」「采购成本未录」
-- 点行开抽屉：成本构成堆叠条、收付款进度、关联的出运批次与退税发票
+- 点行开抽屉：成本构成堆叠条、收款进度、关联的出运批次与退税发票
 
 ### 退税管理
 
 - KPI 随公司段联动重算；金额按公司段全量口径，申报月只决定「本月申报」那张卡
-- 未关联订单的行标红，**关联向导**可搜 PI 号 / 客户 / 产品挂上去，带撤销
-- 税额合计随筛选实时重算
+- 未关联订单的行标红，**关联向导**按报关美元额与 PI 金额的接近度排序推荐，带撤销
+- 税额 / 价税 / 报关美元合计随筛选实时重算
 
 ### 数据看板
 
-- 五张 KPI + 月度出运与订单额组合图 + 目的国 TOP + 业务员业绩 + 利润率分布
-- 「今天要处理什么」清单：停滞、超期、负毛利、退税未关联、额度超限，每条都能跳到能处理它的页面
-- 图表是服务端渲染的纯 SVG，没有图表库依赖
+- 六张 KPI（带迷你趋势）+ 月度出运与签约额组合图 + 目的国 TOP + 业务员业绩 + 利润率分布
+- 「今天要处理什么」清单：停滞、超期、负毛利、退税未关联、额度超限、未销待办，
+  每条都能跳到能处理它的页面
+- 「接下来十天的节点」时间线
+- 图表是手写 SVG，没有图表库依赖
 
-### 通用
+---
 
-- **Excel 导出** —— 三个台账都能导出真正的 `.xlsx`（不是改名的 CSV），
-  金额写成数字带 Excel 原生格式，财务拿到能直接求和；**导出跟随当前筛选条件**
-- **写操作全留痕** —— 每次写入落一条 `AuditLog`，审计日志页面按人 / 单据回查改动前后值
-- 浅色 / 深色主题，侧栏可折叠
+## 界面上花了力气的地方
+
+这一版相对上一版重点改的是**信息密度下的可操作性**：
+
+| | |
+| --- | --- |
+| **表头 / 列头冻结** | 滚到第 80 行仍看得到列名；横向滚动时批次号那一列不动，对得上行。冻结边界滚出去才亮阴影 |
+| **列宽可拖、列可隐藏** | 每列都能拖宽（双击还原到最窄），「列」菜单里可隐藏；宽度、隐藏、排序按表分别记住 |
+| **常驻滚动条** | macOS 默认的覆盖式滚动条会让人根本不知道右边还有内容，全站换成常驻细滚动条 |
+| **侧栏三形态** | 展开（宽度可拖 200–380，记住）/ 收成 64px 图标轨（hover 出气泡）/ 窄屏浮层。`[` 切换 |
+| **⌘K 命令面板** | 一个入口搜三类东西：模块（去哪）、单据（找什么）、动作（做什么） |
+| **表格密度** | 紧凑 / 标准 / 宽松三档，行高与内边距整体联动 |
+| **响应式** | ≥900px 双栏；&lt;900px 侧栏转浮层；&lt;768px 表格整体换成卡片流，不做横向滚 |
+| **「第 N 批」不折行** | 批次号可截断，分批标签整块不换行 —— 这类标签被拆成两行是最刺眼的排版事故 |
+| **保存的视图** | 筛好的条件可以存下来复用；筛选条件全部写进 URL，刷新不丢，也能直接发给同事 |
+| **撤销** | 所有破坏性操作 6 秒内可撤销，提示条上画一圈倒计时，而不是写「5 秒内可撤销」 |
+| **键盘** | `⌘K` 搜索 · `[` 收侧栏 · `N` 新增 · `F` 聚焦搜索 · `↑↓` 选行 · `↵` 打开 · `空格` 勾选 · `J/K` 抽屉换票 |
+| **无障碍** | 跳转到主内容、`:focus-visible` 焦点环、`aria-sort` / `aria-current` / `aria-live`、按钮全部有可读名称、尊重 `prefers-reduced-motion` |
 
 ---
 
 ## 两条硬约定
 
-**1. 金额一律用整数「分」存。** SQLite 没有真正的 `DECIMAL`，浮点会让订单核算和退税
-凑不平账。所有金额字段是 `BigInt`（单位：分），汇率存 6 位小数的整数
-（`6.7392` → `6739200`），只在展示层格式化 —— 见 `src/lib/format.ts`。
+**1. 金额一律用整数「分」存。** 浮点会让订单核算和退税凑不平账。所有金额字段是
+以「分」为单位的整数，汇率存 6 位小数的整数（`6.7392` → `6739200`），
+只在展示层格式化 —— 见 `src/lib/format.ts`。
 
-**2. 只用 SQLite 与 MySQL 都支持的类型。** 状态存字符串 + 应用层枚举（不用 MySQL `ENUM`），
-`AuditLog.before/after` 存 JSON 文本（不用 `Json` 类型）。这样切库时 schema 不用改。
-
----
-
-## 测试
-
-```bash
-npm test          # 先构建再跑，34 条端到端用例
-npm run test:only # 跳过构建（改了测试没改源码时用）
-```
-
-用例跑在**真实的 Next 服务 + 真实 SQLite** 上，不打桩：改动态、批量更新、关联发票
-都是真的写库，然后断言刷新后还在。每次开跑前会重灌演示数据，保证可重复。
-
-覆盖：里程碑渲染、就地改动态、批量更新与撤销、软删除与撤销、筛选写进 URL、
-空态文案、详情抽屉、订单利润率排序与预警筛选、退税公司段联动、关联向导、
-看板图表与风险跳转、客户主从、审计留痕、xlsx 导出（含跟随筛选）、
-侧栏 28 个模块、深色模式、六个页面都不横向溢出。
-
-> **测试必须跑生产构建，不能用 dev server。** 除了 dev 按需编译会让用例撞上编译延迟，
-> 更要命的是 **dev 模式下 Server Action 结束后会把客户端 `router.replace` 写进查询串的
-> 筛选条件丢掉**（筛完改一条数据，筛选自己复位了）。生产构建没有这个表现。
-> 开发时如果遇到这个现象，是 dev 模式的行为差异，不是数据出错。
-
----
-
-## 切换到 MySQL
-
-共三处，应用代码不用动：
-
-1. `prisma/schema.prisma` 里 `datasource.provider` 改成 `"mysql"`
-2. `prisma.config.ts` 里 `migrations.path` 改成 `prisma/migrations-mysql`
-   （两种方言生成的 DDL 不同，不能混用同一个迁移目录）
-3. `src/lib/db.ts` 和 `prisma/seed.ts` 里的 adapter 换掉：
-
-```bash
-npm i @prisma/adapter-mariadb
-```
-
-```ts
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-const adapter = new PrismaMariaDb(databaseUrl());
-```
-
-然后把 `DATABASE_URL` 换成连接串，跑 `npx prisma migrate dev`。
-存量数据用一次性导出导入脚本搬迁。
+**2. 视图模型的字段名跟原后端保持一致。** 查询层（`src/data/queries.ts`）是原来
+`src/server/*` 的平移，返回结构没变。将来接回真后端，页面组件一行都不用改。
 
 ---
 
 ## 目录结构
 
 ```
-prisma/
-  schema.prisma          数据模型（含两条硬约定的说明）
-  migrations-sqlite/     SQLite 方言的迁移
-  seed.ts                演示数据
-scripts/
-  db-stats.ts            快速查看库里的关键计数
 src/
-  app/
-    dashboard/           数据看板
-    customers/           客户管理
-    follow-ups/          跟单表：page.tsx（服务端查询）+ actions.ts（写操作）
-    orders/              订单核算跟踪
-    tax-refund/          退税管理 + 关联订单 action
-    audit/               审计日志
-    api/export/[kind]/   xlsx 导出
-    m/[slug]/            未开发模块的占位页
-    globals.css          设计令牌与组件样式
+  data/                账套：类型、种子、IndexedDB、查询、写操作
+    types.ts           数据模型（由原 Prisma schema 平移）
+    seed.ts            演示数据（时间轴跟着「今天」走）
+    idb.ts             极小的 IndexedDB 封装
+    db.ts              内存账套 + 防抖持久化 + 订阅
+    queries.ts         查询与视图映射（原 src/server/*）
+    mutations.ts       写操作，每次落一条审计留痕
+  auth/                Google 登录 / 账密 / 口令派生 / 角色与数据范围
   components/
-    app-shell.tsx        侧栏 + 顶栏 + 提示条
-    milestone-rail.tsx   里程碑航程线（签名组件）
-    dashboard/charts.tsx 服务端 SVG 图表
-    follow-ups/ orders/ tax/ customers/
-  server/                查询与视图映射（BigInt 在这里转成可序列化的数字）
-  lib/                   db / 金额日期格式化 / 信息架构 / 判定规则
-tests/                   端到端用例
+    shell/             侧栏、顶栏、⌘K 命令面板
+    grid/DataGrid.tsx  冻结表头列、列宽拖拽、密度、排序、分页、卡片视图
+    ui/                Toast / Menu / Drawer / Modal / 基础件
+    MilestoneRail.tsx  里程碑航程线（签名组件）
+    charts.tsx         手写 SVG 图表
+  pages/               各模块页面
+  lib/                 格式化 / 业务规则 / 信息架构 / hooks / 主题 / xlsx 导出
+  styles/              设计令牌与组件样式（tokens / base / ui / shell / grid / pages）
 ```
-
-**约定**：`src/server/*` 只在服务端跑；客户端组件要用的常量和纯函数放 `src/lib/*`。
-从 `"use client"` 模块里 import 函数到服务端页面会直接报错，反过来把 `server/*`
-的值 import 进客户端组件，会把 Prisma 和 better-sqlite3 打进浏览器包。
 
 ---
 
 ## 技术栈
 
-Next.js 16（App Router）· React 19 · TypeScript · Tailwind CSS v4 ·
-Prisma 7 + better-sqlite3 adapter · write-excel-file · Playwright · Node 22
+Vite 7 · React 19 · TypeScript · react-router 7 · IndexedDB · write-excel-file ·
+手写 CSS 设计令牌
 
-**不引入**：Kafka、RabbitMQ、Redis、Elasticsearch、Oracle/PostgreSQL、微服务、K8s。
-这个数据量用不上，装起来还麻烦。
+**不引入**：UI 组件库、CSS 框架、图表库、状态管理库、后端。
+整站 gzip 后约 150 KB，首屏只加载看板与跟单表。
+
+---
+
+## 部署
+
+产物是纯静态文件，`dist/` 直接扔上去就行。仓库里带了两条路：
+
+```bash
+npm run build:root      # base = /        → 用户站点 decli.github.io
+npm run build:project   # base = /ForeignTradeManagementSystem/  → 项目站点
+npm run deploy          # 构建并推到 decli/decli.github.io
+```
+
+GitHub Pages 没有服务端，刷新 `/follow-ups` 这种深链接会 404。构建时会把
+`index.html` 再拷一份成 `404.html`，Pages 找不到路径时回落到它，SPA 路由读
+`location.pathname` 就能正确渲染 —— URL 保持干净，不用 hash 路由。
+
+推到 `main` 时 `.github/workflows/deploy.yml` 会自动构建并发布到本仓库的
+项目站点，作为镜像。
+
+---
+
+## 从这一版走到生产
+
+这个演示版**不能**直接用在真实业务上：没有备份、没有多人协作、没有服务端校验，
+换台设备就是一套新的账套。要上生产，见
+[`docs/architecture.md`](docs/architecture.md) —— 换掉一个文件即可，
+查询与页面代码不动。
 
 ---
 
@@ -188,8 +227,8 @@ Prisma 7 + better-sqlite3 adapter · write-excel-file · Playwright · Node 22
 
 | 阶段 | 内容 |
 | --- | --- |
-| M1 | 登录 + 角色权限 + 数据范围；PI 取号、我的订单 |
-| M2 补齐 | Excel **导入**、新增/编辑批次与订单表单、里程碑日期就地改 |
+| M1 | 接回服务端（Prisma + SQLite/MySQL）与真正的会话认证 |
+| M2 | Excel **导入**、编辑批次与订单表单 |
 | M3 | 收付款 / 财务、供应商、采购合同、询价单、生产单 |
 | M4 | 单证备案、银行日记账、资金汇总、费用明细 |
 | M5 | 报表中心、提成与绩效、系统设置与权限 |

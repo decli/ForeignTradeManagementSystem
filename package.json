@@ -1,38 +1,30 @@
 {
-  "name": "foreigntrademanagementsystem",
-  "version": "0.1.0",
+  "name": "mt-tradeflow",
+  "version": "2.0.0",
   "private": true,
+  "type": "module",
+  "description": "MT 通商 · TRADEFLOW — 外贸业务管理系统（纯静态 · 浏览器本地存储 · GitHub Pages）",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "postinstall": "prisma generate",
-    "typecheck": "tsc --noEmit",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio",
-    "test": "npm run build && playwright test",
-    "test:ui": "playwright test --ui",
-    "test:only": "playwright test"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:root": "tsc -b && vite build --base=/",
+    "build:project": "tsc -b && vite build --base=/ForeignTradeManagementSystem/",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "deploy": "node scripts/deploy-user-site.mjs"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.9.1",
-    "@prisma/client": "^7.9.1",
-    "next": "16.3.0",
-    "prisma": "^7.9.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "tsx": "^4.23.9",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
     "write-excel-file": "^4.1.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.1",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@types/node": "^24.2.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0"
   }
 }

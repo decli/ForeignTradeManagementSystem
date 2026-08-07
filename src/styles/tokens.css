@@ -1,0 +1,212 @@
+/* ============================================================
+   设计令牌
+   主色一个（航线蓝），语义色三个，两者严格分离：
+   蓝色 = 系统的强调，绿 / 琥珀 / 红 = 业务的状态。
+   中性色带轻微蓝偏，不用纯灰 —— 纯灰在长时间盯的台账里显脏。
+   ============================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ── 表面 ── */
+  --paper: #eef2f8;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-3: #eff3f9;
+  --overlay: rgba(11, 18, 32, 0.34);
+  --line: #e3e8f0;
+  --line-2: #eceff5;
+  --line-strong: #c9d3e2;
+
+  /* ── 文字 ── */
+  --text: #111a29;
+  --text-2: #55637a;
+  --text-3: #8794a8;
+  --text-4: #a9b4c4;
+
+  /* ── 主色 ── */
+  --accent: #3b5bd6;
+  --accent-ink: #2a44ae;
+  --accent-hi: #5a76e6;
+  --accent-soft: #e8ecfd;
+  --accent-soft-2: #d6ddfa;
+  --on-accent: #ffffff;
+
+  /* ── 语义色 ── */
+  --jade: #0b8a5f;
+  --jade-soft: #dcf3ea;
+  --amber: #a2650a;
+  --amber-soft: #fbf0d9;
+  --coral: #c8393c;
+  --coral-soft: #fce5e5;
+  --violet: #6a45c2;
+  --violet-soft: #eee8fb;
+  --mute-soft: #eef1f6;
+
+  /* ── 导航轨：两个主题都是深色，作为品牌锚点 ── */
+  --rail-bg: #0b1220;
+  --rail-bg-2: #121c2e;
+  --rail-line: #1e2a40;
+  --rail-text: #c5d0e2;
+  --rail-text-2: #7386a1;
+  --rail-active: rgba(122, 150, 255, 0.16);
+
+  /* ── 层高 ── */
+  --shadow-1: 0 1px 2px rgba(13, 22, 39, 0.05), 0 1px 3px rgba(13, 22, 39, 0.04);
+  --shadow-2: 0 4px 12px -4px rgba(13, 22, 39, 0.12), 0 2px 4px rgba(13, 22, 39, 0.05);
+  --shadow-3: 0 16px 40px -12px rgba(13, 22, 39, 0.24), 0 4px 10px rgba(13, 22, 39, 0.06);
+  --shadow-4: 0 32px 72px -20px rgba(13, 22, 39, 0.36);
+  /* 冻结列 / 冻结表头滚动时的边界阴影，让人知道下面还有内容 */
+  --shadow-freeze: 8px 0 12px -10px rgba(13, 22, 39, 0.4);
+  --shadow-freeze-head: 0 8px 12px -10px rgba(13, 22, 39, 0.36);
+
+  --ring: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--accent) 55%, transparent);
+
+  /* ── 圆角 ── */
+  --r-xs: 5px;
+  --r-sm: 7px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-full: 999px;
+
+  /* ── 字体 ── */
+  --sans: "PingFang SC", "HarmonyOS Sans SC", "Hiragino Sans GB", "Source Han Sans SC",
+    "Noto Sans CJK SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 32px;
+
+  /* ── 布局 ── */
+  --rail-w: 244px;
+  --rail-w-collapsed: 64px;
+  --topbar-h: 52px;
+  --gap: 16px;
+
+  /* ── 表格密度：由 [data-density] 覆盖 ── */
+  --row-h: 56px;
+  --row-pad-y: 10px;
+  --cell-pad-x: 14px;
+  --head-h: 40px;
+
+  --dur-1: 110ms;
+  --dur-2: 180ms;
+  --dur-3: 280ms;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root[data-density="compact"] {
+  --row-h: 44px;
+  --row-pad-y: 6px;
+  --cell-pad-x: 11px;
+  --head-h: 36px;
+}
+:root[data-density="cozy"] {
+  --row-h: 68px;
+  --row-pad-y: 14px;
+  --cell-pad-x: 16px;
+  --head-h: 44px;
+}
+
+/* ── 深色 ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #080d16;
+    --surface: #101827;
+    --surface-2: #151f31;
+    --surface-3: #1a2436;
+    --overlay: rgba(2, 5, 10, 0.62);
+    --line: #212d43;
+    --line-2: #1a2436;
+    --line-strong: #32415c;
+
+    --text: #e6ecf6;
+    --text-2: #9aa8bf;
+    --text-3: #6f7f99;
+    --text-4: #566579;
+
+    --accent: #7f9bff;
+    --accent-ink: #a4b8ff;
+    --accent-hi: #9db3ff;
+    --accent-soft: #18224180;
+    --accent-soft-2: #1f2c53;
+    --on-accent: #0a1020;
+
+    --jade: #3fc493;
+    --jade-soft: #0d3227;
+    --amber: #dba33f;
+    --amber-soft: #33270f;
+    --coral: #ef7676;
+    --coral-soft: #3b1d20;
+    --violet: #ab8ff0;
+    --violet-soft: #241d3e;
+    --mute-soft: #1a2436;
+
+    --rail-bg: #060a12;
+    --rail-bg-2: #0d1420;
+    --rail-line: #18202f;
+    --rail-text: #b8c5da;
+    --rail-text-2: #66768e;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.44);
+    --shadow-2: 0 4px 12px -4px rgba(0, 0, 0, 0.56);
+    --shadow-3: 0 16px 40px -12px rgba(0, 0, 0, 0.68);
+    --shadow-4: 0 32px 72px -20px rgba(0, 0, 0, 0.8);
+    --shadow-freeze: 8px 0 12px -10px rgba(0, 0, 0, 0.7);
+    --shadow-freeze-head: 0 8px 12px -10px rgba(0, 0, 0, 0.66);
+  }
+}
+
+/* 手动切换必须压过系统偏好，两个方向都要写 */
+:root[data-theme="dark"] {
+  --paper: #080d16;
+  --surface: #101827;
+  --surface-2: #151f31;
+  --surface-3: #1a2436;
+  --overlay: rgba(2, 5, 10, 0.62);
+  --line: #212d43;
+  --line-2: #1a2436;
+  --line-strong: #32415c;
+
+  --text: #e6ecf6;
+  --text-2: #9aa8bf;
+  --text-3: #6f7f99;
+  --text-4: #566579;
+
+  --accent: #7f9bff;
+  --accent-ink: #a4b8ff;
+  --accent-hi: #9db3ff;
+  --accent-soft: #18224180;
+  --accent-soft-2: #1f2c53;
+  --on-accent: #0a1020;
+
+  --jade: #3fc493;
+  --jade-soft: #0d3227;
+  --amber: #dba33f;
+  --amber-soft: #33270f;
+  --coral: #ef7676;
+  --coral-soft: #3b1d20;
+  --violet: #ab8ff0;
+  --violet-soft: #241d3e;
+  --mute-soft: #1a2436;
+
+  --rail-bg: #060a12;
+  --rail-bg-2: #0d1420;
+  --rail-line: #18202f;
+  --rail-text: #b8c5da;
+  --rail-text-2: #66768e;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.44);
+  --shadow-2: 0 4px 12px -4px rgba(0, 0, 0, 0.56);
+  --shadow-3: 0 16px 40px -12px rgba(0, 0, 0, 0.68);
+  --shadow-4: 0 32px 72px -20px rgba(0, 0, 0, 0.8);
+  --shadow-freeze: 8px 0 12px -10px rgba(0, 0, 0, 0.7);
+  --shadow-freeze-head: 0 8px 12px -10px rgba(0, 0, 0, 0.66);
+}

@@ -1,0 +1,181 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: var(--fs-base);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+:where(h1, h2, h3, h4, h5, p, figure) {
+  margin: 0;
+}
+:where(ul, ol) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+:where(button) {
+  cursor: pointer;
+}
+:where(a) {
+  color: var(--accent);
+  text-decoration: none;
+}
+:where(a:hover) {
+  color: var(--accent-ink);
+}
+:where(svg) {
+  display: block;
+  flex: none;
+}
+:where(img) {
+  max-width: 100%;
+}
+
+/* 代码型数据（柜号 / PI 号 / 报关单号 / 金额 / 日期）一律等宽 + 等宽数字，
+   小数点才会自然对齐，财务扫一列就能看出量级 */
+.num,
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+  letter-spacing: -0.01em;
+}
+
+/* ── 焦点：只在键盘操作时出现，鼠标点击不出 ── */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+/* ============================================================
+   滚动条
+   macOS 默认是「滚动时才浮现」的覆盖式滚动条，横向滚动的表格里
+   用户根本不知道右边还有内容。这里全站换成常驻的细滚动条。
+   ============================================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--r-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-4);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 深色轨上的滚动条要跟着轨走，不然是一条亮线 */
+.rail ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: content-box;
+}
+.rail {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── 装载屏 ── */
+.boot {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  color: var(--text-3);
+  font-size: var(--fs-md);
+}
+.boot-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  background: linear-gradient(140deg, #3b5bd6, #7f9bff);
+  box-shadow: 0 8px 24px -8px rgba(59, 91, 214, 0.7);
+  animation: boot-pulse 1.4s var(--ease) infinite;
+}
+@keyframes boot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.86); opacity: 0.6; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 键盘用户按 Tab 第一下就能跳过侧栏直达内容 */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 200;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-3);
+  transform: translateY(-160%);
+  transition: transform var(--dur-2) var(--ease);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}

@@ -512,7 +512,7 @@ export function buildSeed(): Database {
     savedViews: [],
     // 口令摘要要跑 PBKDF2，是异步的；seed 保持同步，凭据在 db.load() 里补齐
     credentials: [],
-    ops: { suppliers: [], products: [], rfqs: [], rfqQuotes: [], contracts: [], productions: [], payments: [], accounts: [] },
+    ops: { suppliers: [], products: [], rfqs: [], rfqQuotes: [], contracts: [], productions: [], payments: [], accounts: [], stock: [], lanes: [], freightQuotes: [], docs: [], logins: [] },
   };
   // 采购与资金要挂在已有的 PI / 客户上，所以得等主数据齐了再生成
   base.ops = buildOpsSeed(base);

@@ -234,7 +234,7 @@ export type Database = {
   ops: import("./ops-types").OpsData;
 };
 
-export const DB_VERSION = 8;
+export const DB_VERSION = 11;
 
 /** 演示口令：登录页会直接写出来，没什么好藏的 */
 export const DEMO_PASSWORD = "demo1234";

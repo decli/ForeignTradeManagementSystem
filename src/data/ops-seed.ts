@@ -10,6 +10,10 @@
 import type { Database } from "./types";
 import type {
   BankAccount,
+  DocRecord,
+  FreightLane,
+  FreightQuote,
+  LoginLog,
   OpsData,
   Payment,
   ProductionOrder,
@@ -17,8 +21,10 @@ import type {
   PurchaseContract,
   Rfq,
   RfqQuote,
+  StockItem,
   Supplier,
 } from "./ops-types";
+import { DOC_KINDS, FORM_BY_COUNTRY, STOCK_WAREHOUSES } from "./ops-types";
 
 const DAY = 86_400_000;
 const yuan = (n: number) => Math.round(n * 100);
@@ -46,14 +52,14 @@ export function buildOpsSeed(db: Database): OpsData {
   // ───────────── 供应商 ─────────────
   // 名字取自主种子里退税发票的销售方，两边对得上才叫一套数据
   const supplierSeed: Array<Omit<Supplier, "id" | "createdAt">> = [
-    { code: "S-001", name: "厦门安洁无纺制品有限公司", nameEn: "Xiamen Anjie Nonwoven", category: "防护用品", contact: "王建国", phone: "0592-6688xxx", province: "福建", termDays: 30, score: 92, certExpiry: iso(210), taxNo: "91350200MA2AAAA1X", bank: "中国银行厦门分行", active: true, note: "配合度最好的一家，急单能插队。" },
-    { code: "S-002", name: "江苏正阳防护用品有限公司", nameEn: "Jiangsu Zhengyang Protective", category: "防护用品", contact: "李海涛", phone: "0512-8899xxx", province: "江苏", termDays: 45, score: 85, certExpiry: iso(58), taxNo: "91320500MA1BBBB2Y", bank: "招商银行苏州分行", active: true, note: "资质两个月内到期，需提前提醒换证。" },
-    { code: "S-003", name: "浙江宏达医疗器械有限公司", nameEn: "Zhejiang Hongda Medical", category: "医疗器械", contact: "陈立", phone: "0574-8877xxx", province: "浙江", termDays: 30, score: 88, certExpiry: iso(430), taxNo: "91330200MA2CCCC3Z", bank: "宁波银行", active: true, note: "CE / FDA 齐全，欧美单优先给他们。" },
-    { code: "S-004", name: "湖北康泰无纺布制品有限公司", nameEn: "Hubei Kangtai Nonwoven", category: "防护用品", contact: "刘芳", phone: "027-8866xxx", province: "湖北", termDays: 60, score: 74, certExpiry: iso(150), taxNo: "91420100MA4DDDD4A", bank: "建设银行武汉分行", active: true, note: "价格便宜但交期常拖，大单不敢单给一家。" },
-    { code: "S-005", name: "湖北真诚无纺布制品有限公司", nameEn: "Hubei Zhencheng Nonwoven", category: "防护用品", contact: "赵敏", phone: "027-8855xxx", province: "湖北", termDays: 45, score: 79, certExpiry: iso(-12), taxNo: "91420100MA4EEEE5B", bank: "农业银行武汉分行", active: true, note: "资质已过期，暂停下单直到换证。" },
-    { code: "S-006", name: "泉州黑鹰威视电子科技有限公司", nameEn: "Quanzhou Heiying Vision", category: "安防电子", contact: "林志强", phone: "0595-2233xxx", province: "福建", termDays: 30, score: 90, certExpiry: iso(320), taxNo: "91350500MA3FFFF6C", bank: "兴业银行泉州分行", active: true, note: "监控类唯一供应商，议价空间小。" },
-    { code: "S-007", name: "广东恒安医疗用品有限公司", nameEn: "Guangdong Heng'an Medical", category: "医疗器械", contact: "吴伟", phone: "020-3344xxx", province: "广东", termDays: 30, score: 83, certExpiry: iso(275), taxNo: "91440100MA5GGGG7D", bank: "工商银行广州分行", active: true, note: "手套类强项，价格随丁腈原料波动大。" },
-    { code: "S-008", name: "山东华康防护科技有限公司", nameEn: "Shandong Huakang Protective", category: "防护用品", contact: "孙鹏", phone: "0531-5566xxx", province: "山东", termDays: 45, score: 81, certExpiry: iso(190), taxNo: "91370100MA6HHHH8E", bank: "浦发银行济南分行", active: true, note: "北方仓，走青岛港比走厦门省两天。" },
+    { code: "S-001", name: "厦门安洁无纺制品有限公司", nameEn: "Xiamen Anjie Nonwoven", category: "防护用品", contact: "王建国", phone: "0592-6688xxx", province: "福建", termDays: 30, score: 92, certExpiry: iso(210), taxNo: "91350200MA2AAAA1XB", bank: "中国银行厦门分行", active: true, note: "配合度最好的一家，急单能插队。" },
+    { code: "S-002", name: "江苏正阳防护用品有限公司", nameEn: "Jiangsu Zhengyang Protective", category: "防护用品", contact: "李海涛", phone: "0512-8899xxx", province: "江苏", termDays: 45, score: 85, certExpiry: iso(58), taxNo: "91320500MA1BBBB2YK", bank: "招商银行苏州分行", active: true, note: "资质两个月内到期，需提前提醒换证。" },
+    { code: "S-003", name: "浙江宏达医疗器械有限公司", nameEn: "Zhejiang Hongda Medical", category: "医疗器械", contact: "陈立", phone: "0574-8877xxx", province: "浙江", termDays: 30, score: 88, certExpiry: iso(430), taxNo: "91330200MA2CCCC3ZP", bank: "宁波银行", active: true, note: "CE / FDA 齐全，欧美单优先给他们。" },
+    { code: "S-004", name: "湖北康泰无纺布制品有限公司", nameEn: "Hubei Kangtai Nonwoven", category: "防护用品", contact: "刘芳", phone: "027-8866xxx", province: "湖北", termDays: 60, score: 74, certExpiry: iso(150), taxNo: "91420100MA4DDDD4AT", bank: "建设银行武汉分行", active: true, note: "价格便宜但交期常拖，大单不敢单给一家。" },
+    { code: "S-005", name: "湖北真诚无纺布制品有限公司", nameEn: "Hubei Zhencheng Nonwoven", category: "防护用品", contact: "赵敏", phone: "027-8855xxx", province: "湖北", termDays: 45, score: 79, certExpiry: iso(-12), taxNo: null, bank: "农业银行武汉分行", active: true, note: "资质已过期，暂停下单直到换证。" },
+    { code: "S-006", name: "泉州黑鹰威视电子科技有限公司", nameEn: "Quanzhou Heiying Vision", category: "安防电子", contact: "林志强", phone: "0595-2233xxx", province: "福建", termDays: 30, score: 90, certExpiry: iso(320), taxNo: "91350500MA3FFFF6CW", bank: "兴业银行泉州分行", active: true, note: "监控类唯一供应商，议价空间小。" },
+    { code: "S-007", name: "广东恒安医疗用品有限公司", nameEn: "Guangdong Heng'an Medical", category: "医疗器械", contact: "吴伟", phone: "020-3344xxx", province: "广东", termDays: 30, score: 83, certExpiry: iso(275), taxNo: "91440100MA5GGGG7DR", bank: "工商银行广州分行", active: true, note: "手套类强项，价格随丁腈原料波动大。" },
+    { code: "S-008", name: "山东华康防护科技有限公司", nameEn: "Shandong Huakang Protective", category: "防护用品", contact: "孙鹏", phone: "0531-5566xxx", province: "山东", termDays: 45, score: 81, certExpiry: iso(190), taxNo: "91370100MA6HHHH8E", bank: null, active: true, note: "北方仓，走青岛港比走厦门省两天。" },
   ];
   const suppliers: Supplier[] = supplierSeed.map((s) => ({ ...s, id: id("sup"), createdAt: now.toISOString() }));
 
@@ -286,5 +292,149 @@ export function buildOpsSeed(db: Database): OpsData {
 
   payments.sort((a, b) => b.paidOn.localeCompare(a.paidOn));
 
-  return { suppliers, products, rfqs, rfqQuotes, contracts, productions, payments, accounts };
+  // ───────────── 库存 ─────────────
+  // 一个产品一个仓一个批次一行。医疗器械和防护用品都有效期，
+  // 所以批号和有效期是必填的 —— 出了问题要能召回到批。
+  const stock: StockItem[] = [];
+  products.forEach((prd, pi2) => {
+    const lots = 1 + Math.floor(rand() * 2);
+    for (let l = 0; l < lots; l++) {
+      const inbound = -Math.floor(between(3, 220));
+      const qty = Math.round(between(prd.packQty * 4, prd.packQty * 90) / prd.packQty) * prd.packQty;
+      // 三成的库存被在跟的 PI 锁掉了，可用量要扣掉这部分
+      const lock = rand() < 0.32 ? pick(openPis) : null;
+      stock.push({
+        id: id("stk"),
+        productId: prd.id,
+        warehouse: STOCK_WAREHOUSES[(pi2 + l) % STOCK_WAREHOUSES.length],
+        lotNo: `L${String(now.getFullYear()).slice(2)}${String(1000 + pi2 * 3 + l)}`,
+        qty,
+        lockedQty: lock ? Math.round((qty * between(0.2, 0.6)) / prd.packQty) * prd.packQty : 0,
+        lockedPiId: lock?.id ?? null,
+        inboundOn: iso(inbound),
+        /* 无纺布两年、器械三年，从入库日往后推。
+           另有约四分之一是「进来时就快到期」的尾货 —— 清库存拿的低价单常常这样，
+           临期预警要有东西可警，不然这个功能在演示里等于不存在。 */
+        expiryOn: iso(
+          inbound +
+            (rand() < 0.26
+              ? Math.round(between(60, 280))
+              : prd.category === "安防电子"
+                ? 3650
+                : prd.category === "医疗器械"
+                  ? 1095
+                  : 730),
+        ),
+        note: null,
+      });
+    }
+  });
+
+  // ───────────── 运费询价 ─────────────
+  const laneSeed = [
+    { pol: "厦门", pod: "Callao", country: "秘鲁", mode: "海运" },
+    { pol: "厦门", pod: "Santos", country: "巴西", mode: "海运" },
+    { pol: "深圳", pod: "Jebel Ali", country: "阿联酋", mode: "海运" },
+    { pol: "上海", pod: "Rotterdam", country: "荷兰", mode: "海运" },
+    { pol: "厦门", pod: "Busan", country: "韩国", mode: "海运" },
+    { pol: "青岛", pod: "Hamburg", country: "德国", mode: "海运" },
+    { pol: "厦门", pod: "Manzanillo", country: "墨西哥", mode: "海运" },
+    { pol: "广州", pod: "Sydney", country: "澳大利亚", mode: "海运" },
+    { pol: "深圳", pod: "Frankfurt", country: "德国", mode: "空运" },
+  ];
+  const forwarders = ["中外运华南", "德迅 Kuehne+Nagel", "嘉里大通", "锦程物流", "飞力达", "中远海运物流"];
+  const lanes: FreightLane[] = [];
+  const freightQuotes: FreightQuote[] = [];
+  laneSeed.forEach((ln, i) => {
+    const askedOff = -Math.floor(between(2, 40));
+    const laneId = id("lane");
+    const n2 = 3 + Math.floor(rand() * 2);
+    const picked = [...forwarders].sort(() => rand() - 0.5).slice(0, n2);
+    const base20 = ln.mode === "空运" ? 0 : between(1400, 4200);
+    const qs: FreightQuote[] = picked.map((fw) => {
+      const k = between(0.9, 1.18);
+      return {
+        id: id("fq"),
+        laneId,
+        forwarder: fw,
+        price20Cents: ln.mode === "空运" ? 0 : yuan(Math.round(base20 * k)),
+        price40Cents: ln.mode === "空运" ? 0 : yuan(Math.round(base20 * k * 1.72)),
+        perKgCents: ln.mode === "空运" ? yuan(Number(between(18, 34).toFixed(1))) : 0,
+        transitDays: Math.round(between(ln.mode === "空运" ? 3 : 18, ln.mode === "空运" ? 6 : 42)),
+        sailings: ln.mode === "空运" ? 7 : Math.round(between(1, 4)),
+        // 运价有效期普遍很短，过期的报价不能再拿去核算成本
+        validUntil: iso(askedOff + Math.round(between(10, 45))),
+        note: null,
+      };
+    });
+    freightQuotes.push(...qs);
+    // 便宜不一定中标：船期密、航程短同样值钱，这里按「价 + 时效」的综合分挑
+    const score = (q: FreightQuote) =>
+      (q.price20Cents || q.perKgCents) / 100 + q.transitDays * 22 - q.sailings * 30;
+    const best = [...qs].sort((a, b) => score(a) - score(b))[0];
+    const status = askedOff < -20 ? "booked" : askedOff < -6 ? "quoted" : "open";
+    lanes.push({
+      id: laneId,
+      laneNo: `FQ${String(now.getFullYear()).slice(2)}${String(700 + i)}`,
+      pol: ln.pol,
+      pod: ln.pod,
+      country: ln.country,
+      mode: ln.mode,
+      askedOn: iso(askedOff),
+      status,
+      awardedQuoteId: status === "booked" ? best.id : null,
+      note: null,
+    });
+  });
+
+  // ───────────── 单证 ─────────────
+  // 按目的国决定要不要加优惠原产地证 —— 给错了，客户清关多交关税，
+  // 这是「齐套检查」真正要拦住的事，不是简单数够五份就行。
+  const docs: DocRecord[] = [];
+  db.shipments.filter((s) => !s.archived).forEach((sh, i) => {
+    const need: string[] = [...DOC_KINDS];
+    const form = FORM_BY_COUNTRY[sh.country];
+    if (form) need.push(form);
+    need.forEach((kind, k) => {
+      // 越晚的批次，越可能还没出单证 —— 这样「缺件」是有理由的，不是随机缺
+      const late = i % 7 === 0 && k >= 2;
+      const missing = late && rand() < 0.55;
+      if (missing) return;
+      const st = sh.releaseState === "已放行" ? "filed" : rand() < 0.7 ? "issued" : "pending";
+      docs.push({
+        id: id("doc"),
+        shipmentId: sh.id,
+        kind,
+        docNo: st === "pending" ? null : `${kind.slice(0, 2)}${Math.floor(between(100000, 999999))}`,
+        issuedOn: st === "pending" ? null : iso(-Math.floor(between(1, 50))),
+        status: st,
+        note: null,
+      });
+    });
+  });
+
+  // ───────────── 登录记录 ─────────────
+  const devices = ["Chrome 141 · macOS", "Chrome 141 · Windows", "Safari 19 · iPhone", "Edge 140 · Windows"];
+  const logins: LoginLog[] = [];
+  db.users.filter((u) => u.active).forEach((u, ui) => {
+    for (let d = 0; d < 6; d++) {
+      const off = -(d * Math.round(between(1, 4)) + Math.floor(between(0, 2)));
+      const hour = Math.floor(between(8, 21));
+      // 极少数落在凌晨、且 IP 不在常用段 —— 这就是要提醒的那种
+      const odd = ui === 2 && d === 1;
+      logins.push({
+        id: id("lg"),
+        userId: u.id,
+        at: `${iso(off)}T${String(odd ? 3 : hour).padStart(2, "0")}:${String(Math.floor(between(0, 59))).padStart(2, "0")}:00`,
+        ip: odd ? "103.28.44.19" : `58.22.${Math.floor(between(1, 254))}.${Math.floor(between(1, 254))}`,
+        device: odd ? "Chrome 128 · Linux" : devices[(ui + d) % devices.length],
+        method: d === 0 ? "password" : rand() < 0.3 ? "google" : "password",
+        ok: !(ui === 1 && d === 4),
+        risk: odd ? "非常用地登录（境外 IP），且发生在凌晨" : ui === 1 && d === 4 ? "口令错误" : null,
+      });
+    }
+  });
+  logins.sort((a, b) => b.at.localeCompare(a.at));
+
+  return { suppliers, products, rfqs, rfqQuotes, contracts, productions, payments, accounts, stock, lanes, freightQuotes, docs, logins };
 }

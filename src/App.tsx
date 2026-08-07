@@ -28,6 +28,16 @@ const AccountsPage = lazy(() => import("./pages/finance").then((m) => ({ default
 const Expenses = lazy(() => import("./pages/finance").then((m) => ({ default: m.Expenses })));
 const Sinosure = lazy(() => import("./pages/finance").then((m) => ({ default: m.Sinosure })));
 
+const Inventory = lazy(() => import("./pages/logistics").then((m) => ({ default: m.Inventory })));
+const Freight = lazy(() => import("./pages/logistics").then((m) => ({ default: m.Freight })));
+const Documents = lazy(() => import("./pages/logistics").then((m) => ({ default: m.Documents })));
+
+const SellerEntities = lazy(() => import("./pages/admin").then((m) => ({ default: m.SellerEntities })));
+const InvoiceInfo = lazy(() => import("./pages/admin").then((m) => ({ default: m.InvoiceInfo })));
+const Commission = lazy(() => import("./pages/admin").then((m) => ({ default: m.Commission })));
+const Reports = lazy(() => import("./pages/admin").then((m) => ({ default: m.Reports })));
+const Logins = lazy(() => import("./pages/admin").then((m) => ({ default: m.Logins })));
+
 function PageFallback() {
   return (
     <div className="page">
@@ -76,6 +86,14 @@ export default function App() {
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/expenses" element={<Expenses />} />
           <Route path="/sinosure" element={<Sinosure />} />
+          <Route path="/stock" element={<Inventory />} />
+          <Route path="/freight" element={<Freight />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/seller-entities" element={<SellerEntities />} />
+          <Route path="/invoice-info" element={<InvoiceInfo />} />
+          <Route path="/commission" element={<Commission />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/logins" element={<Logins />} />
           <Route path="/audit" element={<Audit />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/m/:slug" element={<ModulePlaceholder />} />

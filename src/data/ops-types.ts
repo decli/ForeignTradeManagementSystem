@@ -177,6 +177,11 @@ export type OpsData = {
   productions: ProductionOrder[];
   payments: Payment[];
   accounts: BankAccount[];
+  stock: StockItem[];
+  lanes: FreightLane[];
+  freightQuotes: FreightQuote[];
+  docs: DocRecord[];
+  logins: LoginLog[];
 };
 
 export const CONTRACT_STATUS: Record<string, string> = {
@@ -204,4 +209,118 @@ export const PAYMENT_STATUS: Record<string, string> = {
   pending: "待确认",
   confirmed: "已确认",
   reconciled: "已核销",
+};
+
+/* ═══════ 库存 / 运费 / 单证 / 登录 ═══════ */
+
+/** 库存：一个产品在一个仓的一个批次 */
+export type StockItem = {
+  id: string;
+  productId: string;
+  warehouse: string;
+  /** 生产批号，医疗器械出口必须能追溯到批 */
+  lotNo: string;
+  qty: number;
+  /** 已被 PI 锁定的数量，可用 = qty - lockedQty */
+  lockedQty: number;
+  /** 锁给了哪张 PI */
+  lockedPiId: string | null;
+  /** 最近一次入库日，库龄从这里算 */
+  inboundOn: string;
+  /** 有效期。防护用品和医疗器械都有，过期就只能报废 */
+  expiryOn: string | null;
+  note: string | null;
+};
+
+/** 运费询价：一条航线一次询价 */
+export type FreightLane = {
+  id: string;
+  laneNo: string;
+  pol: string;
+  pod: string;
+  country: string;
+  /** 海运 | 空运 */
+  mode: string;
+  askedOn: string;
+  /** open | quoted | booked */
+  status: string;
+  awardedQuoteId: string | null;
+  note: string | null;
+};
+
+export type FreightQuote = {
+  id: string;
+  laneId: string;
+  forwarder: string;
+  /** 20GP / 40HQ 报价，分。空运走 perKgCents */
+  price20Cents: number;
+  price40Cents: number;
+  perKgCents: number;
+  /** 航程天数 */
+  transitDays: number;
+  /** 每周船期班次 */
+  sailings: number;
+  validUntil: string;
+  note: string | null;
+};
+
+/** 单证：挂在出运批次上的一份文件 */
+export type DocRecord = {
+  id: string;
+  shipmentId: string;
+  /** 提单 / 产地证 / FORM E … */
+  kind: string;
+  docNo: string | null;
+  issuedOn: string | null;
+  /** pending | issued | filed */
+  status: string;
+  note: string | null;
+};
+
+/** 登录记录 */
+export type LoginLog = {
+  id: string;
+  userId: string;
+  at: string;
+  ip: string;
+  device: string;
+  /** password | google | demo */
+  method: string;
+  ok: boolean;
+  /** 异地 / 异常时段等风险提示，没有就是 null */
+  risk: string | null;
+};
+
+export const STOCK_WAREHOUSES = ["厦门保税仓", "义乌中转仓", "深圳前海仓"] as const;
+
+/** 目的国 → 出口时必须随附的优惠原产地证。给错了客户清关要多交关税 */
+export const FORM_BY_COUNTRY: Record<string, string> = {
+  韩国: "FORM K",
+  日本: "FORM E",
+  新加坡: "FORM E",
+  印尼: "FORM E",
+  马来西亚: "FORM E",
+  泰国: "FORM E",
+  越南: "FORM E",
+  智利: "FORM F",
+  秘鲁: "FORM R",
+  澳大利亚: "FORM AU",
+  新西兰: "FORM N",
+  巴基斯坦: "FORM P",
+  瑞士: "FORM S",
+};
+
+/** 一票货的标准单证清单。缺哪份，清关就卡在哪份 */
+export const DOC_KINDS = ["商业发票", "装箱单", "提单", "一般原产地证", "报关单"] as const;
+
+export const DOC_STATUS: Record<string, string> = {
+  pending: "待出具",
+  issued: "已出具",
+  filed: "已归档",
+};
+
+export const FREIGHT_STATUS: Record<string, string> = {
+  open: "询价中",
+  quoted: "已报价",
+  booked: "已订舱",
 };

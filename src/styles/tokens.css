@@ -106,6 +106,13 @@
   --cell-pad-x: 14px;
   --head-h: 40px;
 
+  /* 版面节奏只有两档：
+     --gap-tight 用在「一簇同类小件」内部（KPI 卡、报表卡）；
+     --gap-block 用在页面级的块之间（页头、工具条、面板、表格）。
+     两档就够，多了每次都要挑，反而不齐。 */
+  --gap-tight: 12px;
+  --gap-block: 16px;
+
   --dur-1: 110ms;
   --dur-2: 180ms;
   --dur-3: 280ms;

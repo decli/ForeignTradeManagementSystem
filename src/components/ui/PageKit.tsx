@@ -35,8 +35,10 @@ export function Page({
         {actions ? <div className="page-acts">{actions}</div> : null}
       </div>
       {kpis ? <div className="kpis">{kpis}</div> : null}
+      {/* 工具条是 sticky 的，必须留在 .page-body 外面 ——
+          grid 项的 sticky 被限制在自己那行轨道里，圈进去就不粘了 */}
       {toolbar ? <div className="toolbar">{toolbar}</div> : null}
-      {children}
+      <div className="page-body">{children}</div>
     </div>
   );
 }

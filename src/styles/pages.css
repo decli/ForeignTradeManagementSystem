@@ -117,8 +117,8 @@
 .kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--gap-tight);
+  margin-bottom: var(--gap-block);
 }
 .kpi {
   position: relative;
@@ -185,17 +185,17 @@ button.kpi:hover {
 /* ── 看板 ── */
 .dash {
   display: grid;
-  gap: 16px;
+  gap: var(--gap-block);
 }
 .dash-2 {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--gap-block);
 }
 .dash-3 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  gap: var(--gap-block);
 }
 
 .risk {
@@ -1078,13 +1078,17 @@ a.link:hover,
   color: var(--text-3);
 }
 
-.card + .card,
-.card + .grid-2,
-.grid-2 + .card { margin-top: 14px; }
+/* ⚠️ 这里曾经写过 `.card + .card { margin-top: 14px }`。
+   相邻兄弟选择器**不知道自己在什么布局里** —— 页面上纵向堆叠时它是对的，
+   一旦这些卡片是某个 grid 行的成员（看板的 .dash-2 / .dash-3），
+   它就叠在 gap 上面，把第二张之后的卡片整体压低 14px，一行卡片的上边框对不齐。
+
+   规矩：**块与块之间的间距一律由容器的 gap 提供，不用兄弟外边距。**
+   纵向堆叠交给 .page-body 的 gap，横向并排交给各自 grid 的 gap，互不干扰。 */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 14px;
+  gap: var(--gap-block);
 }
 
 /* ── 轻量表格 ──
@@ -1201,7 +1205,7 @@ a.link:hover,
 .entity-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-  gap: 14px;
+  gap: var(--gap-block);
 }
 .entity-mark {
   display: grid;
@@ -1292,7 +1296,7 @@ a.link:hover,
 .report-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-  gap: 12px;
+  gap: var(--gap-tight);
 }
 .report {
   display: flex;

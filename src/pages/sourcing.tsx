@@ -59,7 +59,7 @@ function Page({
       </div>
       {kpis ? <div className="kpis">{kpis}</div> : null}
       <div className="toolbar">{toolbar}</div>
-      {children}
+      <div className="page-body">{children}</div>
     </div>
   );
 }

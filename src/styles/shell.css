@@ -747,12 +747,23 @@ button.rail-group-h:hover .rail-group-n {
   max-width: 1680px;
   margin: 0 auto;
 }
+/* 页面正文的纵向节奏只有这一个来源。
+   用 grid 而不是给每个块加 margin-bottom：块的种类会一直变（面板、表格、
+   图表行、空态），逐个记得加边距是迟早会漏的事，容器的 gap 不会漏。
+
+   注意别把 .toolbar 圈进来 —— 它是 sticky 的，而 grid 项的 sticky
+   被限制在自己那一行的轨道里，等于失效。所以工具条留在 .page-body 外面。 */
+.page-body {
+  display: grid;
+  gap: var(--gap-block);
+  align-content: start;
+}
 .page-head {
   display: flex;
   align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: var(--gap-block);
 }
 .page-head h1 {
   font-size: var(--fs-2xl);
@@ -783,7 +794,7 @@ button.rail-group-h:hover .rail-group-n {
   gap: 8px;
   flex-wrap: wrap;
   padding: 10px;
-  margin-bottom: 12px;
+  margin-bottom: var(--gap-block);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: saturate(180%) blur(10px);
   border: 1px solid var(--line);

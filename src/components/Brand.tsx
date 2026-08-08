@@ -17,12 +17,15 @@ import { useT } from "@/i18n";
  * 老板要的是结果（货出得去钱收得回），业务员要的是省事（不靠记性），
  * 财务要的是对得上（四条流），投资人要的是范围（从询盘到退税）。
  *
- * 断行是手写的。交给浏览器断，「每一票货，都看得见」在 44px 下会折成
- * 「每一票货，都看 / 得见」—— 断在词中间，一眼看得出没人排过版。
+ * 断行是手写的。交给浏览器断，「每一票货，全程可见」在 44px 下会折成
+ * 「每一票货，全程 / 可见」—— 断在词中间，一眼看得出没人排过版。
  * 第二行是重音（样式上更亮），所以落点要放在第二行。
  */
 export const TAGLINES = [
-  { zh: ["每一票货，", "都看得见"], en: ["Every shipment,", "in plain sight."], note: "可见性 · 现用" },
+  /* 选定。「都看得见」说的是**能看**，「全程可见」说的是**哪一段都不断线** ——
+     后者才是这个产品真正在解决的事：货不是在某个节点看得见，是从下单到收汇
+     没有一段是黑的。英文同理，in plain sight → visible end to end。 */
+  { zh: ["每一票货，", "全程可见。"], en: ["Every shipment,", "visible end to end."], note: "可见性 · 选定" },
   { zh: ["货出得去，", "钱收得回"], en: ["Goods out.", "Money back."], note: "结果 · 老板" },
   { zh: ["货在哪，钱在哪，", "一屏之内"], en: ["Where the goods are,", "where the money is."], note: "双主线 · 老板" },
   { zh: ["一个 PI 号，", "串起一整趟外贸"], en: ["One PI number,", "the whole voyage."], note: "机制 · 业务" },
@@ -42,7 +45,11 @@ export const TAGLINES = [
  * 下面十句都在回答同一个问题：**我为什么要用它。**
  */
 export const PITCHES = [
-  { zh: "你的外贸全流程管理助手", en: "Your foreign-trade operations assistant" },
+  /* 选定。「管理」是我们干的事，「数智化助手」是它对用户的身份 ——
+     前者要求用户先接受"我需要一套管理系统"，后者不用。
+     英文不直译「数智化」：digital-and-intelligent 在英文里是套话，
+     用 intelligent + end-to-end 把同一件事说清楚。 */
+  { zh: "你的外贸全流程数智化助手", en: "Your intelligent assistant for end-to-end export operations" },
   { zh: "替你盯着每一票货、每一笔款、每一张退税单", en: "Watching every shipment, every payment, every refund claim" },
   { zh: "从询盘到退税，一条线管到底", en: "One thread from first inquiry to final tax refund" },
   { zh: "把散在 Excel 和微信里的外贸，收成一条线", en: "Pulls trade out of spreadsheets and chat threads, into one line" },
@@ -55,8 +62,8 @@ export const PITCHES = [
 ] as const;
 
 /* 选中哪一句。换一句就是改这两个数字 —— 文案是产品决策，不该散在页面里。 */
-const TAGLINE = 1;
-const PITCH = 1;
+const TAGLINE = 0;
+const PITCH = 0;
 
 export const BRAND = {
   zh: "信风",

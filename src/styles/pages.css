@@ -527,7 +527,9 @@ button.kpi:hover {
   grid-template-rows: auto 1fr auto;
   gap: 32px;
   padding: 52px 60px;
-  background: linear-gradient(158deg, #050a17 0%, #0d1730 48%, #1b2a52 100%);
+  /* 底色是品牌自己的深海军蓝，不跟明暗走；只有最亮那一档掺进主题色，
+     换配色时整面板跟着偏，但不会变成一块彩色。 */
+  background: linear-gradient(158deg, #050a17 0%, #0d1730 48%, color-mix(in srgb, var(--brand-1) 34%, #0a1024) 100%);
   color: #e8eefb;
   overflow: hidden;
   isolation: isolate;
@@ -539,8 +541,8 @@ button.kpi:hover {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-image: radial-gradient(ellipse 62% 52% at 84% 8%, rgba(84, 132, 255, 0.24), transparent 62%),
-    radial-gradient(ellipse 50% 40% at 4% 96%, rgba(52, 190, 168, 0.13), transparent 62%),
+  background-image: radial-gradient(ellipse 62% 52% at 84% 8%, color-mix(in srgb, var(--brand-2) 26%, transparent), transparent 62%),
+    radial-gradient(ellipse 50% 40% at 4% 96%, color-mix(in srgb, var(--brand-1) 20%, transparent), transparent 62%),
     /* 文字全在左边一列，整列压暗一档，流线从字上穿过时对比度才稳 */
     linear-gradient(100deg, rgba(4, 8, 18, 0.84) 0%, rgba(4, 8, 18, 0.4) 32%, transparent 60%);
   pointer-events: none;
@@ -567,8 +569,13 @@ button.kpi:hover {
 .login-brand span {
   display: block;
   font-size: 10px;
-  color: #7d8ea9;
+  color: color-mix(in srgb, var(--brand-2) 34%, #8593a8);
   letter-spacing: 0.22em;
+}
+/* 同 .rail-name：英文界面下副行换成汉字，字距要收，字号要放 */
+.login-brand[data-lang="en"] span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 .login-art-mid {
   align-self: center;
@@ -581,10 +588,14 @@ button.kpi:hover {
   color: #fff;
 }
 /* 断行是手写的（见 BRAND.taglineZhLines），这里只负责把两行的轻重拉开：
-   第一行退半步，第二行是落点，亮度和字重都压上去。 */
+   第一行退半步，第二行是落点，亮度和字重都压上去。
+   ── 这一片深色面板上的所有次要文字都从 --brand-2 兑白得来 ──
+   写死过一组蓝灰（#a9bde0 / #8fa3c4 / #7d8ea9…）。换成松石绿主题后，
+   帆标、流线、按钮全绿了，只有这几行字还泛着蓝，整块面板像两次调色。
+   兑白的比例决定层级：45% 是标题的退半步，30% 是正文，22% 是最轻的注脚。 */
 .login-art h1 .l1 {
   display: block;
-  color: #a9bde0;
+  color: color-mix(in srgb, var(--brand-2) 45%, #ffffff);
   font-weight: 560;
 }
 .login-art h1 .l2 {
@@ -597,11 +608,11 @@ button.kpi:hover {
   height: 2px;
   margin: 28px 0 20px;
   border-radius: 2px;
-  background: linear-gradient(90deg, #93aeff, rgba(147, 174, 255, 0));
+  background: linear-gradient(90deg, var(--brand-2), transparent);
 }
 .login-art p {
   font-size: var(--fs-lg);
-  color: #8fa3c4;
+  color: color-mix(in srgb, var(--brand-2) 30%, #a8b4c6);
   letter-spacing: 0.03em;
   max-width: none;
 }
@@ -617,12 +628,12 @@ button.kpi:hover {
 .login-lore p {
   font-size: var(--fs-md);
   line-height: 1.7;
-  color: #8195b4;
+  color: color-mix(in srgb, var(--brand-2) 22%, #93a0b3);
   letter-spacing: 0.01em;
 }
 /* 词条名领起整句，破折号是排出来的不是打出来的 */
 .login-lore b {
-  color: #d6e2f6;
+  color: color-mix(in srgb, var(--brand-2) 30%, #ffffff);
   font-weight: 640;
   letter-spacing: 0.05em;
 }
@@ -648,11 +659,11 @@ button.kpi:hover {
   fill: none;
 }
 .wind-base {
-  stroke: rgba(148, 178, 236, 0.2);
+  stroke: color-mix(in srgb, var(--brand-2) 22%, transparent);
   stroke-width: 1;
 }
 .wind-gust {
-  stroke: rgba(178, 202, 255, 0.75);
+  stroke: color-mix(in srgb, var(--brand-2) 62%, #dbe6ff);
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-dasharray: 64 936;
@@ -664,7 +675,7 @@ button.kpi:hover {
   stroke-width: 5;
   stroke-linecap: round;
   stroke-dasharray: 0.01 999.99;
-  filter: drop-shadow(0 0 7px rgba(140, 175, 255, 0.95));
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--brand-2) 88%, transparent));
   animation: tw-flow var(--dur) linear var(--delay) infinite;
 }
 @keyframes tw-flow {

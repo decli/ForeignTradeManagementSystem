@@ -102,6 +102,72 @@ export function useScrollLock(active: boolean) {
   }, [active]);
 }
 
+/**
+ * 受控文本框，中文输入法下不会被打断。
+ *
+ * ── 症状 ──
+ * 页面上的搜索框只能打英文。敲拼音，候选框刚冒出来就没了，一个汉字也上不去。
+ * 偏偏右上角 ⌘K 那个搜索框好好的。
+ *
+ * ── 不是输入法的问题，是「这个框的值存在哪」的问题 ──
+ * 出问题的框，值都存在地址栏参数里（useParam）。react-router v7 的
+ * setSearchParams 是包在 startTransition 里的 —— 这次更新被降级成可打断的，
+ * 本轮事件循环里**不提交**。而 React 在事件派发收尾时会做一次
+ * restoreControlledState：发现 DOM 里的值跟上一次渲染的值对不上，就把
+ * DOM 的 value **写回旧值**；等下一帧 transition 提交了，值再变回来。
+ *
+ * 拿浏览器实测过，敲一个 n 的瞬间：
+ *   同步读 input.value → ""      ← 被写回去了
+ *   一帧之后再读       → "n"
+ *
+ * 打英文时这一来一回你看不见，所以从没人发现。但对输入法来说，程序去写
+ * input.value 就等同于宣布「合成结束」—— 拼音缓冲清空，候选框关闭。
+ * 于是永远只能打出英文。⌘K 那个框用的是 useState，是紧急更新，
+ * 同步就提交了，DOM 和渲染值始终一致，自然没事。
+ *
+ * ── 修法：让框在打字期间自己说了算 ──
+ * 本地留一份镜像，渲染用镜像。这样每次按键都是一次紧急 setState，
+ * React 提交完再去比对，值是对的，不会回写 DOM。外面传进来的值只在
+ * 「不在合成中」且「确实是别人改的」时才采纳 —— 清空按钮、浏览器后退、
+ * 切换筛选走的都是这条路。合成期间不往外传半截拼音：搜「ni」没有意义，
+ * 还会让整张表白闪一下。
+ */
+export function useTextField(value: string, onChange: (v: string) => void) {
+  const [local, setLocal] = useState(value);
+  const composing = useRef(false);
+  /** 上一次「认过」的外部值。自己发出去引起的回流不算外部改动 */
+  const seen = useRef(value);
+
+  if (value !== seen.current) {
+    seen.current = value;
+    // 渲染期改自己的 state 是 React 认可的「派生状态」写法，会立刻重跑本组件
+    if (!composing.current && value !== local) setLocal(value);
+  }
+
+  const emit = (v: string) => {
+    setLocal(v);
+    seen.current = v;
+    onChange(v);
+  };
+
+  return {
+    value: local,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (composing.current) setLocal(e.target.value);
+      else emit(e.target.value);
+    },
+    onCompositionStart: () => {
+      composing.current = true;
+    },
+    onCompositionEnd: (e: React.CompositionEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      composing.current = false;
+      emit(e.currentTarget.value);
+    },
+    /** 外部要强改值（清空按钮、快捷筛选）走这个，绕开合成态 */
+    set: emit,
+  };
+}
+
 /** 每分钟走一次的时钟，顶栏的世界时间用 */
 export function useTick(ms = 30_000) {
   const [, set] = useState(0);

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/Icon";
+import { useTextField } from "@/lib/hooks";
 import type { Tone } from "@/lib/rules";
 import { tr } from "@/i18n";
 
@@ -41,6 +42,10 @@ export function Segmented<T extends string>({
   );
 }
 
+/**
+ * 站内所有列表页的搜索框。值大多存在地址栏参数里，
+ * 所以必须走 useTextField —— 直接受控会被中文输入法卡死，原因见那个 hook。
+ */
 export function SearchInput({
   value,
   onChange,
@@ -52,20 +57,23 @@ export function SearchInput({
   placeholder?: string;
   autoFocus?: boolean;
 }) {
+  const field = useTextField(value, onChange);
   return (
     <div className="search">
       <Icon name="search" />
       <input
         className="input"
         type="search"
-        value={value}
         autoFocus={autoFocus}
-        onChange={(e) => onChange(e.target.value)}
+        value={field.value}
+        onChange={field.onChange}
+        onCompositionStart={field.onCompositionStart}
+        onCompositionEnd={field.onCompositionEnd}
         placeholder={placeholder}
-        aria-label={placeholder ?? "搜索"}
+        aria-label={placeholder ?? tr("搜索")}
       />
-      {value ? (
-        <button className="search-clear" onClick={() => onChange("")} aria-label="清空搜索">
+      {field.value ? (
+        <button className="search-clear" onClick={() => field.set("")} aria-label={tr("清空搜索")}>
           <Icon name="x" />
         </button>
       ) : null}

@@ -1,24 +1,14 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Icon } from "@/components/Icon";
+import { Icon, type IconName } from "@/components/Icon";
 import { Menu } from "@/components/ui/Menu";
+import { WorldClocks } from "@/components/shell/WorldClocks";
 import { useDb } from "@/data/DataProvider";
 import { customRate, marketRate } from "@/data/queries";
 import { useTick } from "@/lib/hooks";
-import { localClock } from "@/lib/format";
 import { breadcrumb, navTitle } from "@/lib/nav";
-import { useDensity, useThemeCycle, type Density } from "@/lib/theme";
+import { ACCENTS, useAccent, useDensity, useThemeCycle, type Density, type Theme } from "@/lib/theme";
 import { useT } from "@/i18n";
-
-/** 顶栏跟着的城市：厦门是自己，其余是客户密集的时区 */
-const CITIES = [
-  { name: "厦门", en: "Xiamen", tz: "Asia/Shanghai", home: true },
-  { name: "利马", en: "Lima", tz: "America/Lima" },
-  { name: "纽约", en: "New York", tz: "America/New_York" },
-  { name: "布宜诺斯艾利斯", en: "Buenos Aires", tz: "America/Argentina/Buenos_Aires" },
-  { name: "伦敦", en: "London", tz: "Europe/London" },
-  { name: "迪拜", en: "Dubai", tz: "Asia/Dubai" },
-];
 
 export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void; onOpenNav: () => void }) {
   const db = useDb();
@@ -28,7 +18,6 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
   useTick(30_000);
 
   const fx = useMemo(() => ({ market: marketRate(db), custom: customRate(db) }), [db]);
-  const clocks = useMemo(() => CITIES.map((c) => ({ ...c, clock: localClock(c.tz) })), []);
 
   return (
     <header className="topbar">
@@ -56,23 +45,10 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
         <b>{fx.custom.toFixed(4)}</b>
       </div>
 
-      <div className="clocks" aria-label={t("世界时间")}>
-        {clocks.map((c) => (
-          <span
-            key={c.name}
-            className="clock"
-            data-home={c.home ? "1" : "0"}
-            data-working={c.clock?.working ? "1" : "0"}
-            data-tip={`${c.name} ${c.clock?.time ?? ""} · ${t(c.clock?.working ? "对方在上班" : "对方多半不在")}`}
-          >
-            <i />
-            {lang === "en" ? c.en : c.name} <b>{c.clock?.time ?? "--:--"}</b>
-          </span>
-        ))}
-      </div>
+      <WorldClocks />
 
-      {/* 四个控件成组。散着放会有两个后果：
-          一是顶栏 12px 的 gap 让它们看着像四件不相干的东西；
+      {/* 右侧控件成组。散着放会有两个后果：
+          一是顶栏 12px 的 gap 让它们看着像三件不相干的东西；
           二是一旦时钟被隐藏（≤640px）或内容变短，它们就跟着往左飘 ——
           之前正好是「时钟宽度刚好填满」才看着靠右，是巧合不是布局。 */}
       <div className="topbar-acts">
@@ -80,63 +56,87 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
           <Icon name="search" />
         </button>
         <LangButton />
-        <DensityMenu />
-        <ThemeButton />
+        <AppearanceMenu />
       </div>
     </header>
   );
 }
 
-function ThemeButton() {
-  const { theme, cycle } = useThemeCycle();
-  const { t } = useT();
-  const label = t(theme === "light" ? "浅色" : theme === "dark" ? "深色" : "跟随系统");
-  return (
-    <button className="icon-btn" onClick={cycle} data-tip={`${t("外观")}：${label}`} aria-label={`${t("切换外观")} · ${label}`}>
-      <Icon name={theme === "light" ? "sun" : theme === "dark" ? "moon" : "monitor"} />
-    </button>
-  );
-}
-
-const DENSITY_OPTS: { value: Density; label: string; desc: string }[] = [
-  { value: "compact", label: "紧凑", desc: "一屏塞下更多行" },
-  { value: "default", label: "标准", desc: "默认" },
-  { value: "cozy", label: "宽松", desc: "看着不累" },
+const THEME_OPTS: { value: Theme; label: string; icon: IconName }[] = [
+  { value: "light", label: "浅色", icon: "sun" },
+  { value: "dark", label: "深色", icon: "moon" },
+  { value: "system", label: "跟随", icon: "monitor" },
 ];
 
-function DensityMenu() {
+const DENSITY_OPTS: { value: Density; label: string }[] = [
+  { value: "compact", label: "紧凑" },
+  { value: "default", label: "标准" },
+  { value: "cozy", label: "宽松" },
+];
+
+/**
+ * 外观：明暗 + 主题色 + 表格密度，一个入口。
+ *
+ * 原来明暗和密度各占一个顶栏按钮，加主题色就是第三个 —— 三个只在装修时用一次
+ * 的开关，天天占着顶栏最右边那块地方。合成一个之后顶栏从四个控件降到三个，
+ * 顺带给世界时间腾出了位置。
+ *
+ * 里面用三排分段器而不是三个二级菜单：这三项都是「少数几个互斥选项」，
+ * 摊开来当前值一眼就看见，也不用为了看一眼现在是哪档而多点一次。
+ */
+function AppearanceMenu() {
+  const { theme, setTheme } = useThemeCycle();
+  const [accent, setAccent] = useAccent();
   const [density, setDensity] = useDensity();
   const { t } = useT();
+
   return (
     <Menu
       align="end"
-      width={200}
+      width={244}
       trigger={(p) => (
-        <button className="icon-btn" {...p} ref={p.ref} data-tip={t("表格密度")} aria-label={t("表格密度")}>
-          <Icon name="layout" />
+        <button className="icon-btn" {...p} ref={p.ref} data-tip={t("外观")} aria-label={t("外观")}>
+          <Icon name={theme === "light" ? "sun" : theme === "dark" ? "moon" : "monitor"} />
         </button>
       )}
     >
-      {(close) => (
-        <>
+      {() => (
+        <div className="appearance">
+          <div className="pop-title">{t("明暗")}</div>
+          <div className="seg seg-fill" role="group" aria-label={t("明暗")}>
+            {THEME_OPTS.map((o) => (
+              <button key={o.value} aria-pressed={theme === o.value} onClick={() => setTheme(o.value)}>
+                <Icon name={o.icon} size={14} />
+                {t(o.label)}
+              </button>
+            ))}
+          </div>
+
+          <div className="pop-title">{t("主题色")}</div>
+          <div className="swatches" role="group" aria-label={t("主题色")}>
+            {ACCENTS.map((a) => (
+              <button
+                key={a.value}
+                className="swatch"
+                style={{ ["--sw" as string]: a.sw, ["--sw2" as string]: a.swDark }}
+                aria-pressed={accent === a.value}
+                aria-label={t(a.label)}
+                data-tip={`${t(a.label)} · ${t(a.desc)}`}
+                onClick={() => setAccent(a.value)}
+              />
+            ))}
+          </div>
+          <p className="appearance-note">{t(ACCENTS.find((a) => a.value === accent)?.label ?? "")}</p>
+
           <div className="pop-title">{t("表格密度")}</div>
-          {DENSITY_OPTS.map((o) => (
-            <button
-              key={o.value}
-              className="pop-item"
-              data-active={density === o.value ? "1" : "0"}
-              onClick={() => {
-                setDensity(o.value);
-                close();
-              }}
-            >
-              <span style={{ width: 15 }}>{density === o.value ? <Icon name="check" size={15} /> : null}</span>
-              <span>{t(o.label)}</span>
-              <span className="spacer" />
-              <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>{t(o.desc)}</span>
-            </button>
-          ))}
-        </>
+          <div className="seg seg-fill" role="group" aria-label={t("表格密度")}>
+            {DENSITY_OPTS.map((o) => (
+              <button key={o.value} aria-pressed={density === o.value} onClick={() => setDensity(o.value)}>
+                {t(o.label)}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </Menu>
   );

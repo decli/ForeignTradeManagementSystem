@@ -342,6 +342,67 @@ textarea.input:focus {
   padding: 0 14px;
   font-size: var(--fs-md);
 }
+/* 摊满一行、每段等宽。用在弹层里 —— 一排选项撑满容器才不会左重右轻 */
+.seg-fill {
+  display: flex;
+}
+.seg-fill button {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 6px;
+}
+.seg-fill svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── 外观弹层 ── */
+.appearance {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+}
+/* 每小节的标题和它下面那一排要贴紧，节与节之间才拉开 */
+.appearance .pop-title {
+  padding: 9px 6px 5px;
+}
+.appearance > .pop-title:first-child {
+  padding-top: 3px;
+}
+.swatches {
+  display: flex;
+  gap: 8px;
+  padding: 2px 6px 0;
+}
+/* 色板本身就是说明书：圆点的颜色就是它要换成的颜色，不用再配文字。
+   选中态用外面一圈同色的环，不用打勾 —— 勾会盖住正在展示的那块颜色。 */
+.swatch {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--sw) 0 49%, var(--sw2) 51% 100%);
+  box-shadow: 0 0 0 1px rgba(13, 22, 39, 0.16) inset;
+  transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1);
+}
+.swatch:hover {
+  transform: scale(1.12);
+}
+.swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 1px rgba(13, 22, 39, 0.16) inset, 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+}
+.appearance-note {
+  padding: 8px 6px 0;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
 
 /* ── 状态胶囊 ── */
 .pill {

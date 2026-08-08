@@ -8,6 +8,8 @@
  * 三笔画完，16px 下也认得出来。
  */
 
+import { useT } from "@/i18n";
+
 export const BRAND = {
   zh: "信风",
   en: "Tradewind",
@@ -25,7 +27,9 @@ export const BRAND = {
   /* 名字的来历，一句话。不是营销文案，是词源 ——
      看完知道这产品为什么叫信风，比任何一句「赋能」都管用。 */
   loreZh: "大航海时代，整条欧亚航线都靠这股常年不改向的风。",
-  loreEn: "The one wind that never changed its mind — and carried every ship of the Age of Sail.",
+  /* 破折号是 .login-lore b::after 排出来的，所以正文里不能再有第二个 ——
+     「Tradewind — The one wind … — and carried …」一行两个破折号，念不下去 */
+  loreEn: "The one wind that never changed its mind, and it carried every ship of the Age of Sail.",
 } as const;
 
 export function Logomark({ size = 30, className }: { size?: number; className?: string }) {
@@ -40,9 +44,11 @@ export function Logomark({ size = 30, className }: { size?: number; className?: 
       style={{ borderRadius: size * 0.28, flex: "none" }}
     >
       <defs>
+        {/* 跟着主题色走。写死过 #3B5BD6，换成松石绿主题后左上角还是一块蓝，
+            整屏就这一处不对，比不换更显眼 */}
         <linearGradient id="tw-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#3B5BD6" />
-          <stop offset="1" stopColor="#7F9BFF" />
+          <stop offset="0" stopColor="var(--brand-1)" />
+          <stop offset="1" stopColor="var(--brand-2)" />
         </linearGradient>
       </defs>
       <rect width="32" height="32" rx="9" fill="url(#tw-g)" />
@@ -56,14 +62,29 @@ export function Logomark({ size = 30, className }: { size?: number; className?: 
   );
 }
 
+/**
+ * 名字本身是双语的，切语言时两行对调，而不是只换一行。
+ *
+ *   中文界面   **信风** / TRADEWIND
+ *   英文界面   **Tradewind** / 信风
+ *
+ * 一开始只把主行换成 Tradewind，副行还是 TRADEWIND —— 同一个词写两遍。
+ * 让副行始终摆「另一种写法」，两个方向都成立，也说明了这两个名字是一回事。
+ */
+export function brandLockup(lang: "zh" | "en") {
+  return lang === "en" ? { name: BRAND.en, sub: BRAND.zh } : { name: BRAND.zh, sub: BRAND.wordmark };
+}
+
 /** 侧栏 / 登录页用的完整标识 */
 export function Wordmark({ size = 30, subtitle = true }: { size?: number; subtitle?: boolean }) {
+  const { lang } = useT();
+  const mark = brandLockup(lang);
   return (
     <>
       <Logomark size={size} />
-      <span className="rail-name">
-        <b>{BRAND.zh}</b>
-        {subtitle ? <span>{BRAND.wordmark}</span> : null}
+      <span className="rail-name" data-lang={lang}>
+        <b>{mark.name}</b>
+        {subtitle ? <span>{mark.sub}</span> : null}
       </span>
     </>
   );

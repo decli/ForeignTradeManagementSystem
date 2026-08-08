@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#f3f6fa" media="(prefers-color-scheme: light)" />
     <meta
       name="description"
-      content="MT 通商 · TRADEFLOW —— 外贸业务管理系统：跟单、订单核算、退税、资金。纯前端演示版，数据存在你自己的浏览器里。"
+      content="信风 Tradewind —— 外贸全流程管理：跟单、订单核算、退税、资金、单证。纯前端演示版，数据存在你自己的浏览器里。"
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>信风 Tradewind · 外贸全流程管理</title>
@@ -20,6 +20,9 @@
           if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
           var d = localStorage.getItem("mt.density");
           if (d) document.documentElement.dataset.density = d;
+          // 主色同理：晚一帧的话，选了松石绿的人每次刷新都要先看一眼蓝色
+          var a = localStorage.getItem("mt.accent");
+          if (a) document.documentElement.dataset.accent = a;
         } catch (e) {}
       })();
     </script>

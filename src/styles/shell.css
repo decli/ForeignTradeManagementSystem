@@ -42,21 +42,6 @@
   flex: none;
   overflow: hidden;
 }
-.rail-mark {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--r-sm);
-  background: linear-gradient(140deg, #3b5bd6, #7f9bff);
-  color: #fff;
-  flex: none;
-  box-shadow: 0 4px 12px -4px rgba(59, 91, 214, 0.8);
-}
-.rail-mark svg {
-  width: 17px;
-  height: 17px;
-}
 .rail-name {
   min-width: 0;
   line-height: 1.15;
@@ -75,6 +60,12 @@
   color: var(--rail-text-2);
   letter-spacing: 0.16em;
   white-space: nowrap;
+}
+/* 英文界面副行是「信风」两个汉字。0.16em 的字距是给 TRADEWIND 那种
+   拉丁全大写排的，套到汉字上会散成两个孤字，另外汉字在 9.5px 下认不清。 */
+.rail-name[data-lang="en"] span {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
 }
 
 .rail-search {
@@ -708,49 +699,192 @@ button.rail-group-h:hover .rail-group-n {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--jade) 22%, transparent);
 }
 
-/* 世界时钟：横向可滚，窄屏不挤爆顶栏 */
-.clocks {
+/* ── 世界时间 ──
+   顶栏只剩一个芯片：本地时间 + 「几地在上班」。
+   原来六个城市平铺，横向占掉四百多像素，还要靠遮罩 + 横滚才塞得下。 */
+.clock-chip {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 0 1 auto;
-  overflow-x: auto;
-  scrollbar-width: none;
-  mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
-}
-.clocks::-webkit-scrollbar {
-  display: none;
-}
-.clock {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--fs-sm);
-  color: var(--text-3);
-  white-space: nowrap;
-}
-.clock i {
-  width: 5px;
-  height: 5px;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border: 1px solid var(--line);
   border-radius: var(--r-full);
-  background: var(--text-4);
-  flex: none;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  transition: background var(--dur-1), border-color var(--dur-1);
 }
-.clock[data-working="1"] i {
-  background: var(--jade);
+.clock-chip:hover,
+.clock-chip[aria-expanded="true"] {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
 }
-.clock[data-home="1"] {
-  color: var(--text);
-  font-weight: 500;
+.clock-chip svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-3);
 }
-.clock[data-home="1"] i {
-  background: var(--accent);
+.clock-chip-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--line);
 }
-.clock b {
+.clock-chip b {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  color: var(--text);
+}
+/* 「几地在上班」是这里唯一会变、也唯一有人关心的数。
+   有人在上班就点亮，全下班就退成灰字 —— 不用读文字也知道有没有人可找。 */
+.clock-chip-n {
+  color: var(--text-3);
+}
+.clock-chip-n[data-on="1"] {
+  color: var(--jade);
+  font-weight: 600;
+}
+
+/* ── 时区对照弹层 ── */
+.tz {
+  padding: 4px 4px 2px;
+}
+.tz-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 6px 10px;
+  font-size: var(--fs-md);
+}
+.tz-head .muted {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 三条轨道必须用同一个列模板，否则竖线的百分比和亮块的百分比
+   不在同一条轴上 —— 所以模板只写一次，三处都引用它 */
+.tz {
+  --tz-cols: 74px 74px minmax(0, 1fr);
+  --tz-pad: 6px;
+}
+.tz-scale,
+.tz-row,
+.tz-now {
+  display: grid;
+  grid-template-columns: var(--tz-cols);
+  align-items: center;
+  padding: 0 var(--tz-pad);
+}
+.tz-scale {
+  height: 15px;
+  font-size: 9.5px;
+  color: var(--text-4);
+  font-family: var(--mono);
+}
+/* 刻度、亮块、竖线都活在第三列这条「轨道」里，各自再按百分比定位 */
+.tz-lane {
+  grid-column: 3;
+  position: relative;
+  height: 100%;
+}
+.tz-scale .tz-lane span {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-2px);
+}
+.tz-scale .tz-lane span:last-child {
+  transform: translateX(-100%);
+}
+
+.tz-rows {
+  position: relative;
+  display: grid;
+  gap: 1px;
+}
+.tz-row {
+  height: 26px;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.tz-row:hover {
+  background: var(--surface-2);
+}
+.tz-row[data-home="1"] {
+  color: var(--text);
+  font-weight: 600;
+}
+.tz-time {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
+.tz-row[data-working="1"] .tz-time {
+  color: var(--jade);
+  font-weight: 600;
+}
+.tz-time i {
+  margin-left: 3px;
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--text-4);
+}
+.tz-band {
+  grid-column: 3;
+  position: relative;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+/* 本地那行也画一条，但只描边不填色：它是**参照物**，
+   看别人的亮块偏在自己这条的哪一侧，「早几个钟头 / 晚几个钟头」才是直观的 */
+.tz-row[data-home="1"] .tz-work {
+  background: transparent;
+  border: 1.5px dashed color-mix(in srgb, var(--text-3) 55%, transparent);
+}
+.tz-work {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.tz-row[data-working="1"] .tz-work {
+  background: color-mix(in srgb, var(--jade) 52%, transparent);
+}
+/* 跨零点被切开的那一头削平：读起来是「一段被轴切断」，不是两段班 */
+.tz-work[data-cut="r"] {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.tz-work[data-cut="l"] {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+/* 此刻。铺在 .tz-rows 整片上，而不是每行画一条 —— 每行一条会被行距切成六截 */
+.tz-now {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tz-now i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  margin-left: -0.75px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+.tz-foot {
+  padding: 9px 6px 4px;
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+  color: var(--text-4);
 }
 
 .canvas {
@@ -1006,9 +1140,11 @@ button.rail-group-h:hover .rail-group-n {
   display: none;
 }
 
+/* 顶栏挤起来时，先收掉时钟芯片里的「几地在上班」，只留时间；
+   汇率牌和整个芯片是最后才让位的 —— 它们是这条栏上真正在用的信息 */
 @media (max-width: 1080px) {
-  .clocks {
-    max-width: 240px;
+  .clock-chip-n {
+    display: none;
   }
 }
 
@@ -1097,7 +1233,7 @@ button.rail-group-h:hover .rail-group-n {
     gap: 8px;
   }
   .fx,
-  .clocks {
+  .clock-chip {
     display: none;
   }
   .page-acts {

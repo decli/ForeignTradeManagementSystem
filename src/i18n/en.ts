@@ -1169,4 +1169,26 @@ export const EN: Record<string, string> = {
   "动态": "Updates",
   "留痕": "Audit entries",
   "订单核算": "Order costing",
+
+  /* 外观：明暗 + 主题色 + 密度 */
+  "明暗": "Appearance",
+  "跟随": "System",
+  "主题色": "Accent",
+  "航线蓝": "Harbor blue",
+  "远洋蓝": "Deep sea",
+  "松石绿": "Turquoise",
+  "暮山紫": "Dusk violet",
+  "墨石": "Graphite",
+  "更冷一档": "A notch cooler",
+  "沉一点": "Quieter",
+  "重一点": "Deeper",
+  "只留状态色": "Status colours only",
+  "清空搜索": "Clear search",
+
+  /* 世界时间 */
+  "{n} 地在上班": "{n} at work",
+  "昨": "yd",
+  "明": "tm",
+  "亮块是对方上班的时间段（当地 9:00–18:00），按你这边的钟摆好；竖线是此刻。":
+    "Bars mark when each city is at work (9:00–18:00 their time), laid out on your clock. The line is now.",
 };

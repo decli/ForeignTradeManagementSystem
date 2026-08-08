@@ -1,9 +1,119 @@
 /* ============================================================
    设计令牌
-   主色一个（航线蓝），语义色三个，两者严格分离：
-   蓝色 = 系统的强调，绿 / 琥珀 / 红 = 业务的状态。
+   主色可换（默认航线蓝），语义色三个固定，两者严格分离：
+   主色 = 系统的强调，绿 / 琥珀 / 红 = 业务的状态。
    中性色带轻微蓝偏，不用纯灰 —— 纯灰在长时间盯的台账里显脏。
    ============================================================ */
+
+/* ── 主色调色板 ──────────────────────────────────────────────
+   令牌分两层。这里是**调色板层**：一套配色声明它明暗两条阶梯长什么样，
+   命名只说位置（l = light 那条，d = dark 那条），不说用途。
+   底下明暗块里的 --accent / --accent-hi 是**语义层**，只做一件事：挑一条。
+
+   为什么要拆开：加一套配色 = 加一个五行的块，不用去动明暗那两大段；
+   而且「明暗」和「配色」两个维度互不知情，5 套色 × 3 种明暗可以自由组合，
+   不用写 15 份。
+
+   ── 选色的两条硬约束 ──
+   1. **不能跟状态色撞。** 状态色的色相是 jade 162° / amber 68° / coral 24°，
+      主色一旦落进这些邻域，一个「主要按钮」就会被读成「成功」或「报错」。
+      所以候选全在冷色半区（190°–310°）加一个近乎无彩的墨石。绿色和橙色
+      看着好看，但这个系统里它们已经有工作了。
+   2. **落在 sRGB 色域内。** 阶梯是按 OKLCH 的固定明度档算的，青色一带
+      （190°–240°）在中明度上能吃的彩度只有蓝色的一半左右，硬给会被浏览器
+      裁通道、连色相一起偏掉。所以每一档的彩度都单独收到自己那档的上限以内 ——
+      这也是青色两套看起来比蓝紫两套「素」的原因，不是没调，是色域就这么大。
+
+   白字压在 --acc-l 上的对比度：5.2–6.0，深色那条 7.3–8.0，都过 AA。
+   ───────────────────────────────────────────────────────── */
+:root,
+:root[data-accent="harbor"] {
+  /* 航线蓝 —— 默认。这一套的值是手调出来的，其余四套按同样的明度阶梯换色相生成 */
+  --acc-l-ink: #2a44ae;
+  --acc-l: #3b5bd6;
+  --acc-l-hi: #5a76e6;
+  --acc-l-s2: #d6ddfa;
+  --acc-l-s: #e8ecfd;
+  --acc-d-ink: #a4b8ff;
+  --acc-d: #7f9bff;
+  --acc-d-hi: #9db3ff;
+  --acc-d-s2: #1f2c53;
+  --acc-d-s: #18224180;
+  --acc-d-on: #0a1020;
+  /* 标识的渐变：中明度 → 高明度，深浅底上都立得住，所以不跟明暗走 */
+  --brand-1: #3b5bd6;
+  --brand-2: #7f9bff;
+}
+
+:root[data-accent="cerulean"] {
+  /* 远洋蓝 240°，偏青的蓝，比默认更冷一档 */
+  --acc-l-ink: #005783;
+  --acc-l: #0170a6;
+  --acc-l-hi: #0389ca;
+  --acc-l-s2: #c7e3f7;
+  --acc-l-s: #e0effb;
+  --acc-d-ink: #7bc5f8;
+  --acc-d: #2eacf5;
+  --acc-d-hi: #6fc0f7;
+  --acc-d-s2: #00324f;
+  --acc-d-s: #00273e80;
+  --acc-d-on: #040d15;
+  --brand-1: #0170a6;
+  --brand-2: #2eacf5;
+}
+
+:root[data-accent="teal"] {
+  /* 松石绿 192°，彩度收到 0.75 —— 离 jade 的 162° 只有 30°，
+     不压一档的话主要按钮会被当成「已完成」 */
+  --acc-l-ink: #005e5c;
+  --acc-l: #017976;
+  --acc-l-hi: #039491;
+  --acc-l-s2: #c9e5e3;
+  --acc-l-s: #e0f1f0;
+  --acc-d-ink: #7dccc9;
+  --acc-d: #30b8b4;
+  --acc-d-hi: #72c8c5;
+  --acc-d-s2: #003735;
+  --acc-d-s: #002b2a80;
+  --acc-d-on: #040e0e;
+  --brand-1: #017976;
+  --brand-2: #30b8b4;
+}
+
+:root[data-accent="dusk"] {
+  /* 暮山紫 306° */
+  --acc-l-ink: #663590;
+  --acc-l: #8149b2;
+  --acc-l-hi: #9766c5;
+  --acc-l-s2: #e4d9f1;
+  --acc-l-s: #f0eaf8;
+  --acc-d-ink: #caade9;
+  --acc-d: #b68ce1;
+  --acc-d-hi: #c6a8e8;
+  --acc-d-s2: #362647;
+  --acc-d-s: #2a1d3880;
+  --acc-d-on: #0e0a13;
+  --brand-1: #8149b2;
+  --brand-2: #b68ce1;
+}
+
+:root[data-accent="graphite"] {
+  /* 墨石 264°，彩度压到 15% —— 近乎无彩。
+     给「界面上只想看见数据」的人：此时唯一的颜色就是状态色 */
+  --acc-l-ink: #4a5260;
+  --acc-l: #61697a;
+  --acc-l-hi: #798191;
+  --acc-l-s2: #dcdee2;
+  --acc-l-s: #ebedef;
+  --acc-d-ink: #b7bcc6;
+  --acc-d: #9ba2b1;
+  --acc-d-hi: #b2b7c2;
+  --acc-d-s2: #2c2f34;
+  --acc-d-s: #22242980;
+  --acc-d-on: #0b0c0e;
+  --brand-1: #61697a;
+  --brand-2: #9ba2b1;
+}
 
 :root {
   color-scheme: light dark;
@@ -24,12 +134,12 @@
   --text-3: #8794a8;
   --text-4: #a9b4c4;
 
-  /* ── 主色 ── */
-  --accent: #3b5bd6;
-  --accent-ink: #2a44ae;
-  --accent-hi: #5a76e6;
-  --accent-soft: #e8ecfd;
-  --accent-soft-2: #d6ddfa;
+  /* ── 主色（语义层：从上面的调色板里挑「浅色那条」）── */
+  --accent: var(--acc-l);
+  --accent-ink: var(--acc-l-ink);
+  --accent-hi: var(--acc-l-hi);
+  --accent-soft: var(--acc-l-s);
+  --accent-soft-2: var(--acc-l-s2);
   --on-accent: #ffffff;
 
   /* ── 语义色 ── */
@@ -53,7 +163,7 @@
   --rail-text-2: #8794a8;
   --rail-strong: #111a29;
   --rail-hover: rgba(17, 26, 41, 0.05);
-  --rail-active: #e8ecfd;
+  --rail-active: var(--acc-l-s);
   --rail-chip: rgba(17, 26, 41, 0.06);
 
   /* 气泡与提示条在两个主题下都偏深 —— 它们是浮在内容之上的临时层，
@@ -149,12 +259,12 @@
     --text-3: #6f7f99;
     --text-4: #566579;
 
-    --accent: #7f9bff;
-    --accent-ink: #a4b8ff;
-    --accent-hi: #9db3ff;
-    --accent-soft: #18224180;
-    --accent-soft-2: #1f2c53;
-    --on-accent: #0a1020;
+    --accent: var(--acc-d);
+    --accent-ink: var(--acc-d-ink);
+    --accent-hi: var(--acc-d-hi);
+    --accent-soft: var(--acc-d-s);
+    --accent-soft-2: var(--acc-d-s2);
+    --on-accent: var(--acc-d-on);
 
     --jade: #3fc493;
     --jade-soft: #0d3227;
@@ -173,7 +283,7 @@
     --rail-text-2: #66768e;
     --rail-strong: #ffffff;
     --rail-hover: rgba(255, 255, 255, 0.06);
-    --rail-active: #1f2c53;
+    --rail-active: var(--acc-d-s2);
     --rail-chip: rgba(255, 255, 255, 0.08);
     --tip-bg: #26334a;
     --tip-text: #e9eefa;
@@ -203,12 +313,12 @@
   --text-3: #6f7f99;
   --text-4: #566579;
 
-  --accent: #7f9bff;
-  --accent-ink: #a4b8ff;
-  --accent-hi: #9db3ff;
-  --accent-soft: #18224180;
-  --accent-soft-2: #1f2c53;
-  --on-accent: #0a1020;
+  --accent: var(--acc-d);
+  --accent-ink: var(--acc-d-ink);
+  --accent-hi: var(--acc-d-hi);
+  --accent-soft: var(--acc-d-s);
+  --accent-soft-2: var(--acc-d-s2);
+  --on-accent: var(--acc-d-on);
 
   --jade: #3fc493;
   --jade-soft: #0d3227;
@@ -227,7 +337,7 @@
   --rail-text-2: #66768e;
   --rail-strong: #ffffff;
   --rail-hover: rgba(255, 255, 255, 0.06);
-  --rail-active: #1f2c53;
+  --rail-active: var(--acc-d-s2);
   --rail-chip: rgba(255, 255, 255, 0.08);
   --tip-bg: #26334a;
   --tip-text: #e9eefa;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
-import { BRAND, Logomark } from "@/components/Brand";
+import { BRAND, Logomark, brandLockup } from "@/components/Brand";
 import { BrandWind } from "@/components/BrandWind";
 import { Avatar } from "@/components/ui/bits";
 import { DEMO_ACCOUNTS, signInWithPassword } from "@/auth/accounts";
@@ -23,6 +23,7 @@ export default function Login() {
   const { signInDemo, signInPassword } = useAuth();
   const { theme, cycle } = useThemeCycle();
   const { t, lang, toggle } = useT();
+  const mark = brandLockup(lang);
 
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState(DEMO_PASSWORD);
@@ -56,9 +57,9 @@ export default function Login() {
 
         <div className="login-art-top">
           <Logomark size={34} />
-          <span className="login-brand">
-            <b>{BRAND.zh}</b>
-            <span>{BRAND.wordmark}</span>
+          <span className="login-brand" data-lang={lang}>
+            <b>{mark.name}</b>
+            <span>{mark.sub}</span>
           </span>
         </div>
 
@@ -76,7 +77,7 @@ export default function Login() {
 
         <div className="login-lore">
           <p>
-            <b>{BRAND.zh}</b>
+            <b>{mark.name}</b>
             {lang === "zh" ? BRAND.loreZh : BRAND.loreEn}
           </p>
         </div>

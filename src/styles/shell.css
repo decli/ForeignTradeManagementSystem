@@ -1673,32 +1673,33 @@ button.rail-group-h:hover .rail-group-n {
 }
 
 /* ── 迷你趋势线 ── */
+/* ── 迷你趋势线：线是中性色，只有末端那个点带方向色 ──
+   原来整条线跟着涨跌染色，两个问题：
+     1. 线画的是**近半小时**的形状，箭头算的是**最近一次刷新**的变化 ——
+        两个不同的时间窗共用一种颜色。于是出现「线明明在往上，却标着绿色 ▼」，
+        看的人只会觉得哪里坏了。
+     2. 「这一刻没怎么动」被染成灰色。灰色在这套界面里的意思是「没有值」，
+        于是一条正常的持平线看起来像取价失败。
+   现在：线 = 历史形状（中性），末端的点 = 此刻的方向（红涨绿跌）。
+   两段信息各说各的，不再互相矛盾，也不会再有「灰线」这种状态。 */
 .spark {
   overflow: visible;
 }
 .spark path {
   fill: none;
-  stroke: var(--text-4);
+  stroke: color-mix(in srgb, var(--text-3) 70%, transparent);
   stroke-width: 1.3;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .spark circle {
-  fill: var(--text-4);
+  fill: var(--text-3);
 }
-.spark[data-dir="up"] path,
 .spark[data-dir="up"] circle {
-  stroke: var(--coral);
   fill: var(--coral);
 }
-.spark[data-dir="down"] path,
 .spark[data-dir="down"] circle {
-  stroke: var(--jade);
   fill: var(--jade);
-}
-.spark[data-dir="up"] path,
-.spark[data-dir="down"] path {
-  fill: none;
 }
 
 /* 时钟行的城市名跟国旗并排 */

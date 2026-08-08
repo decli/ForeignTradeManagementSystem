@@ -25,6 +25,7 @@ import { Bar, EmptyState, KV, Pill, SearchInput, Segmented } from "@/components/
 import { useDb } from "@/data/DataProvider";
 import { listPayments, paymentKpis, type PaymentRow } from "@/data/ops-queries";
 import { PAYMENT_STATUS } from "@/data/ops-types";
+import { useTableExport } from "@/components/ui/TableExport";
 import { useT } from "@/i18n";
 import {
   centsToYuan,
@@ -164,31 +165,6 @@ export function Payments() {
     <Page
       title={t("收付款 / 财务")}
       desc={t("收汇与付汇的登记、认领与核销。每一笔钱都要能说出是哪张单子的")}
-      actions={
-        <button
-          className="btn"
-          onClick={() =>
-            exportXlsx(
-              stampName("收付款"),
-              [
-                { header: t("单号"), width: 18, value: (r: PaymentRow) => r.paymentNo },
-                { header: t("方向"), width: 8, value: (r: PaymentRow) => (r.direction === "in" ? "收汇" : "付汇") },
-                { header: t("往来单位"), width: 26, value: (r: PaymentRow) => r.counterparty },
-                { header: t("关联单据"), width: 18, value: (r: PaymentRow) => r.piNo ?? r.contractNo ?? "" },
-                { header: t("币种"), width: 8, value: (r: PaymentRow) => r.currency },
-                { header: t("金额"), width: 14, type: "number", format: "#,##0.00", value: (r: PaymentRow) => r.amount },
-                { header: t("折人民币"), width: 14, type: "number", format: "#,##0.00", value: (r: PaymentRow) => r.cny },
-                { header: t("日期"), width: 12, value: (r: PaymentRow) => r.paidOn },
-                { header: t("状态"), width: 10, value: (r: PaymentRow) => PAYMENT_STATUS[r.status] ?? r.status },
-              ],
-              rows,
-            )
-          }
-        >
-          <Icon name="download" />
-          {t("导出 Excel")}
-        </button>
-      }
       kpis={
         <>
           <Kpi icon="download" k={t("收汇合计")} v={formatCompact(k.inCny, "¥")} s={t("筛选范围内已登记")} tone="jade" />
@@ -245,6 +221,23 @@ export function Payments() {
     >
       <DataGrid
         gridId="payments"
+        onExport={() =>
+          exportXlsx(
+            stampName("收付款"),
+            [
+              { header: t("单号"), width: 18, value: (r: PaymentRow) => r.paymentNo },
+              { header: t("方向"), width: 8, value: (r: PaymentRow) => (r.direction === "in" ? "收汇" : "付汇") },
+              { header: t("往来单位"), width: 26, value: (r: PaymentRow) => r.counterparty },
+              { header: t("关联单据"), width: 18, value: (r: PaymentRow) => r.piNo ?? r.contractNo ?? "" },
+              { header: t("币种"), width: 8, value: (r: PaymentRow) => r.currency },
+              { header: t("金额"), width: 14, type: "number", format: "#,##0.00", value: (r: PaymentRow) => r.amount },
+              { header: t("折人民币"), width: 14, type: "number", format: "#,##0.00", value: (r: PaymentRow) => r.cny },
+              { header: t("日期"), width: 12, value: (r: PaymentRow) => r.paidOn },
+              { header: t("状态"), width: 10, value: (r: PaymentRow) => PAYMENT_STATUS[r.status] ?? r.status },
+            ],
+            rows,
+          )
+        }
         rows={rows}
         columns={columns}
         onRowOpen={setOpen}
@@ -386,6 +379,8 @@ const t0 = (i: number) => ["第 1 周", "第 2 周", "第 3 周", "第 4 周"][i
 
 export function Funds() {
   const { t } = useT();
+  const cashflowX = useTableExport(t("现金流预测"));
+  const balanceX = useTableExport(t("账户余额"));
   const tr = useTreasury();
   const worst = tr.projected.reduce((m, w) => (w.close < m.close ? w : m), tr.projected[0]);
 
@@ -428,27 +423,29 @@ export function Funds() {
           </div>
         </Panel>
 
-        <Panel title={t("未来四周现金流")} sub={t("收 − 付，滚动结余")}>
-          <table className="mini-table">
-            <thead>
-              <tr>
-                <th>{t("区间")}</th>
-                <th className="r">{t("预计收")}</th>
-                <th className="r">{t("预计付")}</th>
-                <th className="r">{t("期末结余")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tr.projected.map((w) => (
-                <tr key={w.label} data-tone={w.close < 0 ? "coral" : undefined}>
-                  <td>{t(w.label)}</td>
-                  <td className="r mono t-jade">{w.in ? "+" + formatCompact(w.in, "¥") : "—"}</td>
-                  <td className="r mono">{w.out ? "−" + formatCompact(w.out, "¥") : "—"}</td>
-                  <td className="r mono strong">{formatCompact(w.close, "¥")}</td>
+        <Panel title={t("未来四周现金流")} sub={t("收 − 付，滚动结余")} actions={cashflowX.button}>
+          {cashflowX.wrap(
+            <table className="mini-table">
+              <thead>
+                <tr>
+                  <th>{t("区间")}</th>
+                  <th className="r">{t("预计收")}</th>
+                  <th className="r">{t("预计付")}</th>
+                  <th className="r">{t("期末结余")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tr.projected.map((w) => (
+                  <tr key={w.label} data-tone={w.close < 0 ? "coral" : undefined}>
+                    <td>{t(w.label)}</td>
+                    <td className="r mono t-jade">{w.in ? "+" + formatCompact(w.in, "¥") : "—"}</td>
+                    <td className="r mono">{w.out ? "−" + formatCompact(w.out, "¥") : "—"}</td>
+                    <td className="r mono strong">{formatCompact(w.close, "¥")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
           <p className="panel-note">
             {t(
               "应付按采购合同交货日落点，应收按最近一个 ETA 落点（无 ETA 的按 PI 日期 +45 天估）。这是推演，不是承诺。",
@@ -457,39 +454,41 @@ export function Funds() {
         </Panel>
       </div>
 
-      <Panel title={t("账户余额")} sub={t("期初 + 收 − 付")}>
-        <table className="mini-table">
-          <thead>
-            <tr>
-              <th>{t("账户")}</th>
-              <th>{t("开户行")}</th>
-              <th>{t("币种")}</th>
-              <th className="r">{t("期初")}</th>
-              <th className="r">{t("本期收")}</th>
-              <th className="r">{t("本期付")}</th>
-              <th className="r">{t("当前余额")}</th>
-              <th className="r">{t("流水")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tr.byAccount.map((a) => (
-              <tr key={a.id}>
-                <td className="strong">{a.name}</td>
-                <td className="muted">{a.bank}</td>
-                <td className="mono">{a.currency}</td>
-                <td className="r mono dim">{formatMoney(a.opening, "")}</td>
-                <td className="r mono t-jade">{a.in ? "+" + formatMoney(a.in, "") : "—"}</td>
-                <td className="r mono">{a.out ? "−" + formatMoney(a.out, "") : "—"}</td>
-                <td className="r mono strong">{formatMoney(a.balance, "")}</td>
-                <td className="r">
-                  <Link className="link" to={`/bank-journal?acct=${a.id}`}>
-                    {t("{n} 笔", { n: a.moves })}
-                  </Link>
-                </td>
+      <Panel title={t("账户余额")} sub={t("期初 + 收 − 付")} actions={balanceX.button}>
+        {balanceX.wrap(
+          <table className="mini-table">
+            <thead>
+              <tr>
+                <th>{t("账户")}</th>
+                <th>{t("开户行")}</th>
+                <th>{t("币种")}</th>
+                <th className="r">{t("期初")}</th>
+                <th className="r">{t("本期收")}</th>
+                <th className="r">{t("本期付")}</th>
+                <th className="r">{t("当前余额")}</th>
+                <th className="r">{t("流水")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tr.byAccount.map((a) => (
+                <tr key={a.id}>
+                  <td className="strong">{a.name}</td>
+                  <td className="muted">{a.bank}</td>
+                  <td className="mono">{a.currency}</td>
+                  <td className="r mono dim">{formatMoney(a.opening, "")}</td>
+                  <td className="r mono t-jade">{a.in ? "+" + formatMoney(a.in, "") : "—"}</td>
+                  <td className="r mono">{a.out ? "−" + formatMoney(a.out, "") : "—"}</td>
+                  <td className="r mono strong">{formatMoney(a.balance, "")}</td>
+                  <td className="r">
+                    <Link className="link" to={`/bank-journal?acct=${a.id}`}>
+                      {t("{n} 笔", { n: a.moves })}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Panel>
     </Page>
   );
@@ -642,6 +641,7 @@ export function BankJournal() {
     >
       <DataGrid
         gridId="bank-journal"
+        exportName={t("银行日记账")}
         rows={lines}
         columns={columns}
         getRowLabel={(r) => r.paymentNo}
@@ -678,6 +678,8 @@ const LEDGER: { code: string; name: string; nameEn: string; kind: string; from?:
 export function Accounts() {
   const db = useDb();
   const { t, lang } = useT();
+  const bankX = useTableExport(t("银行账户"));
+  const ledgerX = useTableExport(t("会计科目"));
 
   const ledger = useMemo(() => {
     const piById = new Map(db.pis.map((p) => [p.id, p]));
@@ -704,62 +706,66 @@ export function Accounts() {
         </>
       }
     >
-      <Panel title={t("银行账户")} sub={t("PI 上的收款账户从这里选")}>
-        <table className="mini-table">
-          <thead>
-            <tr>
-              <th>{t("账户名称")}</th>
-              <th>{t("开户行")}</th>
-              <th>{t("账号")}</th>
-              <th>{t("币种")}</th>
-              <th className="r">{t("期初余额")}</th>
-              <th>{t("状态")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {db.ops.accounts.map((a) => (
-              <tr key={a.id}>
-                <td className="strong">{a.name}</td>
-                <td className="muted">{a.bank}</td>
-                <td className="mono muted">{a.accountNo}</td>
-                <td className="mono">{a.currency}</td>
-                <td className="r mono">{formatMoney(centsToYuan(a.openingCents), "")}</td>
-                <td>
-                  <Pill tone={a.active ? "jade" : "mute"}>{a.active ? t("启用") : t("停用")}</Pill>
-                </td>
+      <Panel title={t("银行账户")} sub={t("PI 上的收款账户从这里选")} actions={bankX.button}>
+        {bankX.wrap(
+          <table className="mini-table">
+            <thead>
+              <tr>
+                <th>{t("账户名称")}</th>
+                <th>{t("开户行")}</th>
+                <th>{t("账号")}</th>
+                <th>{t("币种")}</th>
+                <th className="r">{t("期初余额")}</th>
+                <th>{t("状态")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {db.ops.accounts.map((a) => (
+                <tr key={a.id}>
+                  <td className="strong">{a.name}</td>
+                  <td className="muted">{a.bank}</td>
+                  <td className="mono muted">{a.accountNo}</td>
+                  <td className="mono">{a.currency}</td>
+                  <td className="r mono">{formatMoney(centsToYuan(a.openingCents), "")}</td>
+                  <td>
+                    <Pill tone={a.active ? "jade" : "mute"}>{a.active ? t("启用") : t("停用")}</Pill>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Panel>
 
-      <Panel title={t("会计科目")} sub={t("金额取自订单核算，口径与费用明细报表一致")}>
-        <table className="mini-table ledger">
-          <thead>
-            <tr>
-              <th>{t("科目编码")}</th>
-              <th>{t("科目名称")}</th>
-              <th>{t("类别")}</th>
-              <th className="r">{t("本期发生额")}</th>
-              <th>{t("占比")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledger.map((a) => (
-              <tr key={a.code}>
-                <td className="mono muted">{a.code}</td>
-                <td className="strong">{lang === "en" ? a.nameEn : a.name}</td>
-                <td>
-                  <Pill tone={a.kind === "资产" ? "accent" : a.kind === "负债" ? "violet" : "mute"}>{t(a.kind)}</Pill>
-                </td>
-                <td className="r mono">{a.amount === null ? <span className="muted">{t("按账户取数")}</span> : formatCny(a.amount)}</td>
-                <td className="ledger-bar">
-                  {a.amount === null ? null : <Bar value={a.amount} max={maxAmount} tone="accent" />}
-                </td>
+      <Panel title={t("会计科目")} sub={t("金额取自订单核算，口径与费用明细报表一致")} actions={ledgerX.button}>
+        {ledgerX.wrap(
+          <table className="mini-table ledger">
+            <thead>
+              <tr>
+                <th>{t("科目编码")}</th>
+                <th>{t("科目名称")}</th>
+                <th>{t("类别")}</th>
+                <th className="r">{t("本期发生额")}</th>
+                <th>{t("占比")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ledger.map((a) => (
+                <tr key={a.code}>
+                  <td className="mono muted">{a.code}</td>
+                  <td className="strong">{lang === "en" ? a.nameEn : a.name}</td>
+                  <td>
+                    <Pill tone={a.kind === "资产" ? "accent" : a.kind === "负债" ? "violet" : "mute"}>{t(a.kind)}</Pill>
+                  </td>
+                  <td className="r mono">{a.amount === null ? <span className="muted">{t("按账户取数")}</span> : formatCny(a.amount)}</td>
+                  <td className="ledger-bar">
+                    {a.amount === null ? null : <Bar value={a.amount} max={maxAmount} tone="accent" />}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Panel>
     </Page>
   );
@@ -877,30 +883,6 @@ export function Expenses() {
     <Page
       title={t("费用明细报表")}
       desc={t("按订单穿透的费用构成，默认按费用率从高到低排 —— 不正常的排在最前面")}
-      actions={
-        <button
-          className="btn"
-          onClick={() =>
-            exportXlsx(
-              stampName("费用明细"),
-              [
-                { header: "PI", width: 18, value: (r: (typeof rows)[number]) => r.piNo },
-                { header: t("客户"), width: 26, value: (r: (typeof rows)[number]) => r.customer },
-                { header: t("海运费"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.freight },
-                { header: t("报关报检"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.customs },
-                { header: t("银行手续费"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.bank },
-                { header: t("其他"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.other },
-                { header: t("费用合计"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.expense },
-                { header: t("费用率"), width: 10, type: "number", format: "0.00", value: (r: (typeof rows)[number]) => r.rate },
-              ],
-              rows,
-            )
-          }
-        >
-          <Icon name="download" />
-          {t("导出 Excel")}
-        </button>
-      }
       kpis={
         <>
           <Kpi icon="pie" k={t("费用合计")} v={formatCompact(totalExpense, "¥")} s={t("{n} 张订单", { n: rows.length })} />
@@ -940,6 +922,22 @@ export function Expenses() {
       </Panel>
       <DataGrid
         gridId="expenses"
+        onExport={() =>
+          exportXlsx(
+            stampName("费用明细"),
+            [
+              { header: "PI", width: 18, value: (r: (typeof rows)[number]) => r.piNo },
+              { header: t("客户"), width: 26, value: (r: (typeof rows)[number]) => r.customer },
+              { header: t("海运费"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.freight },
+              { header: t("报关报检"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.customs },
+              { header: t("银行手续费"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.bank },
+              { header: t("其他"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.other },
+              { header: t("费用合计"), width: 14, type: "number", format: "#,##0.00", value: (r: (typeof rows)[number]) => r.expense },
+              { header: t("费用率"), width: 10, type: "number", format: "0.00", value: (r: (typeof rows)[number]) => r.rate },
+            ],
+            rows,
+          )
+        }
         rows={rows}
         columns={columns}
         getRowLabel={(r) => r.piNo}
@@ -1118,6 +1116,7 @@ export function Sinosure() {
       ) : null}
       <DataGrid
         gridId="sinosure"
+        exportName={t("中信保客户")}
         rows={rows}
         columns={columns}
         getRowLabel={(r) => r.name}

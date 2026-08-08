@@ -22,7 +22,6 @@ import { Flag } from "@/components/Flag";
 import { DataGrid, type Column } from "@/components/grid/DataGrid";
 import { Page, Kpi, Panel, useParam } from "@/components/ui/PageKit";
 import { Bar, EmptyState, Pill, SearchInput } from "@/components/ui/bits";
-import { toast } from "@/components/ui/Toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
 import { listSalesNames, viewerOf } from "@/data/queries";
@@ -181,41 +180,35 @@ export default function ReceivablesPage() {
     [t],
   );
 
+  /* 挂在表格工具条上（DataGrid 的 onExport），不放页头 ——
+     全屏看表时页头是不在的，而那正是最想「这批直接导出去」的时候。
+     金额、日期写成 Excel 原生格式，所以不能走通用导出（它只能拿到界面上那串文本）。 */
+  const doExport = () =>
+    exportXlsx(
+      stampName("应收账龄"),
+      [
+        { header: t("PI 号"), value: (r: AgingRow) => r.piNo, width: 16 },
+        { header: t("期次"), value: (r: AgingRow) => r.termLabel ?? t("整单"), width: 8 },
+        { header: t("状态"), value: (r: AgingRow) => (r.pending ? t(r.pending) : ""), width: 12 },
+        { header: t("客户"), value: (r: AgingRow) => r.customer, width: 24 },
+        { header: t("国家"), value: (r: AgingRow) => r.country, width: 12 },
+        { header: t("业务员"), value: (r: AgingRow) => r.salesName, width: 12 },
+        { header: t("币种"), value: (r: AgingRow) => r.currency, width: 8 },
+        { header: t("合同额"), type: "number", value: (r: AgingRow) => centsToYuan(r.amountCents), width: 14 },
+        { header: t("已收"), type: "number", value: (r: AgingRow) => centsToYuan(r.paidCents), width: 14 },
+        { header: t("未收"), type: "number", value: (r: AgingRow) => centsToYuan(r.openCents), width: 14 },
+        { header: t("起算日"), type: "date", value: (r: AgingRow) => r.startOn, width: 12 },
+        { header: t("到期日"), type: "date", value: (r: AgingRow) => r.dueOn, width: 12 },
+        { header: t("逾期天数"), type: "number", format: "0", value: (r: AgingRow) => r.overdue, width: 10 },
+        { header: t("账龄"), value: (r: AgingRow) => r.bucket, width: 14 },
+      ],
+      rows,
+    );
+
   return (
     <Page
       title={t("应收账龄")}
       desc={t("谁欠我多少、欠了多久 · 账期从提单日起算，按金额加权算平均逾期")}
-      actions={
-        <button
-          className="btn"
-          onClick={async () => {
-            await exportXlsx(
-              stampName("应收账龄"),
-              [
-                { header: t("PI 号"), value: (r: AgingRow) => r.piNo, width: 16 },
-                { header: t("期次"), value: (r: AgingRow) => r.termLabel ?? t("整单"), width: 8 },
-                { header: t("状态"), value: (r: AgingRow) => (r.pending ? t(r.pending) : ""), width: 12 },
-                { header: t("客户"), value: (r: AgingRow) => r.customer, width: 24 },
-                { header: t("国家"), value: (r: AgingRow) => r.country, width: 12 },
-                { header: t("业务员"), value: (r: AgingRow) => r.salesName, width: 12 },
-                { header: t("币种"), value: (r: AgingRow) => r.currency, width: 8 },
-                { header: t("合同额"), type: "number", value: (r: AgingRow) => centsToYuan(r.amountCents), width: 14 },
-                { header: t("已收"), type: "number", value: (r: AgingRow) => centsToYuan(r.paidCents), width: 14 },
-                { header: t("未收"), type: "number", value: (r: AgingRow) => centsToYuan(r.openCents), width: 14 },
-                { header: t("起算日"), type: "date", value: (r: AgingRow) => r.startOn, width: 12 },
-                { header: t("到期日"), type: "date", value: (r: AgingRow) => r.dueOn, width: 12 },
-                { header: t("逾期天数"), type: "number", format: "0", value: (r: AgingRow) => r.overdue, width: 10 },
-                { header: t("账龄"), value: (r: AgingRow) => r.bucket, width: 14 },
-              ],
-              rows,
-            );
-            toast(t("已导出 {n} 行", { n: rows.length }));
-          }}
-        >
-          <Icon name="download" size={14} />
-          {t("导出 Excel")}
-        </button>
-      }
       kpis={
         <>
           <Kpi icon="wallet" k={t("应收合计")} v={formatCompact(centsToYuan(sum.total), "$")} s={t("{n} 张单未收清", { n: all.length })} />
@@ -265,6 +258,7 @@ export default function ReceivablesPage() {
       <div className="ar-split">
         <DataGrid
           gridId="receivables"
+          onExport={doExport}
           rows={rows}
           columns={columns}
           summary={[

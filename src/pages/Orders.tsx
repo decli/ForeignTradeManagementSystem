@@ -234,12 +234,6 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
             {t(" · 成本超支自动进入复核 · 点行下钻看成本构成与收付款")}
           </p>
         </div>
-        <div className="page-acts">
-          <button className="btn" onClick={doExport}>
-            <Icon name="download" />
-            {t("导出 Excel")}
-          </button>
-        </div>
       </div>
 
       <div className="kpis">
@@ -336,6 +330,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
 
       <DataGrid<OrderRow>
         gridId="orders"
+        onExport={doExport}
         rows={rows}
         columns={columns}
         rowTone={(r) => (r.profitRate < 0 ? "coral" : r.profitRate < PROFIT_WARN_PCT ? "amber" : undefined)}

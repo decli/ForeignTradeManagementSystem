@@ -179,12 +179,6 @@ export default function TaxRefund() {
           <h1>{t("退税管理")}</h1>
           <p>{t("出口退税发票明细台账 · 未关联订单的行会标红并可一键挂到 PI")}</p>
         </div>
-        <div className="page-acts">
-          <button className="btn" onClick={doExport}>
-            <Icon name="download" />
-            {t("导出 Excel")}
-          </button>
-        </div>
       </div>
 
       <div className="kpis">
@@ -263,6 +257,7 @@ export default function TaxRefund() {
 
       <DataGrid<TaxRow>
         gridId="tax"
+        onExport={doExport}
         rows={rows}
         columns={columns}
         rowTone={(r) => (r.piNo ? undefined : "coral")}

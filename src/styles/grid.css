@@ -15,6 +15,54 @@
   overflow: hidden;
 }
 
+/* ── 全屏 ──
+   一张三十列的台账在 1200px 的内容区里永远要横滚。全屏把表格从文档流里抬出来
+   铺满一屏；同时 DataGrid 也会请求浏览器原生全屏（挂在 documentElement 上，
+   见组件里的注释），所以「充满整个屏幕」是真的整个屏幕。 */
+.grid-full-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 89;
+  background: rgba(9, 15, 28, 0.44);
+  backdrop-filter: blur(2px);
+  animation: veil-in var(--dur-2) var(--ease);
+}
+@keyframes veil-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.grid-wrap[data-full="1"] {
+  position: fixed;
+  inset: 12px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-4);
+  animation: grid-full-in var(--dur-3) var(--ease);
+}
+@keyframes grid-full-in {
+  from { opacity: 0; transform: scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+/* 表格自己吃掉剩下的所有高度：min-height:0 少一个，flex 子项就不肯缩，
+   表格撑出容器、分页条被顶到屏幕外面（跟通知面板那次是同一个坑）。 */
+.grid-wrap[data-full="1"] .grid-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.grid-wrap[data-full="1"] .grid-bar,
+.grid-wrap[data-full="1"] .grid-foot {
+  flex: none;
+}
+@media (max-width: 768px) {
+  .grid-wrap[data-full="1"] {
+    inset: 0;
+    border-radius: 0;
+  }
+}
+
 .grid-bar {
   display: flex;
   align-items: center;

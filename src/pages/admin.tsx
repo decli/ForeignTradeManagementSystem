@@ -15,6 +15,7 @@ import { Kpi, Page, Panel, useParam } from "@/components/ui/PageKit";
 import { Avatar, Bar, EmptyState, Pill, SearchInput, Segmented } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
+import { useTableExport } from "@/components/ui/TableExport";
 import { useT, personName } from "@/i18n";
 import { centsToYuan, formatCny, formatCompact, formatInt, formatPct, relativeTime, todayIso } from "@/lib/format";
 
@@ -259,6 +260,7 @@ export function InvoiceInfo() {
     >
       <DataGrid
         gridId="invoice-info"
+        exportName={t("开票资料")}
         rows={rows}
         columns={columns}
         getRowLabel={(r) => r.name}
@@ -289,6 +291,7 @@ const tierOf = (pct: number) => TIERS.find((x) => pct >= x.min && pct < x.max) ?
 export function Commission() {
   const db = useDb();
   const { t, lang } = useT();
+  const commissionX = useTableExport(t("提成试算"));
   const { user } = useAuth();
 
   const rows = useMemo(() => {
@@ -387,56 +390,58 @@ export function Commission() {
         </div>
       </Panel>
 
-      <Panel title={t("按人试算")} sub={t("利润 = 签约额 − 采购成本 − 期间费用")}>
-        <table className="mini-table">
-          <thead>
-            <tr>
-              <th>{t("业务员")}</th>
-              <th>{t("小组")}</th>
-              <th className="r">{t("订单数")}</th>
-              <th className="r">{t("签约额")}</th>
-              <th className="r">{t("利润")}</th>
-              <th className="r">{t("利润率")}</th>
-              <th>{t("档位")}</th>
-              <th className="r">{t("提成")}</th>
-              <th>{t("距离下一档")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} data-me={r.isMe ? "1" : undefined}>
-                <td>
-                  <span className="tier-chip">
-                    <Avatar name={r.name} hue={r.hue} size="sm" />
-                    <b>{r.name}</b>
-                    {r.isMe ? <Pill tone="accent">{t("我")}</Pill> : null}
-                  </span>
-                </td>
-                <td className="muted">{r.team}</td>
-                <td className="r num">{formatInt(r.orders)}</td>
-                <td className="r num">{formatCny(r.sale)}</td>
-                <td className="r num">{formatCny(r.profit)}</td>
-                <td className="r num">
-                  <span style={{ color: `var(--${r.tier.tone})` }}>{formatPct(r.pct, 1)}</span>
-                </td>
-                <td>
-                  <Pill tone={r.tier.tone}>{lang === "en" ? r.tier.labelEn : r.tier.label}</Pill>
-                </td>
-                <td className="r num strong">{r.commission ? formatCny(r.commission) : "—"}</td>
-                <td className="muted">
-                  {r.nextTier
-                    ? r.gap > 0
-                      ? t("再多 {v} 利润跳到 {r}", {
-                          v: formatCny(r.gap),
-                          r: `${r.nextTier.rate}%`,
-                        })
-                      : t("已够格")
-                    : t("已是最高档")}
-                </td>
+      <Panel title={t("按人试算")} sub={t("利润 = 签约额 − 采购成本 − 期间费用")} actions={commissionX.button}>
+        {commissionX.wrap(
+          <table className="mini-table">
+            <thead>
+              <tr>
+                <th>{t("业务员")}</th>
+                <th>{t("小组")}</th>
+                <th className="r">{t("订单数")}</th>
+                <th className="r">{t("签约额")}</th>
+                <th className="r">{t("利润")}</th>
+                <th className="r">{t("利润率")}</th>
+                <th>{t("档位")}</th>
+                <th className="r">{t("提成")}</th>
+                <th>{t("距离下一档")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} data-me={r.isMe ? "1" : undefined}>
+                  <td>
+                    <span className="tier-chip">
+                      <Avatar name={r.name} hue={r.hue} size="sm" />
+                      <b>{r.name}</b>
+                      {r.isMe ? <Pill tone="accent">{t("我")}</Pill> : null}
+                    </span>
+                  </td>
+                  <td className="muted">{r.team}</td>
+                  <td className="r num">{formatInt(r.orders)}</td>
+                  <td className="r num">{formatCny(r.sale)}</td>
+                  <td className="r num">{formatCny(r.profit)}</td>
+                  <td className="r num">
+                    <span style={{ color: `var(--${r.tier.tone})` }}>{formatPct(r.pct, 1)}</span>
+                  </td>
+                  <td>
+                    <Pill tone={r.tier.tone}>{lang === "en" ? r.tier.labelEn : r.tier.label}</Pill>
+                  </td>
+                  <td className="r num strong">{r.commission ? formatCny(r.commission) : "—"}</td>
+                  <td className="muted">
+                    {r.nextTier
+                      ? r.gap > 0
+                        ? t("再多 {v} 利润跳到 {r}", {
+                            v: formatCny(r.gap),
+                            r: `${r.nextTier.rate}%`,
+                          })
+                        : t("已够格")
+                      : t("已是最高档")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <p className="panel-note">
           {t("演示口径：利润率按该业务员全部订单合计计算，不区分已完结与在跟。正式使用应按月封账。")}
         </p>
@@ -710,6 +715,7 @@ export function Logins() {
       ) : null}
       <DataGrid
         gridId="logins"
+        exportName={t("登录记录")}
         rows={rows}
         columns={columns}
         getRowLabel={(r) => `${r.name} ${r.at}`}

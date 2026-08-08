@@ -8,7 +8,6 @@ import { listAudit } from "@/data/queries";
 import type { AuditLog } from "@/data/types";
 import { relativeTime } from "@/lib/format";
 import { exportXlsx, stampName } from "@/lib/xlsx";
-import { toast } from "@/components/ui/Toast";
 
 const ENTITY_LABEL: Record<string, string> = {
   Shipment: "出运批次",
@@ -81,30 +80,6 @@ export default function Audit() {
           <h1>{t("审计日志")}</h1>
           <p>{t("所有写操作留痕 · 按人 / 单据 / 时间回查改动前后值 · 保留最近 800 条")}</p>
         </div>
-        <div className="page-acts">
-          <button
-            className="btn"
-            onClick={async () => {
-              await exportXlsx<AuditLog>(
-                stampName("审计日志"),
-                [
-                  { header: t("时间"), width: 20, value: (r) => r.at },
-                  { header: t("操作人"), width: 12, value: (r) => r.actorName },
-                  { header: t("动作"), width: 14, value: (r) => r.action },
-                  { header: t("对象类型"), width: 14, value: (r) => ENTITY_LABEL[r.entity] ?? r.entity },
-                  { header: t("单据"), width: 24, value: (r) => r.entityLabel },
-                  { header: t("改动前"), width: 40, value: (r) => r.before },
-                  { header: t("改动后"), width: 40, value: (r) => r.after },
-                ],
-                rows,
-              );
-              toast(t("已导出 {n} 条留痕", { n: rows.length }));
-            }}
-          >
-            <Icon name="download" />
-            {t("导出 Excel")}
-          </button>
-        </div>
       </div>
 
       <div className="toolbar">
@@ -134,6 +109,21 @@ export default function Audit() {
         gridId="audit"
         rows={rows}
         columns={columns}
+        onExport={() =>
+          exportXlsx<AuditLog>(
+            stampName("审计日志"),
+            [
+              { header: t("时间"), width: 20, value: (r) => r.at },
+              { header: t("操作人"), width: 12, value: (r) => r.actorName },
+              { header: t("动作"), width: 14, value: (r) => r.action },
+              { header: t("对象类型"), width: 14, value: (r) => ENTITY_LABEL[r.entity] ?? r.entity },
+              { header: t("单据"), width: 24, value: (r) => r.entityLabel },
+              { header: t("改动前"), width: 40, value: (r) => r.before },
+              { header: t("改动后"), width: 40, value: (r) => r.after },
+            ],
+            rows,
+          )
+        }
         pageSize={50}
         empty={<EmptyState icon="shield" title={t("没有匹配的留痕")} desc={t("改一条动态、批量更新一次、关联一张发票，这里就会出现记录。")} />}
         renderCard={(r) => (

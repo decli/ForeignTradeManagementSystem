@@ -318,10 +318,6 @@ export default function FollowUps() {
           <p>{t("出运跟踪台账 · 一行一个出运批次 · 点动态即可直改，勾选多行可批量")}</p>
         </div>
         <div className="page-acts">
-          <button className="btn" onClick={doExport}>
-            <Icon name="download" />
-            {t("导出 Excel")}
-          </button>
           <button className="btn btn-primary" onClick={() => setNewOpen(true)} disabled={readOnly} title={t("新增批次 · N")}>
             <Icon name="plus" />
             {t("新增批次")}
@@ -409,6 +405,7 @@ export default function FollowUps() {
 
       <DataGrid<ShipmentRow>
         gridId="follow-ups"
+        onExport={doExport}
         rows={rows}
         columns={columns}
         selected={readOnly ? undefined : selected}

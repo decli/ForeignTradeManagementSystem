@@ -265,6 +265,55 @@ button.kpi:hover {
      卡片外面去 —— 溢出的那一下看起来像布局塌了，裁掉只是少看见半个字。 */
   overflow: hidden;
 }
+/* ── 悬停读数 ──
+   贴在绘图区上边缘、跟着光标那一列走。不用 SVG 的 <title>（原生 tooltip
+   要停一秒、样式归操作系统管、还只在压中那个 3px 圆点时才出来）。 */
+.chart-box {
+  position: relative;
+}
+.chart-tip {
+  position: absolute;
+  top: 2px;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  white-space: nowrap;
+  /* 读数不能挡住自己要读的那条线：鼠标穿过去 */
+  pointer-events: none;
+}
+.chart-tip b {
+  font-size: var(--fs-md);
+  font-weight: 650;
+}
+.chart-tip span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+}
+.chart-tip i {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 2px;
+}
+.chart-tip em {
+  margin-left: auto;
+  padding-left: 12px;
+  font-family: var(--mono);
+  font-style: normal;
+  font-weight: 620;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 量宽度那一帧的占位。不留位的话卡片会先塌一下再弹开 */
 .chart-skel {
   border-radius: var(--r-sm);
@@ -1636,8 +1685,9 @@ button.kpi:focus-visible {
   border-color: var(--line-strong);
 }
 
-/* 月度柱状图：悬停的那一组提亮，其余压暗。
-   不做 tooltip —— 图上本来就有数值轴，再弹一个框是重复信息。 */
+/* 月度柱状图：光标所在的那一列提亮，其余压暗。
+   命中判定不靠鼠标压中柱子（矮柱子只有几像素高，根本瞄不准），
+   而是按横轴上离光标最近的那个月算，见 charts.tsx 的 onMove。 */
 .chart-svg .bar-a,
 .chart-svg .bar-b {
   transition: opacity var(--dur-1);
@@ -1646,16 +1696,20 @@ button.kpi:focus-visible {
 .chart-svg:hover .bar-b {
   opacity: 0.45;
 }
-.chart-svg .bar-g:hover .bar-a,
-.chart-svg .bar-g:hover .bar-b {
+.chart-svg .bar-g[data-hot] .bar-a,
+.chart-svg .bar-g[data-hot] .bar-b {
   opacity: 1;
 }
-.chart-svg .bar-g:hover .bar-hit {
-  fill: color-mix(in srgb, var(--accent) 7%, transparent);
+.chart-svg .line-dot {
+  transition: r var(--dur-1);
 }
-.bar-hit {
-  fill: transparent;
-  transition: fill var(--dur-1);
+.chart-svg .line-dot[data-hot] {
+  stroke-width: 2.4;
+}
+.chart-guide {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
 }
 
 /* 排行条：悬停时条子本身亮一档，配合行文字 */

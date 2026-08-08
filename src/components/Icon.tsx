@@ -42,6 +42,10 @@ export const ICONS = {
   flag: "M4 15V4h13l-1.5 3L17 10H4M4 21V10",
   filter: "M3 5h18l-7 8v6l-4 2v-8z",
   columns: "M4 4h16v16H4zM10 4v16M16 4v16",
+  /* 四角外扩 / 四角内收。用箭头而不是「方框」，因为方框在这套图标里
+     已经是「列」「布局」「卡片」了，再来一个谁也认不出是全屏 */
+  maximize: "M9 4H4v5M20 9V4h-5M15 20h5v-5M4 15v5h5",
+  minimize: "M4 9h5V4M15 4v5h5M20 15h-5v5M9 20v-5H4",
   layout: "M4 4h16v16H4zM4 9h16M9 20V9",
   refresh: "M20 11a8 8 0 1 0-.6 4M20 5v6h-6",
   external: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",

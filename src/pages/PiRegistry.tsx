@@ -112,6 +112,7 @@ export default function PiRegistry() {
 
       <DataGrid<OrderRow>
         gridId="pi"
+        exportName={t("PI 取号")}
         rows={rows}
         columns={columns}
         empty={<EmptyState icon="tag" title={t("还没有取过号")} desc={t("点右上角「取下一个号」建第一张 PI。")} />}

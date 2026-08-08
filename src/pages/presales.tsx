@@ -506,6 +506,7 @@ export function Inquiries() {
       <div className="presale-split">
         <DataGrid
           gridId="inquiries"
+          exportName={t("询盘")}
           rows={rows}
           columns={columns}
           /* 表头上方那条原来只放一个「列」按钮，右边全空。放当前筛选下的合计，
@@ -880,6 +881,7 @@ export function Quotes() {
     >
       <DataGrid
         gridId="quotes"
+        exportName={t("报价单")}
         rows={rows}
         columns={columns}
         summary={[
@@ -1068,6 +1070,7 @@ export function Samples() {
     >
       <DataGrid
         gridId="samples"
+        exportName={t("样品")}
         rows={rows}
         columns={columns}
         summary={[

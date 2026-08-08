@@ -1,9 +1,48 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import { Menu } from "@/components/ui/Menu";
+import { toast, toastError } from "@/components/ui/Toast";
 import { StickyXScroll } from "@/components/grid/StickyXScroll";
-import { useDragResize, useIsNarrow, useStored } from "@/lib/hooks";
+import { useDragResize, useIsNarrow, useScrollLock, useStored } from "@/lib/hooks";
+import { exportXlsx, stampName } from "@/lib/xlsx";
 import { useT } from "@/i18n";
+
+/**
+ * 把一格渲染出来的 ReactNode 榨成一行纯文本，给「导出」兜底用。
+ *
+ * 为什么值得写这个：列定义里只有 `render`，返回的是 JSX。没有它，
+ * 想给一张表加导出就得把每一列的取值逻辑再写一遍 —— 三十多张表就是三十多份
+ * 会跟界面慢慢走散的副本。走 children 递归能覆盖绝大多数格子
+ * （`<b>{n}</b>`、`<>{a} · {b}</>`、甚至自定义组件，因为 children 一样在 props 里）。
+ *
+ * 榨不出来的只有「文本不在 children 里」的组件 —— 图标、国旗、进度条。
+ * 那正是**不该**进 Excel 的东西，落成空格子是对的。
+ * 真需要另一个值（界面显示 `$1,234.56`，Excel 要数字 1234.56）就写 `exportValue`。
+ */
+function nodeText(n: ReactNode): string {
+  if (n === null || n === undefined || typeof n === "boolean") return "";
+  if (typeof n === "string" || typeof n === "number") return String(n);
+  if (isValidElement(n)) return nodeText((n.props as { children?: ReactNode }).children);
+  if (Array.isArray(n)) {
+    /* 相邻两段之间要不要补空格，看它们是不是**都是元素**：
+         <div>编号</div><div>名称</div>  → 两个元素，补空格，否则挤成「编号名称」
+         {"¥"}{amount}                   → 字符串挨着数字，不补，不然成了「¥ 1234」
+       元素通常各占一行（一行主标、一行副标），字面量通常是同一句话的碎片。 */
+    let out = "";
+    let prevEl = false;
+    for (const k of n) {
+      const s = nodeText(k);
+      const el = isValidElement(k);
+      if (s) {
+        if (out && prevEl && el && !/\s$/.test(out) && !/^\s/.test(s)) out += " ";
+        out += s;
+      }
+      if (s || el) prevEl = el;
+    }
+    return out;
+  }
+  return "";
+}
 
 export type Column<T> = {
   key: string;
@@ -21,6 +60,12 @@ export type Column<T> = {
   hideable?: boolean;
   /** 表头上的一句解释 */
   tip?: string;
+  /**
+   * 导出到 Excel 时这一格写什么。不给就从 `render` 的结果里榨文本（见 nodeText）。
+   * 返回数字就写成 Excel 的数字格（能求和、能透视），返回 null 就是空格子。
+   * 金额列一定要给：界面上是 `$1,234.56`，Excel 里要的是 1234.56。
+   */
+  exportValue?: (row: T) => string | number | null | undefined;
 };
 
 export type GridPrefs = { widths: Record<string, number>; hidden: string[]; sortKey: string; sortDir: "asc" | "desc" | "" };
@@ -42,6 +87,8 @@ export function DataGrid<T extends { id: string }>({
   pageSize: initialPageSize = 50,
   maxHeight,
   getRowLabel,
+  exportName,
+  onExport,
 }: {
   /** 列宽 / 隐藏列 / 排序按这个键分别记住 */
   gridId: string;
@@ -66,6 +113,13 @@ export function DataGrid<T extends { id: string }>({
   pageSize?: number;
   maxHeight?: string;
   getRowLabel?: (row: T) => string;
+  /** 导出的文件名（不含日期和扩展名）。不给就用 gridId */
+  exportName?: string;
+  /**
+   * 自己接管导出。金额、日期要写成 Excel 的原生格式时用它 ——
+   * 通用导出只能拿到界面上那串文本，`$1,234.56` 在 Excel 里求不了和。
+   */
+  onExport?: () => void | Promise<void>;
 }) {
   const { t } = useT();
   const [prefs, setPrefs] = useStored<GridPrefs>(`mt.grid.${gridId}`, DEFAULT_PREFS);
@@ -178,6 +232,76 @@ export function DataGrid<T extends { id: string }>({
     if (warn) out.push({ k: t("留意"), v: String(warn), tone: "amber" });
     return out;
   }, [summary, rows, rowTone, t]);
+
+  /* ── 导出 ──
+     导的是「我现在看到的这张表」：当前筛选后的**全部**行（不是当前页）、
+     当前显示的列、按当前排序。导出跟着界面走，用户才不用回头对
+     "我导出的是不是刚才筛的那批"。 */
+  const [busy, setBusy] = useState(false);
+  const doExport = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (onExport) await onExport();
+      else {
+        await exportXlsx(
+          stampName(exportName ?? gridId),
+          visible.map((c) => ({
+            header: c.title,
+            width: Math.max(8, Math.min(48, Math.round(widthOf(c) / 8))),
+            value: (r: T) => {
+              const v = c.exportValue ? c.exportValue(r) : nodeText(c.render(r, 0)).replace(/\s+/g, " ").trim();
+              return typeof v === "number" ? v : (v ?? "");
+            },
+            type: c.exportValue && sorted.some((r) => typeof c.exportValue!(r) === "number") ? ("number" as const) : ("text" as const),
+          })),
+          sorted,
+        );
+      }
+      toast(t("已导出 {n} 行", { n: sorted.length }));
+    } catch {
+      toastError(t("导出失败，换个浏览器或稍后再试"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* ── 全屏 ──
+     一张三十列的台账在 1200px 的内容区里永远要横滚。全屏做两件事：
+     一是把表格铺成一整屏的浮层（侧栏、顶栏、页头都让位），
+     二是**顺手把浏览器也切进全屏** —— 用户说的「充满整个屏幕」是真的整个屏幕。
+
+     requestFullscreen 挂在 documentElement 上而不是表格容器上：菜单、提示气泡
+     都是 portal 到 body 的，如果全屏根是表格自己，那些浮层会整个消失
+     （全屏元素之外的东西不参与渲染）。挂在根节点上，一切照旧。 */
+  const [full, setFull] = useState(false);
+  useScrollLock(full);
+  const enterFull = () => {
+    setFull(true);
+    void document.documentElement.requestFullscreen?.().catch(() => {
+      /* 浏览器不给（iOS Safari、权限策略）就只当浮层用，功能不受影响 */
+    });
+  };
+  const exitFull = () => {
+    setFull(false);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  };
+  useEffect(() => {
+    if (!full) return;
+    // Esc 会先被浏览器吃掉去退出原生全屏，所以两个信号都要听
+    const onKeyEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFull(false);
+    };
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setFull(false);
+    };
+    window.addEventListener("keydown", onKeyEsc);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => {
+      window.removeEventListener("keydown", onKeyEsc);
+      document.removeEventListener("fullscreenchange", onFsChange);
+    };
+  }, [full]);
 
   const allChecked = pageRows.length > 0 && pageRows.every((r) => selected?.has(r.id));
   const someChecked = !allChecked && pageRows.some((r) => selected?.has(r.id));
@@ -339,15 +463,23 @@ export function DataGrid<T extends { id: string }>({
     </Menu>
   );
 
+  const exportBtn = (
+    <button className="btn btn-sm" onClick={doExport} disabled={busy || sorted.length === 0} data-tip={t("导出当前筛选的全部行")}>
+      <Icon name="download" />
+      {t("导出")}
+    </button>
+  );
+
   // ── 窄屏：卡片流 ──
   if (narrow && renderCard) {
     return (
       <div>
-        {bar || onSelectedChange ? (
-          <div className="grid-bar" style={{ border: 0, padding: "0 0 10px" }}>
-            {bar}
-          </div>
-        ) : null}
+        {/* 窄屏不给全屏 —— 手机上本来就是满屏。导出留着，出门在外也可能要发一份 */}
+        <div className="grid-bar" style={{ border: 0, padding: "0 0 10px" }}>
+          {bar}
+          <span className="spacer" />
+          {exportBtn}
+        </div>
         {pageRows.length === 0 ? (
           <div className="grid-wrap">{empty}</div>
         ) : (
@@ -360,7 +492,10 @@ export function DataGrid<T extends { id: string }>({
 
   return (
     <>
-    <div className="grid-wrap">
+    {/* 全屏时表格从文档流里抬出来铺满一屏，后面垫一层遮罩把页面盖掉。
+        遮罩本身也能点，点了就退出 —— 全屏状态必须有一个"随手能出去"的出口。 */}
+    {full ? <div className="grid-full-veil" onClick={exitFull} /> : null}
+    <div className="grid-wrap" data-full={full ? "1" : undefined}>
       <div className="grid-bar">
         {bar}
         {autoSummary.length ? (
@@ -375,6 +510,16 @@ export function DataGrid<T extends { id: string }>({
         ) : null}
         <span className="spacer" />
         {columnMenu}
+        {exportBtn}
+        <button
+          className="btn btn-sm"
+          onClick={full ? exitFull : enterFull}
+          data-tip={`${t(full ? "退出全屏" : "全屏查看")} · Esc`}
+          aria-pressed={full}
+        >
+          <Icon name={full ? "minimize" : "maximize"} />
+          {t(full ? "退出" : "全屏")}
+        </button>
       </div>
 
       {/* 一行都没有时不渲染表格。

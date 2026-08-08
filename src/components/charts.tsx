@@ -6,8 +6,9 @@
  * 深色模式还要再改一遍。手写的这几十行反而更省事。
  */
 
+import { useState } from "react";
 import { useWidth } from "@/lib/hooks";
-import { formatCompact } from "@/lib/format";
+import { formatCompact, formatMoney } from "@/lib/format";
 import { tr } from "@/i18n";
 
 /** KPI 卡背景上的那条趋势线 */
@@ -98,14 +99,40 @@ export function MonthlyChart({ data }: { data: { label: string; count: number; a
 
   const line = data.map((d, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)} ${yLine(d.amount).toFixed(1)}`).join(" ");
 
+  /* ── 悬停读数 ──
+     原来靠 SVG 的 <title>，也就是浏览器原生的那个 tooltip：要停住一秒才出来，
+     样式是操作系统的，深色模式下白底黑字，而且**只在正好压中那个 3px 的圆点时**
+     才有。图表上最常问的一句话是「五月到底多少」，不该这么难问。
+
+     改成跟着鼠标走的一层：横轴上离光标最近的那个月直接命中，
+     不用瞄准；一条竖线把柱子、折线点和读数串在同一个 x 上。 */
+  const [hot, setHot] = useState<number | null>(null);
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    // 屏幕像素 → 画布坐标。这里 1:1，但容器窄到触发 max-width 时会有缩放
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.round((px - padL) / (iw / data.length) - 0.5);
+    setHot(i < 0 || i >= data.length ? null : i);
+  };
+  const tip = hot === null ? null : data[hot];
+
   return (
-    <div ref={box}>
+    <div ref={box} className="chart-box">
       {/* 宽度还没量到之前先不画：0 宽度会让所有坐标算成 NaN，
           SVG 里出现 NaN 的后果是整条 path 静默消失，比空着更难查 */}
       {W < 80 ? (
         <div className="chart-skel" style={{ height: H }} />
       ) : (
-        <svg className="chart-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tr("月度出运柜量与签约额")}>
+        <svg
+          className="chart-svg"
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          role="img"
+          aria-label={tr("月度出运柜量与签约额")}
+          onPointerMove={onMove}
+          onPointerLeave={() => setHot(null)}
+        >
           {/* ── 两条轴，各自染成自己那条数据的颜色 ──
             双轴图最容易出的错是读者不知道哪个数字配哪条线。原来左边一列
             13/10/7/3/0 是中性灰，右上角孤零零一个绿色数字 —— 那个数字既不像
@@ -122,14 +149,11 @@ export function MonthlyChart({ data }: { data: { label: string; count: number; a
               </text>
             </g>
           ))}
+          {/* 竖线在柱子和折线**下面**画，压在上面会把数据切成两段 */}
+          {hot !== null ? <line className="chart-guide" x1={x(hot)} x2={x(hot)} y1={padT} y2={padT + ih} /> : null}
           {data.map((d, i) => (
-            /* bar-hit 是一条贯穿全高的透明命中区：柱子矮的时候（比如只出运 1 票）
-               实际可悬停的高度只有几像素，鼠标很难对上。加了它，整列都能悬停。 */
-            <g key={d.label} className="bar-g">
-              <rect className="bar-hit" x={x(i) - bw} y={padT} width={bw * 2} height={ih} rx="4" />
-              <rect className="bar-a" x={x(i) - bw / 2} y={yBar(d.count)} width={bw} height={Math.max(1, padT + ih - yBar(d.count))} rx="3">
-                <title>{tr("{m} 出运 {n} 票 · 签约 {v}", { m: d.label, n: d.count, v: formatCompact(d.amount) })}</title>
-              </rect>
+            <g key={d.label} className="bar-g" data-hot={hot === i ? "1" : undefined}>
+              <rect className="bar-a" x={x(i) - bw / 2} y={yBar(d.count)} width={bw} height={Math.max(1, padT + ih - yBar(d.count))} rx="3" />
               <text x={x(i)} y={H - 6} textAnchor="middle">
                 {d.label}
               </text>
@@ -137,12 +161,35 @@ export function MonthlyChart({ data }: { data: { label: string; count: number; a
           ))}
           <path className="line-a" d={line} />
           {data.map((d, i) => (
-            <circle key={d.label} className="line-dot" cx={x(i)} cy={yLine(d.amount)} r="2.6">
-              <title>{tr("{m} 签约 {v}", { m: d.label, v: formatCompact(d.amount) })}</title>
-            </circle>
+            <circle key={d.label} className="line-dot" data-hot={hot === i ? "1" : undefined} cx={x(i)} cy={yLine(d.amount)} r={hot === i ? 4.2 : 2.6} />
           ))}
         </svg>
       )}
+      {/* 读数浮在图上而不是画进 SVG：HTML 排两行文字比 SVG 的 <text> 省事得多，
+          而且不会被 overflow:hidden 裁掉。贴着上边缘走，不挡住任何数据点。 */}
+      {tip ? (
+        <div
+          className="chart-tip"
+          style={{
+            left: `${(x(hot!) / W) * 100}%`,
+            // 靠近右边缘时翻到左侧，不然会被卡片裁掉半截
+            transform: x(hot!) > W - 110 ? "translateX(-100%) translateX(-10px)" : x(hot!) < 110 ? "translateX(10px)" : "translateX(-50%)",
+          }}
+        >
+          <b>{tip.label}</b>
+          <span>
+            <i style={{ background: "color-mix(in srgb, var(--accent) 45%, transparent)" }} />
+            {tr("出运")}
+            <em>{tip.count}</em>
+          </span>
+          <span>
+            <i style={{ background: "var(--jade)" }} />
+            {tr("签约")}
+            {/* 悬停是「要看准数」的时刻，所以这里给完整金额，不是 $803.4K */}
+            <em>{formatMoney(tip.amount)}</em>
+          </span>
+        </div>
+      ) : null}
       {/* 图例的色块必须跟图上真实的颜色一样。柱子退成 34% 之后图例还留着满饱和，
           等于告诉读者"那个深色块是柱子"，而图上根本没有那个颜色。 */}
       <div className="chart-legend" style={{ marginTop: 8 }}>

@@ -194,30 +194,6 @@ export function Inventory() {
     <Page
       title={t("库存管理")}
       desc={t("现货与备货库存。可用量、锁库归属、库龄与有效期都在一张表上")}
-      actions={
-        <button
-          className="btn"
-          onClick={() =>
-            exportXlsx(
-              stampName("库存"),
-              [
-                { header: "SKU", width: 16, value: (r: (typeof rows)[number]) => r.sku },
-                { header: t("产品"), width: 28, value: (r: (typeof rows)[number]) => r.name },
-                { header: t("仓库"), width: 14, value: (r: (typeof rows)[number]) => r.warehouse },
-                { header: t("批号"), width: 12, value: (r: (typeof rows)[number]) => r.lotNo },
-                { header: t("账面数量"), width: 12, type: "number", value: (r: (typeof rows)[number]) => r.qty },
-                { header: t("已锁定"), width: 12, type: "number", value: (r: (typeof rows)[number]) => r.locked },
-                { header: t("可用量"), width: 12, type: "number", value: (r: (typeof rows)[number]) => r.free },
-                { header: t("有效期"), width: 12, value: (r: (typeof rows)[number]) => r.expiryOn ?? "" },
-              ],
-              rows,
-            )
-          }
-        >
-          <Icon name="download" />
-          {t("导出 Excel")}
-        </button>
-      }
       kpis={
         <>
           <Kpi icon="box" k={t("库存金额")} v={formatCny(totalValue)} s={t("{n} 个批次", { n: rows.length })} />
@@ -269,6 +245,22 @@ export function Inventory() {
     >
       <DataGrid
         gridId="stock"
+        onExport={() =>
+          exportXlsx(
+            stampName("库存"),
+            [
+              { header: "SKU", width: 16, value: (r: (typeof rows)[number]) => r.sku },
+              { header: t("产品"), width: 28, value: (r: (typeof rows)[number]) => r.name },
+              { header: t("仓库"), width: 14, value: (r: (typeof rows)[number]) => r.warehouse },
+              { header: t("批号"), width: 12, value: (r: (typeof rows)[number]) => r.lotNo },
+              { header: t("账面数量"), width: 12, type: "number", value: (r: (typeof rows)[number]) => r.qty },
+              { header: t("已锁定"), width: 12, type: "number", value: (r: (typeof rows)[number]) => r.locked },
+              { header: t("可用量"), width: 12, type: "number", value: (r: (typeof rows)[number]) => r.free },
+              { header: t("有效期"), width: 12, value: (r: (typeof rows)[number]) => r.expiryOn ?? "" },
+            ],
+            rows,
+          )
+        }
         rows={rows}
         columns={columns}
         onRowOpen={setOpen}
@@ -509,6 +501,7 @@ export function Freight() {
     >
       <DataGrid
         gridId="freight"
+        exportName={t("运费询价")}
         rows={rows}
         columns={columns}
         onRowOpen={setOpen}
@@ -745,6 +738,7 @@ export function Documents() {
     >
       <DataGrid
         gridId="documents"
+        exportName={t("单证备案")}
         rows={rows}
         columns={columns}
         onRowOpen={setOpen}

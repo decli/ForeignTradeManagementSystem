@@ -11,7 +11,6 @@ import { Icon } from "@/components/Icon";
 import { DataGrid, type Column } from "@/components/grid/DataGrid";
 import { Drawer } from "@/components/ui/Drawer";
 import { Bar, EmptyState, KV, Pill, SearchInput, Segmented } from "@/components/ui/bits";
-import { toast } from "@/components/ui/Toast";
 import { useDb } from "@/data/DataProvider";
 import {
   getRfqQuotes,
@@ -196,9 +195,17 @@ export function Suppliers() {
       toolbar={
         <>
           <SearchInput value={q} onChange={(v) => set({ q: v })} placeholder={t("搜供应商 / 编号 / 品类 / 联系人…")} />
-          <span className="spacer" />
-          <button className="btn" onClick={async () => {
-            await exportXlsx<SupplierRow>(stampName(t("供应商")), [
+        </>
+      }
+    >
+      <DataGrid<SupplierRow>
+        gridId="suppliers"
+        rows={rows}
+        columns={columns}
+        onExport={() =>
+          exportXlsx<SupplierRow>(
+            stampName(t("供应商")),
+            [
               { header: t("编号"), width: 10, value: (r) => r.code },
               { header: t("供应商"), width: 32, value: (r) => r.name },
               { header: t("品类"), width: 12, value: (r) => r.category },
@@ -209,19 +216,10 @@ export function Suppliers() {
               { header: t("资质到期"), width: 12, type: "date", value: (r) => r.certExpiry },
               { header: t("采购金额"), width: 16, type: "number", value: (r) => r.amount },
               { header: t("未付余额"), width: 16, type: "number", value: (r) => r.unpaid },
-            ], rows);
-            toast(t("已导出 {n} 行（跟随当前筛选）", { n: rows.length }));
-          }}>
-            <Icon name="download" />
-            {t("导出 Excel")}
-          </button>
-        </>
-      }
-    >
-      <DataGrid<SupplierRow>
-        gridId="suppliers"
-        rows={rows}
-        columns={columns}
+            ],
+            rows,
+          )
+        }
         rowTone={(r) => (r.certDays !== null && r.certDays < 0 ? "coral" : r.certDays !== null && r.certDays < 90 ? "amber" : undefined)}
         onRowOpen={setOpen}
         empty={<EmptyState icon="building" title={t("没有匹配的供应商")} desc={t("换个关键词试试，或者清空搜索。")} />}
@@ -399,6 +397,7 @@ export function Products() {
     >
       <DataGrid<ProductRow>
         gridId="products"
+        exportName={t("产品")}
         rows={rows}
         columns={columns}
         empty={<EmptyState icon="box" title={t("没有匹配的产品")} desc={t("换个关键词试试，或者清空搜索。")} />}
@@ -519,6 +518,7 @@ export function Rfqs() {
     >
       <DataGrid<RfqRow>
         gridId="rfqs"
+        exportName={t("询价单")}
         rows={rows}
         columns={columns}
         onRowOpen={setOpen}
@@ -697,6 +697,7 @@ export function Contracts() {
     >
       <DataGrid<ContractRow>
         gridId="contracts"
+        exportName={t("采购合同")}
         rows={rows}
         columns={columns}
         rowTone={(r) => (r.status !== "closed" && (r.daysToDelivery ?? 1) < 0 ? "coral" : r.unpaid > 0 && r.status === "executing" ? "amber" : undefined)}
@@ -830,6 +831,7 @@ export function Productions() {
     >
       <DataGrid<ProductionRow>
         gridId="productions"
+        exportName={t("生产单")}
         rows={rows}
         columns={columns}
         rowTone={(r) => (r.late ? "coral" : r.status !== "done" && r.daysLeft <= 7 ? "amber" : undefined)}

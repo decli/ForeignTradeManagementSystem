@@ -16,10 +16,12 @@ const SPARK_H = 15;
  * 迷你趋势线。42×15，一行一个。
  *
  * 只画一条折线，不画坐标轴、不画网格、不加悬停 —— 它要回答的只有
- * 「最近是在往上还是往下」，具体数字右边那一列已经写着了。
+ * 「最近是什么形状」，具体数字右边那一列已经写着了。
  * 一旦加上刻度，这行就从「一眼」变成「要读」，而这是个只有 28px 高的表格行。
  *
  * 末端一个点：眼睛需要知道这条线的**现在**在哪一头。
+ * 只有这个点带涨跌色，线本身是中性的 —— 线画的是近半小时，箭头算的是最近一次刷新，
+ * 两个时间窗共用一种颜色就会出现「线在涨、标着跌」。详见 shell.css 里 .spark 的注释。
  */
 function Spark({ code, tick, dir }: { code: string; tick: number; dir: string }) {
   const pts = series(code, tick);
@@ -176,9 +178,13 @@ export function FxRates() {
                       <b className="num">{fmt(r.cny)}</b>
                       {/* 红涨绿跌是中文金融界面的默认读法，但颜色不能是唯一的通道 ——
                           它跟站内「珊瑚=有问题」的语义正好撞车，色觉障碍的人也读不出。
-                          所以方向由箭头说，颜色只是加强。 */}
-                      <span className="fxp-delta" data-dir={dir}>
-                        {dir === "flat" ? "—" : `${dir === "up" ? "▲" : "▼"} ${Math.abs(bp / 100).toFixed(2)}%`}
+                          所以方向由箭头说，颜色只是加强。
+
+                          没变的那一档原来写「—」。这套界面里的「—」处处都是「没有值」
+                          （空日期、空金额都是它），于是一个正常的持平报价被读成取价失败。
+                          写成「持平」两个字，一个字都不用猜。 */}
+                      <span className="fxp-delta" data-dir={dir} data-tip={t("与上一次刷新相比")}>
+                        {dir === "flat" ? t("持平") : `${dir === "up" ? "▲" : "▼"} ${Math.abs(bp / 100).toFixed(2)}%`}
                       </span>
                       <button
                         className="row-x"

@@ -15,8 +15,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon, type IconName } from "@/components/Icon";
 import { useDb } from "@/data/DataProvider";
-import { isReadOnly, schemaState } from "@/data/db";
+import { isPersistent, isReadOnly, schemaState } from "@/data/db";
 import { formatBytes } from "@/data/files";
+import { resetWedgedDb, storageFault } from "@/data/idb";
 import { readStorageHealth, type StorageHealth } from "@/lib/storage-health";
 import { useT } from "@/i18n";
 
@@ -65,6 +66,36 @@ export function SystemBanner() {
 
   const notices: Notice[] = [];
   const schema = schemaState();
+
+  /* ── 最高优先级：改了根本没存 ──
+     纯内存模式下界面一切正常，用户录一周单子、关掉浏览器，全没了。
+     这比任何"结构升级""该备份了"都严重，所以排在最前面而且不可关闭。
+     以前这件事只在设置页角落里挂了一个小标签 —— 没人会去看。 */
+  if (!isPersistent()) {
+    const wedged = storageFault() === "wedged";
+    notices.push({
+      id: "no-persist",
+      level: "danger",
+      icon: "alert",
+      sticky: true,
+      title: t("改动没有保存 —— 现在是临时模式"),
+      body: wedged
+        ? t("本机这个账套库被一次没走完的升级锁死了，打不开。你现在看到的是演示数据，所有改动只存在于这个页面，刷新就没。修法是把这个库删掉重建 —— 里面的数据本来也已经读不出来了。")
+        : t("这个浏览器不让本站使用存储（隐私模式或站点权限里关掉了），所有改动只存在于这个页面，刷新就没。换一个普通窗口打开，或在站点设置里允许本站存储。"),
+      action: wedged
+        ? {
+            label: t("删掉重建"),
+            run: () => {
+              if (!window.confirm(t("这个库已经打不开，里面的数据读不出来了。删掉后会重新建一个空的，然后你可以导入之前的 JSON 备份。确定吗？"))) return;
+              void resetWedgedDb().then((ok) => {
+                if (ok) window.location.reload();
+                else window.alert(t("删除被其他标签页挡住了。关掉本站的所有其他标签页，再试一次。"));
+              });
+            },
+          }
+        : undefined,
+    });
+  }
 
   if (isReadOnly() && schema.kind === "ahead") {
     notices.push({

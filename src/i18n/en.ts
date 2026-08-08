@@ -1962,4 +1962,16 @@ export const EN: Record<string, string> = {
   /* ── 相对时间：分钟 / 小时。「刚刚」「{n} 天前」在上面通用区已有 ── */
   "{n} 分钟前": "{n}m ago",
   "{n} 小时前": "{n}h ago",
+
+  /* ── 纯内存模式：改了根本没存，这是最严重的一条 ── */
+  "改动没有保存 —— 现在是临时模式": "Changes are not being saved — temporary mode",
+  "本机这个账套库被一次没走完的升级锁死了，打不开。你现在看到的是演示数据，所有改动只存在于这个页面，刷新就没。修法是把这个库删掉重建 —— 里面的数据本来也已经读不出来了。":
+    "This machine's database is wedged by an upgrade that never finished, and cannot be opened. What you see is demo data; every change lives only in this page and is gone on reload. The fix is to delete and rebuild it — its contents are already unreadable either way.",
+  "这个浏览器不让本站使用存储（隐私模式或站点权限里关掉了），所有改动只存在于这个页面，刷新就没。换一个普通窗口打开，或在站点设置里允许本站存储。":
+    "This browser is blocking storage for the site (private mode, or turned off in site permissions). Every change lives only in this page and is gone on reload. Open it in a normal window, or allow storage for this site.",
+  "删掉重建": "Delete and rebuild",
+  "这个库已经打不开，里面的数据读不出来了。删掉后会重新建一个空的，然后你可以导入之前的 JSON 备份。确定吗？":
+    "This database cannot be opened and its contents are unreadable. Deleting it creates a fresh empty one; you can then import a previous JSON backup. Continue?",
+  "删除被其他标签页挡住了。关掉本站的所有其他标签页，再试一次。":
+    "The delete was blocked by another tab. Close all other tabs for this site and try again.",
 };

@@ -205,13 +205,76 @@ export async function storageEstimate() {
   }
 }
 
-/** 隐私模式 / 关掉存储的浏览器里 IndexedDB 会直接抛错，得能退到纯内存跑 */
+/**
+ * 打不开主库时，究竟是哪一种打不开。
+ *
+ * 三种情况对用户的意义完全不同，不能都算作"没有存储"：
+ *  - `none`      能用，一切正常
+ *  - `unsupported` 浏览器压根没有 IndexedDB（隐私模式等）—— 无解，只能靠导出
+ *  - `wedged`    IndexedDB 能用，**偏偏这一个库打不开**：请求发出去之后
+ *                success / error / blocked 一个都不触发，就那么悬着。
+ *                成因是某次没走完的版本升级把库锁死了，而且这个状态**跨刷新存在**。
+ *                这正是本项目上一次 v1→v2 事故留下的残骸。
+ *                这一种有救：把这个库删掉重建。
+ */
+export type StorageFault = "none" | "unsupported" | "wedged";
+
+let fault: StorageFault = "none";
+export const storageFault = () => fault;
+
 export async function idbAvailable() {
-  try {
-    if (typeof indexedDB === "undefined") return false;
-    await open();
-    return true;
-  } catch {
+  if (typeof indexedDB === "undefined") {
+    fault = "unsupported";
     return false;
   }
+  try {
+    await open();
+    fault = "none";
+    return true;
+  } catch {
+    /* 主库开不了。再拿一个全新的库名探一下：
+       新库能开 = IndexedDB 本身没问题，是这个库被锁死了（可修）；
+       新库也开不了 = 整个 IndexedDB 不可用（无解）。
+       这一步值得做：两种情况该对用户说的话完全不同。 */
+    const probe = `${DB_NAME}-probe`;
+    try {
+      const db = await openDb(probe, ["p"]);
+      // 探针用完就地清理：连接关掉、库删掉，别在用户机器上留垃圾
+      db.close();
+      pool.delete(probe);
+      indexedDB.deleteDatabase(probe);
+      fault = "wedged";
+    } catch {
+      pool.delete(probe);
+      fault = "unsupported";
+    }
+    return false;
+  }
+}
+
+/**
+ * 把锁死的主库删掉重建。
+ *
+ * 只在 `wedged` 时才该调用。库里的数据本来就读不出来 —— 删掉不会让用户
+ * 多损失什么，而不删就永远停在"改了不保存"的状态。
+ * 调用方必须先让用户确认：这是不可逆的。
+ */
+export function resetWedgedDb(): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      pool.delete(DB_NAME);
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      // 删除请求同样可能被挂起，给它一个上限，别让按钮转到天荒地老
+      const timer = setTimeout(() => resolve(false), OPEN_TIMEOUT);
+      const done = (ok: boolean) => {
+        clearTimeout(timer);
+        resolve(ok);
+      };
+      req.onsuccess = () => done(true);
+      req.onerror = () => done(false);
+      req.onblocked = () => done(false);
+    } catch {
+      resolve(false);
+    }
+  });
 }

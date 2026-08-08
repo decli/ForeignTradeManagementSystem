@@ -26,18 +26,71 @@ const IDB_VERSION = 2;
 
 let dbp: Promise<IDBDatabase> | null = null;
 
+/**
+ * 打开数据库。
+ *
+ * ⚠️ 这里有三个只在**版本升级那一次**才会踩到的坑，全都会表现为
+ * 「正在装载账套…」永远转下去 —— 而且只有老用户会遇到，本地开发看不见。
+ *
+ * 1. `onblocked`：另一个标签页还开着老版本的连接时，升级请求会被挂起。
+ *    不处理的话这个 promise 永不 settle，上层 `load()` 一直挂着。
+ * 2. 没有兜底超时：IndexedDB 在某些隐私模式和被清理的配置下会既不成功也不报错。
+ * 3. `onversionchange`：**已经开着**的老标签页不主动让位，新标签页就永远升不上去。
+ *    每个连接都要在收到这个事件时把自己关掉。
+ */
+const OPEN_TIMEOUT = 8000;
+
 function open(): Promise<IDBDatabase> {
   if (dbp) return dbp;
   dbp = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, IDB_VERSION);
+    let settled = false;
+    const done = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      fn();
+    };
+
+    // 兜底：转不出结果也得让上层往下走（退成纯内存），不能把用户卡在装载页
+    const timer = setTimeout(() => done(() => reject(new Error("IndexedDB 打开超时"))), OPEN_TIMEOUT);
+
+    let req: IDBOpenDBRequest;
+    try {
+      req = indexedDB.open(DB_NAME, IDB_VERSION);
+    } catch (e) {
+      clearTimeout(timer);
+      done(() => reject(e));
+      return;
+    }
+
     req.onupgradeneeded = () => {
       // 老库升上来时 kv 已经在了，只补新的 —— 升级不能碰用户已有的账套
       for (const name of [STORE, FILES, SNAPS]) {
         if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
       }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      clearTimeout(timer);
+      const db = req.result;
+      /* 别的标签页要升级时，主动关掉自己这条连接放行。
+         不关的话那边会一直 blocked，两个标签页互相卡死。 */
+      db.onversionchange = () => {
+        db.close();
+        dbp = null;
+      };
+      done(() => resolve(db));
+    };
+    req.onerror = () => {
+      clearTimeout(timer);
+      done(() => reject(req.error));
+    };
+    req.onblocked = () => {
+      clearTimeout(timer);
+      done(() => reject(new Error("本站在其他标签页里开着旧版本，挡住了数据库升级。关掉那些标签页再刷新即可。")));
+    };
+  });
+  // 失败之后允许下次重试，否则一次超时就永久退化成内存模式
+  dbp.catch(() => {
+    dbp = null;
   });
   return dbp;
 }

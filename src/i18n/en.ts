@@ -1974,4 +1974,6 @@ export const EN: Record<string, string> = {
     "This database cannot be opened and its contents are unreadable. Deleting it creates a fresh empty one; you can then import a previous JSON backup. Continue?",
   "删除被其他标签页挡住了。关掉本站的所有其他标签页，再试一次。":
     "The delete was blocked by another tab. Close all other tabs for this site and try again.",
+  "已经试过自动修复，但删除被一条后台连接挡住了 —— 多半是刚才那个页面还留在浏览器的后退缓存里。请把这个站点的所有标签页全部关掉、彻底退出浏览器再重新打开；在那之前所有改动都不会保存。":
+    "Automatic repair was attempted but the delete was blocked by a background connection — most likely the page just reloaded, still held in the browser's back-forward cache. Close every tab for this site and fully quit the browser, then reopen. Until then, nothing will be saved.",
 };

@@ -279,6 +279,11 @@ export function requestRecovery() {
  * 启动最早期调用，必须在任何 open 之前。
  * 有标记就把主库删掉 —— 此时本页还没发出过任何 open 请求，删得掉。
  */
+/** 上一次自动修复的结果。`failed` 时不要再给同一个按钮，见 SystemBanner */
+export type RecoveryOutcome = "none" | "fixed" | "failed";
+let recovery: RecoveryOutcome = "none";
+export const recoveryOutcome = () => recovery;
+
 export function consumeRecovery(): Promise<void> {
   let flagged = false;
   try {
@@ -293,16 +298,25 @@ export function consumeRecovery(): Promise<void> {
     try {
       pool.delete(DB_NAME);
       const req = indexedDB.deleteDatabase(DB_NAME);
-      // 删除也可能挂住（比如别的标签页开着），给上限，别把启动卡死
-      const timer = setTimeout(resolve, OPEN_TIMEOUT);
-      const done = () => {
+      /* 删除同样可能被挂住 —— 而且实测最常见的挡路者是**刚刚重载掉的那个页面**：
+         它进了 bfcache，连同那条永远不会完成的 open 请求一起留在连接队列里。
+         这跟当初 v1→v2 卡住老用户的机制是同一个。
+         所以这里给上限、并且**记下失败**，让 UI 换一种说法，
+         而不是再给一个点了也没用的按钮。 */
+      const timer = setTimeout(() => {
+        recovery = "failed";
+        resolve();
+      }, OPEN_TIMEOUT);
+      const done = (ok: boolean) => {
         clearTimeout(timer);
+        recovery = ok ? "fixed" : "failed";
         resolve();
       };
-      req.onsuccess = done;
-      req.onerror = done;
-      req.onblocked = done;
+      req.onsuccess = () => done(true);
+      req.onerror = () => done(false);
+      req.onblocked = () => done(false);
     } catch {
+      recovery = "failed";
       resolve();
     }
   });

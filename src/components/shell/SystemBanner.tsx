@@ -17,7 +17,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { useDb } from "@/data/DataProvider";
 import { isPersistent, isReadOnly, schemaState } from "@/data/db";
 import { formatBytes } from "@/data/files";
-import { requestRecovery, storageFault } from "@/data/idb";
+import { recoveryOutcome, requestRecovery, storageFault } from "@/data/idb";
 import { readStorageHealth, type StorageHealth } from "@/lib/storage-health";
 import { useT } from "@/i18n";
 
@@ -73,16 +73,22 @@ export function SystemBanner() {
      以前这件事只在设置页角落里挂了一个小标签 —— 没人会去看。 */
   if (!isPersistent()) {
     const wedged = storageFault() === "wedged";
+    /* 自动修复试过一次还是不行 —— 挡路的是 bfcache 里那个刚被重载掉的页面，
+       再点一次同一个按钮结果一样。这时候只有"彻底退出浏览器"才有用，
+       所以换一种说法，而不是让人反复点一个没用的按钮。 */
+    const triedAndFailed = recoveryOutcome() === "failed";
     notices.push({
       id: "no-persist",
       level: "danger",
       icon: "alert",
       sticky: true,
       title: t("改动没有保存 —— 现在是临时模式"),
-      body: wedged
+      body: triedAndFailed
+        ? t("已经试过自动修复，但删除被一条后台连接挡住了 —— 多半是刚才那个页面还留在浏览器的后退缓存里。请把这个站点的所有标签页全部关掉、彻底退出浏览器再重新打开；在那之前所有改动都不会保存。")
+        : wedged
         ? t("本机这个账套库被一次没走完的升级锁死了，打不开。你现在看到的是演示数据，所有改动只存在于这个页面，刷新就没。修法是把这个库删掉重建 —— 里面的数据本来也已经读不出来了。")
         : t("这个浏览器不让本站使用存储（隐私模式或站点权限里关掉了），所有改动只存在于这个页面，刷新就没。换一个普通窗口打开，或在站点设置里允许本站存储。"),
-      action: wedged
+      action: wedged && !triedAndFailed
         ? {
             label: t("删掉重建"),
             run: () => {

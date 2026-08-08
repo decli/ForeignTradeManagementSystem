@@ -25,7 +25,17 @@ import { listInquiries, listQuotes, listSamples } from "@/data/presales-queries"
 import { centsToYuan, formatCompact } from "@/lib/format";
 import { useT } from "@/i18n";
 
-type Item = { icon: IconName; text: string; href: string; tone: "coral" | "amber" | "accent" };
+/**
+ * ── 为什么拆成 text + detail 两段 ──
+ * 原来每条是一句长句子（「$1.27M 应收逾期 · 31 张单 · 加权平均 43 天」）。
+ * 塞进等宽格子后短句一行、长句两行，一排卡片高高低低；
+ * 而且换行点由宽度决定，会断在「先查中信保报损 / 时限」这种地方。
+ *
+ * 拆开之后：第一行是**扫一眼就够**的结论（数字 + 干什么），
+ * 第二行是支撑细节。每条都有两行，高度天然一致，
+ * 换行也发生在语义边界上而不是随机位置。
+ */
+type Item = { icon: IconName; text: string; detail: string; href: string; tone: "coral" | "amber" | "accent" };
 
 export function RoleBand() {
   const db = useDb();
@@ -37,22 +47,32 @@ export function RoleBand() {
   const items: Item[] = [];
 
   /* 所有角色共用的第一条：轮到我审的。它最有时效性 —— 别人在等 */
-  const mine = listApprovals(db, viewer, { mine: true }).length;
-  if (mine) items.push({ icon: "check", text: t("{n} 笔审批等你拍板", { n: mine }), href: "/approvals?view=mine", tone: "amber" });
+  const mineRows = listApprovals(db, viewer, { mine: true });
+  if (mineRows.length) {
+    const worst = Math.max(...mineRows.map((r) => r.waitHours));
+    items.push({
+      icon: "check",
+      text: t("{n} 笔审批等你拍板", { n: mineRows.length }),
+      // 别人在等这件事，最久那笔等了多久才是真正的紧迫度
+      detail: worst >= 24 ? t("最久已等 {n} 天", { n: Math.floor(worst / 24) }) : t("最久已等 {n} 小时", { n: Math.round(worst) }),
+      href: "/approvals?view=mine",
+      tone: "amber",
+    });
+  }
 
   if (role === "sales" || role === "admin") {
     const inq = listInquiries(db, viewer);
     const breach = inq.filter((i) => i.sla === "breach").length;
-    if (breach) items.push({ icon: "inbox", text: t("{n} 条询盘超过 24 小时没回", { n: breach }), href: "/inquiries?sla=breach", tone: "coral" });
+    if (breach) items.push({ icon: "inbox", text: t("{n} 条询盘还没回", { n: breach }), detail: t("已超过 24 小时响应线"), href: "/inquiries?sla=breach", tone: "coral" });
 
     const dueFollow = inq.filter((i) => i.followIn !== null && i.followIn < 0).length;
-    if (dueFollow) items.push({ icon: "clock", text: t("{n} 条询盘过了该跟进的日子", { n: dueFollow }), href: "/inquiries?status=working", tone: "amber" });
+    if (dueFollow) items.push({ icon: "clock", text: t("{n} 条询盘该跟进了", { n: dueFollow }), detail: t("已过自己定的跟进日"), href: "/inquiries?status=working", tone: "amber" });
 
     const expiring = listQuotes(db, viewer).filter((q) => (q.status === "sent" || q.status === "negotiating") && q.expireIn >= 0 && q.expireIn <= 3).length;
-    if (expiring) items.push({ icon: "tag", text: t("{n} 张报价 3 天内过期", { n: expiring }), href: "/quotes?status=sent", tone: "amber" });
+    if (expiring) items.push({ icon: "tag", text: t("{n} 张报价快过期", { n: expiring }), detail: t("3 天内到有效期"), href: "/quotes?status=sent", tone: "amber" });
 
     const chase = listSamples(db, viewer).filter((s) => s.status !== "closed" && s.followIn !== null && s.followIn < 0).length;
-    if (chase) items.push({ icon: "box", text: t("{n} 个样品该催反馈了", { n: chase }), href: "/samples", tone: "accent" });
+    if (chase) items.push({ icon: "box", text: t("{n} 个样品该催反馈", { n: chase }), detail: t("寄出后一直没有回音"), href: "/samples", tone: "accent" });
   }
 
   if (role === "admin" || role === "finance") {
@@ -61,18 +81,19 @@ export function RoleBand() {
     if (sum.overdueCount) {
       items.push({
         icon: "wallet",
-        text: t("{amt} 应收逾期 · {n} 张单 · 加权平均 {d} 天", { amt: formatCompact(centsToYuan(sum.overdueCents), "$"), n: sum.overdueCount, d: sum.weightedDays.toFixed(0) }),
+        text: t("{amt} 应收逾期", { amt: formatCompact(centsToYuan(sum.overdueCents), "$") }),
+        detail: t("{n} 张单 · 按金额加权平均 {d} 天", { n: sum.overdueCount, d: sum.weightedDays.toFixed(0) }),
         href: "/receivables",
         tone: sum.weightedDays > 45 ? "coral" : "amber",
       });
     }
     const bad = aging.filter((r) => r.overdue > 90);
-    if (bad.length) items.push({ icon: "shield", text: t("{n} 张单逾期超 90 天 —— 先查中信保报损时限", { n: bad.length }), href: "/receivables?bucket=逾期 90 天以上", tone: "coral" });
+    if (bad.length) items.push({ icon: "shield", text: t("{n} 张单逾期超 90 天", { n: bad.length }), detail: t("先查中信保报损时限"), href: "/receivables?bucket=逾期 90 天以上", tone: "coral" });
   }
 
   if (role === "merchandiser" || role === "purchaser") {
     const noLines = db.pis.filter((p) => p.status === "open" && !db.piLines.some((l) => l.piId === p.id)).length;
-    if (noLines) items.push({ icon: "file", text: t("{n} 张在跟 PI 还没有商品明细，开不出发票和装箱单", { n: noLines }), href: "/pi", tone: "amber" });
+    if (noLines) items.push({ icon: "file", text: t("{n} 张 PI 缺商品明细", { n: noLines }), detail: t("开不出发票和装箱单"), href: "/pi", tone: "amber" });
   }
 
   const hour = new Date().getHours();
@@ -90,9 +111,14 @@ export function RoleBand() {
         <ul className="rb-list">
           {items.map((it, i) => (
             <li key={i}>
+              {/* 整条都能点。标题一行、细节一行，两行是固定结构 ——
+                  高度一致靠的是结构一致，不是写死高度 */}
               <Link to={it.href} data-tone={it.tone}>
-                <Icon name={it.icon} size={14} />
-                <span>{it.text}</span>
+                <Icon name={it.icon} size={15} />
+                <span className="rb-main">
+                  <b className="truncate">{it.text}</b>
+                  <i className="truncate">{it.detail}</i>
+                </span>
                 <Icon name="chevronRight" size={13} />
               </Link>
             </li>

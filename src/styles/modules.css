@@ -734,24 +734,40 @@
 
 .rb-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 6px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  gap: 8px;
+  /* 所有行等高。少了这一条，一行短句、一行长句，卡片就高高低低 ——
+     等高靠布局保证，不靠给卡片写死 height（写死了字号一变又崩） */
+  grid-auto-rows: 1fr;
 }
+/* li 撑满格子、a 撑满 li，等高才能传导到卡片本身 */
+.rb-list > li { display: flex; }
 .rb-list a {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 11px;
+  gap: 9px;
+  padding: 9px 11px;
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--text);
   text-decoration: none;
   font-size: var(--fs-sm);
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
 }
-.rb-list a > span { flex: 1; min-width: 0; }
+.rb-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+.rb-main b { font-size: var(--fs-sm); font-weight: 650; line-height: 1.35; }
+/* 细节行压暗、缩小：它是支撑信息，不该跟结论抢注意力 */
+.rb-main i { font-style: normal; color: var(--text-3); font-size: var(--fs-xs); line-height: 1.35; }
 .rb-list a:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+.rb-list a:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
 .rb-list a > svg:first-child { flex: none; }
 .rb-list a[data-tone="coral"] > svg:first-child { color: var(--coral); }
 .rb-list a[data-tone="amber"] > svg:first-child { color: var(--amber); }

@@ -1976,4 +1976,22 @@ export const EN: Record<string, string> = {
     "The delete was blocked by another tab. Close all other tabs for this site and try again.",
   "已经试过自动修复，但删除被一条后台连接挡住了 —— 多半是刚才那个页面还留在浏览器的后退缓存里。请把这个站点的所有标签页全部关掉、彻底退出浏览器再重新打开；在那之前所有改动都不会保存。":
     "Automatic repair was attempted but the delete was blocked by a background connection — most likely the page just reloaded, still held in the browser's back-forward cache. Close every tab for this site and fully quit the browser, then reopen. Until then, nothing will be saved.",
+
+  /* ── 首页角色条：标题 + 细节两段 ── */
+  "最久已等 {n} 天": "longest waiting {n}d",
+  "最久已等 {n} 小时": "longest waiting {n}h",
+  "{n} 条询盘还没回": "{n} inquiries unanswered",
+  "已超过 24 小时响应线": "past the 24h response line",
+  "{n} 条询盘该跟进了": "{n} inquiries due for follow-up",
+  "已过自己定的跟进日": "past the date you set",
+  "{n} 张报价快过期": "{n} quotations expiring",
+  "3 天内到有效期": "within 3 days",
+  "{n} 个样品该催反馈": "{n} samples need chasing",
+  "寄出后一直没有回音": "no word since they shipped",
+  "{amt} 应收逾期": "{amt} overdue",
+  "{n} 张单 · 按金额加权平均 {d} 天": "{n} orders · {d}d weighted by value",
+  "{n} 张单逾期超 90 天": "{n} orders over 90 days late",
+  "先查中信保报损时限": "check the credit-insurance claim window first",
+  "{n} 张 PI 缺商品明细": "{n} PIs missing line items",
+  "开不出发票和装箱单": "cannot issue invoice or packing list",
 };

@@ -4,6 +4,7 @@ import { Menu } from "@/components/ui/Menu";
 import { FxRates } from "@/components/shell/FxRates";
 import { WorldClocks } from "@/components/shell/WorldClocks";
 import { Notifications } from "@/components/shell/Notifications";
+import { isDemo } from "@/data/profile";
 import { useTick } from "@/lib/hooks";
 import { breadcrumb, navTitle } from "@/lib/nav";
 import { ACCENTS, useAccent, useDensity, useThemeCycle, type Density, type Theme } from "@/lib/theme";
@@ -13,6 +14,7 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
   const { pathname } = useLocation();
   const crumb = breadcrumb(pathname);
   const { t, lang } = useT();
+  const demo = isDemo();
   // 顶栏的时钟每 30 秒走一格
   useTick(30_000);
 
@@ -32,6 +34,17 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
       </nav>
 
       <span className="spacer" />
+
+      {/* 演示账套必须一眼看得出来。
+          有人拿演示的应收账龄当真数据去催款、拿演示的利润率去报价，
+          都是能出事的。所以这个标记常驻、不可关闭，窄屏也不隐藏 ——
+          它是全站唯一一个"哪怕挤掉别的东西也要留着"的控件。 */}
+      {demo ? (
+        <Link to="/settings" className="demo-flag" data-tip={t("这是演示数据。去「系统设置」切换到我的账套")}>
+          <Icon name="info" size={13} />
+          <span>{t("演示数据")}</span>
+        </Link>
+      ) : null}
 
       <FxRates />
       <WorldClocks />

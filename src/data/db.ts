@@ -9,6 +9,8 @@
 import { hashPassword } from "@/auth/password";
 import { idbAvailable, idbDel, idbGet, idbSet, requestPersist } from "./idb";
 import { buildSeed } from "./seed";
+import { buildEmpty } from "./empty";
+import { activeProfile, dbKeyFor, setActiveProfile, type ProfileId } from "./profile";
 import { autoSnapshot, takeSnapshot } from "./backup";
 import { publish, startSync } from "./sync";
 import { emptyPresales } from "./presales-types";
@@ -16,7 +18,8 @@ import { emptyFlow } from "./flow-types";
 import type { AuditLog, Database } from "./types";
 import { DB_VERSION, DEMO_PASSWORD } from "./types";
 
-const KEY = "db";
+/** 当前账套的存储键。演示 = "db"（老键，不搬家），真实 = "db:live" */
+const KEY = dbKeyFor(activeProfile());
 const SAVE_DEBOUNCE = 220;
 
 let current: Database | null = null;
@@ -224,9 +227,37 @@ export async function load(): Promise<Database> {
     }
   }
 
-  current = await ensureCredentials(buildSeed());
+  /* 真实账套的空壳绝不能用 buildSeed 兜底 —— 那会把 63 张演示 PI
+     灌进用户以为是自己的账套里。正常情况下 switchProfile 已经写好了初始记录，
+     走到这里说明那一步没成功，宁可给一个空的（并且没人能登录，问题看得见）。 */
+  current = await ensureCredentials(activeProfile() === "live" ? buildEmpty() : buildSeed());
   scheduleSave();
   return current;
+}
+
+/**
+ * 切换账套。
+ *
+ * 第一次切到真实账套时，在这里就把初始记录写好 —— 因为只有这一刻同时
+ * 拿得到"当前登录的是谁"和"演示账套里的汇率配置"。等到 load() 再去建，
+ * 那边既不知道 session 也读不到另一个键。
+ */
+export async function switchProfile(next: ProfileId, currentUserId?: string | null) {
+  await flush();
+
+  if (next === "live") {
+    const existing = await idbGet<Database>(dbKeyFor("live")).catch(() => undefined);
+    if (!looksLikeDb(existing)) {
+      const src = snapshot();
+      const user = src.users.find((u) => u.id === currentUserId) ?? null;
+      const credential = user ? (src.credentials.find((c) => c.userId === user.id) ?? null) : null;
+      await idbSet(dbKeyFor("live"), buildEmpty({ user, credential, fxRates: src.fxRates })).catch(() => undefined);
+    }
+  }
+
+  setActiveProfile(next);
+  // 见 profile.ts：内存态、订阅、广播、页面缓存全都要换，重载比手工拆干净
+  window.location.reload();
 }
 
 /**
@@ -277,8 +308,22 @@ export function pushAudit(draft: Database, entry: Omit<AuditLog, "id" | "at">) {
   ].slice(0, 800);
 }
 
+/**
+ * 重灌。
+ *
+ * 在真实账套里"重灌"绝不能灌成演示数据 —— 那是把用户的账套换成别人的样例。
+ * 真实账套的原点是**空**，而且要保住当前这个人，否则重灌完自己都登不进去。
+ */
+function freshForProfile() {
+  if (activeProfile() !== "live") return buildSeed();
+  const src = current;
+  const user = src?.users[0] ?? null;
+  const credential = user ? (src?.credentials.find((c) => c.userId === user.id) ?? null) : null;
+  return buildEmpty({ user, credential, fxRates: src?.fxRates ?? [] });
+}
+
 export async function resetToSeed() {
-  current = await ensureCredentials(buildSeed());
+  current = await ensureCredentials(freshForProfile());
   await idbSet(KEY, current).catch(() => undefined);
   emit();
   return current;
@@ -286,7 +331,7 @@ export async function resetToSeed() {
 
 export async function clearAll() {
   await idbDel(KEY).catch(() => undefined);
-  current = await ensureCredentials(buildSeed());
+  current = await ensureCredentials(freshForProfile());
   emit();
   return current;
 }

@@ -22,6 +22,7 @@
  * (`localTabAdapter`) 就是照着这个接口写的，可以当参考实现。
  */
 
+import { activeProfile } from "./profile";
 import type { Database } from "./types";
 
 /**
@@ -67,7 +68,14 @@ export interface SyncAdapter {
 
 /* ═══════════════════ 本机多标签页 ═══════════════════ */
 
-const CHANNEL = "tradewind-sync";
+/**
+ * 频道名带上账套。
+ *
+ * 一个固定频道会让演示账套的标签页把 63 张假 PI 广播进真实账套的标签页，
+ * 对面收到就当成"别处的最新状态"整份换上、顺手落盘 —— 真数据当场没了。
+ * 顺带也修好了对端计数：另一个账套的标签页不该算作我的对端。
+ */
+const CHANNEL = `tradewind-sync:${activeProfile()}`;
 /** 心跳间隔。对端计数靠它，太密会吵，太疏会显示"0 个对端"其实有 */
 const BEAT_MS = 4000;
 const BEAT_STALE = BEAT_MS * 2.5;

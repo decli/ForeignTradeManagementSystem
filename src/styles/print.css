@@ -174,3 +174,26 @@
     margin: 15mm;
   }
 }
+
+/* ── 演示数据水印 ──────────────────────────────────────────────
+   演示账套打出来的 PI / 发票 / 装箱单必须带水印。
+   这几张单是拿去给客户、给货代、给海关的 —— 一张看不出真假的
+   演示商业发票流出去，比界面上任何一个 bug 都严重。
+
+   用伪元素而不是背景图：打印默认不带背景图，会静默消失。 */
+body[data-demo="1"] .doc-sheet { position: relative; }
+body[data-demo="1"] .doc-sheet::after {
+  content: attr(data-demo-mark);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-24deg);
+  font-size: 58px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: rgba(220, 38, 38, 0.13);
+  pointer-events: none;
+  z-index: 5;
+}

@@ -11,7 +11,7 @@ import { clearAll, exportJson, importJson, isPersistent, markExported, resetToSe
 import { setCustomRate } from "@/data/mutations";
 import { customRate, marketRate } from "@/data/queries";
 import { useDensity, useTheme, type Density, type Theme } from "@/lib/theme";
-import { BackupSection, CustomFieldSection, ImportSection, StorageSection, SyncSection } from "@/components/settings/DataOps";
+import { BackupSection, CustomFieldSection, ImportSection, ProfileSection, StorageSection, SyncSection } from "@/components/settings/DataOps";
 
 export default function Settings() {
   const { t } = useT();
@@ -244,6 +244,7 @@ export default function Settings() {
           </div>
         </section>
 
+        <ProfileSection />
         <StorageSection />
         <BackupSection />
         <SyncSection />

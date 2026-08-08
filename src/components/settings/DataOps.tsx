@@ -11,7 +11,8 @@ import { Field, Pill } from "@/components/ui/bits";
 import { toast, toastError } from "@/components/ui/Toast";
 import { ImportWizard } from "@/components/ImportWizard";
 import { useDb } from "@/data/DataProvider";
-import { restoreSnapshot, snapshot } from "@/data/db";
+import { restoreSnapshot, snapshot, switchProfile } from "@/data/db";
+import { isDemo } from "@/data/profile";
 import { dropSnapshot, listSnapshots, readSnapshot, storageEstimate, takeSnapshot, type SnapshotMeta } from "@/data/backup";
 import { requestPersist } from "@/data/idb";
 import { syncStatus, watchSync } from "@/data/sync";
@@ -29,6 +30,68 @@ function Text({ value, onChange, label, placeholder }: { value: string; onChange
   const f = useTextField(value, onChange);
   return (
     <input className="input" value={f.value} onChange={f.onChange} onCompositionStart={f.onCompositionStart} onCompositionEnd={f.onCompositionEnd} aria-label={label} placeholder={placeholder} />
+  );
+}
+
+/* ═══════════════════ 账套切换 ═══════════════════ */
+
+/**
+ * 演示账套 ↔ 我的账套。
+ *
+ * 刻意**不做**「清空演示数据」那种一次性的破坏动作 —— 两套各存各的，
+ * 随时来回，谁也不覆盖谁。用户第一次点「我的账套」时心里是打鼓的，
+ * 所以这里要明确写出"演示数据原样留着，随时切回来"。
+ */
+export function ProfileSection() {
+  const { t } = useT();
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const demo = isDemo();
+
+  const go = async (next: "demo" | "live") => {
+    if (next === (demo ? "demo" : "live")) return;
+    setBusy(true);
+    await switchProfile(next, user?.id ?? null);
+  };
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h3>{t("账套")}</h3>
+        <span className="card-sub">{t("演示和真实数据分开存，互不覆盖")}</span>
+        <span className="spacer" />
+        <Pill tone={demo ? "amber" : "jade"} dot={false}>
+          {demo ? t("正在用：演示数据") : t("正在用：我的账套")}
+        </Pill>
+      </div>
+      <div className="card-body">
+        <p className="setting-note">
+          {t("两套数据存在不同的地方。切换不会删任何东西 —— 想回来看样例、给同事演示，随时切回演示账套。")}
+        </p>
+
+        <div className="setting">
+          <div className="setting-t">
+            <b>{t("演示账套")}</b>
+            <small>{t("24 个客户、63 张 PI 的完整样例，用来摸清流程和试功能。改坏了也不要紧，随时可以重灌。")}</small>
+          </div>
+          <button className="btn" disabled={busy || demo} onClick={() => void go("demo")}>
+            {demo ? t("使用中") : t("切过去")}
+          </button>
+        </div>
+
+        <div className="setting">
+          <div className="setting-t">
+            <b>{t("我的账套")}</b>
+            <small>
+              {t("从空白开始录真实业务。第一次进去会带上你这个账号（管理员）和汇率设置，其余全空 —— 看板上会有四步引导。")}
+            </small>
+          </div>
+          <button className="btn btn-primary" disabled={busy || !demo} onClick={() => void go("live")}>
+            {demo ? t("开始用我的账套") : t("使用中")}
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 

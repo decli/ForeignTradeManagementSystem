@@ -1082,3 +1082,89 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
 
 /* 打印时不要把它带进单据 */
 @media print { .sysbanner { display: none; } }
+
+/* ── 演示账套标记 ──────────────────────────────────────────────
+   常驻顶栏。窄屏也不隐藏 —— 全站唯一一个"挤掉别的也要留着"的控件，
+   因为把演示的应收/利润当成真数据用是会出事的。 */
+.demo-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--amber) 42%, var(--line));
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+  flex: none;
+}
+.demo-flag:hover { border-color: var(--amber); }
+.demo-flag svg { flex: none; }
+
+/* ── 空账套引导 ────────────────────────────────────────────────
+   看板顶部的四步清单。做完自动消失，不给关闭按钮 ——
+   一个能被关掉的引导，等于用户永远找不回来。 */
+.setup {
+  margin-bottom: 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+.setup-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 16px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
+}
+.setup-head h2 { font-size: var(--fs-md); margin: 0 0 3px; }
+.setup-head p { margin: 0; color: var(--text-2); font-size: var(--fs-xs); line-height: 1.55; }
+.setup-count { margin-left: auto; flex: none; display: flex; align-items: baseline; gap: 2px; color: var(--accent-ink); }
+.setup-count b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.setup-count span { font-size: var(--fs-xs); opacity: 0.7; }
+
+.setup-list { list-style: none; margin: 0; padding: 0; }
+.setup-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.setup-list li:first-child { border-top: 0; }
+/* 只有"下一步该做的"是亮的。四条一样亮就等于没有顺序 */
+.setup-list li[data-next="0"][data-done="0"] { opacity: 0.62; }
+
+.setup-dot {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--mute-soft);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.setup-list li[data-next="1"] .setup-dot { background: var(--accent); color: #fff; }
+.setup-list li[data-done="1"] .setup-dot { background: var(--jade-soft); color: var(--jade); }
+
+.setup-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.setup-main b { font-size: var(--fs-sm); }
+.setup-main small { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.55; }
+.setup-ok { flex: none; color: var(--jade); font-size: var(--fs-xs); font-weight: 650; }
+.setup-list .btn { flex: none; }
+
+@media (max-width: 640px) {
+  .setup-list li { flex-wrap: wrap; }
+  .setup-main { flex-basis: 100%; order: 2; }
+  .setup-list .btn, .setup-ok { margin-left: auto; }
+}
+@media print { .setup { display: none; } }

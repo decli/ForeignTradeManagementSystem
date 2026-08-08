@@ -5,6 +5,7 @@ import App from "./App";
 import { DataProvider } from "./data/DataProvider";
 import { AuthProvider } from "./auth/AuthProvider";
 import { LangProvider } from "./i18n";
+import { isDemo } from "./data/profile";
 import { initSpotlight } from "./lib/spotlight";
 import "./styles/index.css";
 
@@ -17,6 +18,10 @@ const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // 卡片光晕跟随鼠标。委托一次就覆盖全站的 .kpi，页面里不用管
 initSpotlight();
+
+/* 演示账套在 body 上打标记，打印时给单据盖水印（见 print.css）。
+   账套只在重载时才会变，所以在这里设一次就够，不用跟着 React 走。 */
+document.body.dataset.demo = isDemo() ? "1" : "0";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

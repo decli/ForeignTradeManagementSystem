@@ -11,6 +11,7 @@ import { dashboardData } from "@/data/queries";
 import { formatCompact, formatPct, humanDate } from "@/lib/format";
 import { PROFIT_WARN_PCT } from "@/lib/rules";
 import { RoleBand } from "@/components/RoleBand";
+import { SetupGuide } from "@/components/SetupGuide";
 
 export default function Dashboard() {
   const { t } = useT();
@@ -20,6 +21,10 @@ export default function Dashboard() {
 
   return (
     <div className="page">
+      {/* 空账套引导排在最前面：账套还没搭起来的时候，
+          下面那些"0 张在跟订单""今天没有异常"全是假的从容 */}
+      <SetupGuide />
+
       {/* 角色条：只属于你的行动清单。下面的经营大盘所有角色一样 */}
       <RoleBand />
 

@@ -17,6 +17,7 @@ import { Icon } from "@/components/Icon";
 import { Modal } from "@/components/ui/Modal";
 import { Segmented } from "@/components/ui/bits";
 import { useDb } from "@/data/DataProvider";
+import { isDemo } from "@/data/profile";
 import type { Pi } from "@/data/types";
 import { DOC_TITLES, amountInWords, buildDoc, showsPacking, showsPrice, type DocKind, type DocLang } from "@/lib/docs";
 import { formatInt } from "@/lib/format";
@@ -100,7 +101,10 @@ export function DocSheet({ pi, onClose }: { pi: Pi | null; onClose: () => void }
         {t("单据发给客户和清关行，所以默认英文 —— 界面切成中文不会改变发出去的单据。「中英对照」是给内部复核用的。")}
       </p>
 
-      <div className="doc-sheet" data-lang={lang}>
+      {/* 演示账套打出来的单据一律带水印。见 print.css ——
+          一张看不出真假的演示商业发票流到客户或海关手里，
+          比界面上任何一个 bug 都严重 */}
+      <div className="doc-sheet" data-lang={lang} data-demo-mark={isDemo() ? "DEMO 演示数据" : undefined}>
         {/* ── 抬头 ── */}
         <header className="doc-head">
           <div className="doc-seller">

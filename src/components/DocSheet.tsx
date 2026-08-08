@@ -38,15 +38,38 @@ function L({ en, zh, lang }: { en: string; zh: string; lang: DocLang }) {
   );
 }
 
-export function DocSheet({ pi, onClose }: { pi: Pi | null; onClose: () => void }) {
+/**
+ * `batchId` = 只给这一批出 CI / PL。
+ * 从跟单表进来时带着它，从 PI 详情进来时不带（整票口径）。
+ * 见 buildDoc：PI 永远是整票的，它是合同，不随出运拆分。
+ */
+export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: string | null; onClose: () => void }) {
   const db = useDb();
   const { t } = useT();
-  const [kind, setKind] = useState<DocKind>("PI");
+  // 从批次进来的人要的就是这一批的发票，别让他再点一次
+  const [kind, setKind] = useState<DocKind>(batchId ? "CI" : "PI");
   const [lang, setLang] = useState<DocLang>("en");
-  const doc = useMemo(() => (pi ? buildDoc(db, pi, kind) : null), [db, pi, kind]);
+  const doc = useMemo(() => (pi ? buildDoc(db, pi, kind, batchId) : null), [db, pi, kind, batchId]);
+  const batch = batchId ? db.shipments.find((s) => s.id === batchId) : null;
+  const batchUnlogged = !!batch && !db.shipmentLines.some((l) => l.shipmentId === batch.id);
 
   if (!pi) return null;
   if (!doc) return null;
+
+  /* 有批次、但没登记这批装了什么 —— 这时候绝不能默默按整票数量出单。
+     那张纸是要拿去清关的，数量错了是实打实的麻烦。 */
+  if (batch && batchUnlogged && kind !== "PI") {
+    return (
+      <Modal open title={t("生成单据")} onClose={onClose} width={560}>
+        <p className="modal-lead">
+          {t("批次 {no} 还没有登记装了哪些货、各多少。按批次开的商业发票和装箱单要用这一批的实际数量 —— 没有它只能按整票出，那个数拿去清关是错的。", { no: batch.batchNo })}
+        </p>
+        <p className="muted" style={{ fontSize: "var(--fs-xs)" }}>
+          {t("去 PI 详情的「出运进度」里补登，或者从这张 PI 整票出单。")}
+        </p>
+      </Modal>
+    );
+  }
 
   if (doc.lines.length === 0) {
     return (
@@ -98,7 +121,9 @@ export function DocSheet({ pi, onClose }: { pi: Pi | null; onClose: () => void }
     >
       <p className="doc-hint">
         <Icon name="info" size={13} />
-        {t("单据发给客户和清关行，所以默认英文 —— 界面切成中文不会改变发出去的单据。「中英对照」是给内部复核用的。")}
+        {batch && kind !== "PI"
+          ? t("正在按批次 {no} 出单：数量、箱数、毛重都是这一批的实际值，不是整张 PI 的。形式发票是合同，仍按整票出。", { no: batch.batchNo })
+          : t("单据发给客户和清关行，所以默认英文 —— 界面切成中文不会改变发出去的单据。「中英对照」是给内部复核用的。")}
       </p>
 
       {/* 演示账套打出来的单据一律带水印。见 print.css ——

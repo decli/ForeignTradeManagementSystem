@@ -101,6 +101,15 @@ export type Pi = {
   sellerEntityId: string | null;
   /** 从哪张报价单转过来的。一单到底的链路视图靠它往回追 */
   quoteId?: string | null;
+  /**
+   * 溢短装，基点。500 = ±5%。
+   *
+   * 外贸合同上的 "5% more or less at seller's option" —— 生产和装柜
+   * 不可能刚好凑到整数，合同允许多装少装一点，超出这个范围客户才有权拒收。
+   * 分批出运对账时判断"这张 PI 出完了没有"用的就是它，
+   * 而不是死磕 `已出 === 订单量`：那样每一张单最后都会挂着几十件的尾巴。
+   */
+  moreOrLessBp?: number;
   ext?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
@@ -263,6 +272,12 @@ export type Shipment = {
   carrier: string | null;
   pod: string | null;
   releaseState: ReleaseState;
+  /**
+   * 本批的商业发票号。
+   * 分批出运时每一批各开各的发票 —— 金额、数量、柜号都不同，
+   * 共用一个号会让客户的财务和清关行对不上账。
+   */
+  invoiceNo?: string | null;
   team: string | null;
   /** 冗余一份最新动态，列表页免去一次关联查询 */
   latestNote: string | null;
@@ -273,6 +288,34 @@ export type Shipment = {
   salesId: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+/**
+ * 某一批实际出运了哪些货、各多少。
+ *
+ * ── 为什么非有不可 ──
+ * 一张 PI 分 4 批出运是常态（工厂产能、客户仓位、船期都能导致分批）。
+ * 在这张表之前，`Shipment` 只有 `piId` 和一个「第 4 批」的文字标签，
+ * **系统不知道第 4 批里装的是什么、多少件**。于是给第 4 批开装箱单，
+ * 打出来的是整张 PI 的 8 万件和总箱数 —— 柜号是对的，数量是错的。
+ * 那张纸是要拿去清关的。
+ *
+ * ── 箱数重量为什么可以留空 ──
+ * 多数时候按 PiLine 的包装参数推算就够准（`ceil(qty / packQty)`）。
+ * 但实际装柜经常有零头箱、混装箱，货代给回来的数据才是准的 ——
+ * 留空 = 按参数算，填了 = 以实际为准。不强制填，否则每一批都要手抄一遍。
+ */
+export type ShipmentLine = {
+  id: string;
+  shipmentId: string;
+  piLineId: string;
+  /** 本批实际出运数量 */
+  qty: number;
+  /** 实际箱数。null = 按 PiLine 的每箱数量推算 */
+  cartons: number | null;
+  /** 实际毛重（克）/ 体积（立方厘米），每箱。null = 用 PiLine 上的 */
+  grossWeightG: number | null;
+  volumeCm3: number | null;
 };
 
 export type MilestoneKind = "交期" | "装柜" | "进仓" | "ATD" | "ETA";
@@ -376,6 +419,8 @@ export type Database = {
   piLines: PiLine[];
   costings: OrderCosting[];
   shipments: Shipment[];
+  /** 每批实际装了什么。见 ShipmentLine —— 分批 CI/PL 的数量来源 */
+  shipmentLines: ShipmentLine[];
   milestones: ShipmentMilestone[];
   notes: ShipmentNote[];
   taxInvoices: TaxInvoice[];
@@ -398,7 +443,10 @@ export type Database = {
   lastExportAt: string | null;
 };
 
-export const DB_VERSION = 14;
+export const DB_VERSION = 15;
+
+/** 溢短装默认 ±5%，外贸合同上最常见的一档 */
+export const DEFAULT_MORE_OR_LESS_BP = 500;
 
 /** 演示口令：登录页会直接写出来，没什么好藏的 */
 export const DEMO_PASSWORD = "demo1234";

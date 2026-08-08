@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { MilestoneRail } from "@/components/MilestoneRail";
 import { Drawer } from "@/components/ui/Drawer";
+import { DocSheet } from "@/components/DocSheet";
 import { toast } from "@/components/ui/Toast";
 import { KV, Pill } from "@/components/ui/bits";
 import { useAuth } from "@/auth/AuthProvider";
@@ -42,9 +43,11 @@ export function ShipmentDrawer({
   const { user, can } = useAuth();
   const [tab, setTab] = useState("overview");
   const [draft, setDraft] = useState("");
+  const [printing, setPrinting] = useState(false);
   const detail = useMemo(() => (id ? getShipmentDetail(db, id) : null), [db, id]);
   const actor = { id: user?.id ?? null, name: user?.name ?? "—" };
   const readOnly = !can("write");
+  const batchPi = detail?.piId ? (db.pis.find((p) => p.id === detail.piId) ?? null) : null;
 
   if (!detail) return null;
   const clock = localClock(detail.customerTz);
@@ -59,7 +62,8 @@ export function ShipmentDrawer({
   };
 
   return (
-    <Drawer
+    <>
+      <Drawer
       open
       onClose={onClose}
       onPrev={onPrev}
@@ -124,6 +128,14 @@ export function ShipmentDrawer({
             ))}
           </select>
           <span className="spacer" />
+          {/* 按批次开单据。一张 PI 分 4 批，每批的柜号、数量、毛重都不同，
+              发票和装箱单必须各开各的 —— 见 buildDoc 的 shipmentId */}
+          {batchPi ? (
+            <button className="btn" onClick={() => setPrinting(true)}>
+              <Icon name="file" size={14} />
+              {t("开本批单据")}
+            </button>
+          ) : null}
           {detail.piId ? (
             <Link className="btn btn-sm" to={`/orders?id=${detail.piId}`}>
               {t("看这张 PI 的核算")}
@@ -281,6 +293,9 @@ export function ShipmentDrawer({
           </div>
         </div>
       ) : null}
-    </Drawer>
+      </Drawer>
+
+      {printing && batchPi ? <DocSheet pi={batchPi} batchId={detail.id} onClose={() => setPrinting(false)} /> : null}
+    </>
   );
 }

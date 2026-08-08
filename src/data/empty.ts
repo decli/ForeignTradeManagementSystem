@@ -7,7 +7,7 @@
  * 直接被踢回登录页，而且登录页上一个可选账号都没有 —— 自己把自己锁在门外。
  *
  * 所以要把**当前这个人**带过去：用户记录、登录凭据一起搬，
- * 并且提到 boss 角色。理由不是"方便"，是**新账套里只有他一个人**，
+ * 并且提到 admin 角色。理由不是"方便"，是**新账套里只有他一个人**，
  * 没人能替他审批、也没人能替他配主体，权限卡在中间就是死锁。
  *
  * ── 什么带、什么不带 ──
@@ -57,6 +57,7 @@ export function buildEmpty(opts: { user?: User | null; credential?: Credential |
     piLines: [],
     costings: [],
     shipments: [],
+    shipmentLines: [],
     milestones: [],
     notes: [],
     taxInvoices: [],

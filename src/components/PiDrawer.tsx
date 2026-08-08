@@ -19,6 +19,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useDb } from "@/data/DataProvider";
 import { addPiLine, patchPiLine, removePiLine, setPiExt } from "@/data/mutations";
 import { lineAmount, lineCartons } from "@/data/types";
+import { ShipProgress } from "@/components/ShipProgress";
 import { canSeeCost } from "@/lib/perms";
 import { packSummary } from "@/lib/quote-calc";
 import { unitEn } from "@/lib/docs";
@@ -259,6 +260,8 @@ export function PiDrawer({ piId, onClose }: { piId: string | null; onClose: () =
             <p className="muted" style={{ fontSize: "var(--fs-xs)" }}>
               {t("PI 金额取明细行合计，改明细会同步改金额 —— 单据上的合计和系统里的金额必须是同一个数。")}
             </p>
+
+            <ShipProgress pi={pi} />
           </div>
         ) : null}
 

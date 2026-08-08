@@ -26,12 +26,13 @@ import type {
   SellerEntity,
   ShipMode,
   Shipment,
+  ShipmentLine,
   ShipmentMilestone,
   ShipmentNote,
   TaxInvoice,
   User,
 } from "./types";
-import { DB_VERSION, lineAmount } from "./types";
+import { DB_VERSION, DEFAULT_MORE_OR_LESS_BP, lineAmount } from "./types";
 import { buildOpsSeed } from "./ops-seed";
 import { PRODUCT_SEED, buildProducts } from "./catalog";
 import { emptyPresales } from "./presales-types";
@@ -291,6 +292,8 @@ export function buildSeed(): Database {
       salesId: by(p.sales).id,
       sellerEntityId: p.entity.id,
       quoteId: null,
+      // 合同上的 "5% more or less"。分批对账判「出完没有」用的就是它
+      moreOrLessBp: DEFAULT_MORE_OR_LESS_BP,
       createdAt: now,
       updatedAt: now,
     });
@@ -618,6 +621,47 @@ export function buildSeed(): Database {
   }
   auditLogs.sort((a, b) => b.at.localeCompare(a.at));
 
+  /* ── 分批出运明细 ──────────────────────────────────────────
+     一张 PI 的订单量要摊到它的各个批次上。没有这张表，给「第 4 批」
+     开装箱单打出来的会是整张 PI 的数量。
+
+     摊法：按批次平均分，除不尽的零头全给最后一批（现实里也是这样，
+     最后一票扫尾）。少数单子刻意留一点没出完 / 稍微超装，
+     好让「待出」和「溢短装」这两种状态在演示数据里真的看得见。 */
+  const shipmentLines: ShipmentLine[] = [];
+  const byPi = new Map<string, Shipment[]>();
+  for (const s of shipments) {
+    if (!s.piId) continue;
+    const arr = byPi.get(s.piId) ?? [];
+    arr.push(s);
+    byPi.set(s.piId, arr);
+  }
+  for (const [piId, batches] of byPi) {
+    // 批次号里带序号（-1 / -4），按它排才是真实的出运顺序
+    batches.sort((a, b) => a.batchNo.localeCompare(b.batchNo, undefined, { numeric: true }));
+    for (const l of piLines.filter((x) => x.piId === piId)) {
+      const roll = rand();
+      // 12% 还没出完（在途/待排），8% 轻微超装 —— 都在 ±5% 之外才有信号意义
+      const shipRatio = roll < 0.12 ? 0.55 + rand() * 0.3 : roll < 0.2 ? 1.02 + rand() * 0.06 : 1;
+      const total = Math.round(l.qty * shipRatio);
+      const per = Math.floor(total / batches.length);
+      batches.forEach((s, i) => {
+        const qty = i === batches.length - 1 ? total - per * (batches.length - 1) : per;
+        if (qty <= 0) return;
+        shipmentLines.push({
+          id: id("shl"),
+          shipmentId: s.id,
+          piLineId: l.id,
+          qty,
+          // 演示数据里留空，走「按包装参数推算」那条路 —— 那才是多数用户的实际用法
+          cartons: null,
+          grossWeightG: null,
+          volumeCm3: null,
+        });
+      });
+    }
+  }
+
   const base: Database = {
     version: DB_VERSION,
     seededAt: now,
@@ -630,6 +674,7 @@ export function buildSeed(): Database {
     piLines,
     costings,
     shipments,
+    shipmentLines,
     milestones,
     notes,
     taxInvoices,

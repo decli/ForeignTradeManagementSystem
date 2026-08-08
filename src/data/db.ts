@@ -16,7 +16,7 @@ import { publish, startSync } from "./sync";
 import { emptyPresales } from "./presales-types";
 import { emptyFlow } from "./flow-types";
 import type { AuditLog, Database } from "./types";
-import { DB_VERSION, DEMO_PASSWORD } from "./types";
+import { DB_VERSION, DEFAULT_MORE_OR_LESS_BP, DEMO_PASSWORD } from "./types";
 
 /** 当前账套的存储键。演示 = "db"（老键，不搬家），真实 = "db:live" */
 const KEY = dbKeyFor(activeProfile());
@@ -113,6 +113,7 @@ function hydrate(db: Database): Database {
     ...db,
     contacts: db.contacts ?? [],
     piLines: db.piLines ?? [],
+    shipmentLines: db.shipmentLines ?? [],
     attachments: db.attachments ?? [],
     savedViews: db.savedViews ?? [],
     presales: db.presales ?? emptyPresales(),
@@ -138,7 +139,8 @@ function hydrate(db: Database): Database {
  * 多标签页、导入旧备份、回滚再前滚，都可能让同一条迁移跑第二遍。
  * 所以一律写成 `if (x == null) x = 默认值`，不要写成 `x = x + 1`。
  */
-type Migration = { to: number; note: string; up: (db: Database) => void };
+/** `up` 返回「我确实改了东西」—— 决定这次载入要不要回写，见 migrate() */
+type Migration = { to: number; note: string; up: (db: Database) => boolean };
 
 const MIGRATIONS: Migration[] = [
   {
@@ -146,7 +148,30 @@ const MIGRATIONS: Migration[] = [
     note: "记录上次导出时间",
     // 老账套没导出过，但也不能当成"刚导出过"。null = 从未导出，UI 会照此提醒
     up: (db) => {
-      if (db.lastExportAt === undefined) db.lastExportAt = null;
+      if (db.lastExportAt !== undefined) return false;
+      db.lastExportAt = null;
+      return true;
+    },
+  },
+  {
+    to: 15,
+    note: "分批出运明细与溢短装",
+    up: (db) => {
+      let changed = false;
+      if (!Array.isArray(db.shipmentLines)) {
+        db.shipmentLines = [];
+        changed = true;
+      }
+      /* 老 PI 一律给默认的 ±5%。
+         不去猜每张单的真实约定 —— 猜错会让"这单出完了没有"直接判错，
+         而这个数用户在 PI 上随时能改。 */
+      for (const p of db.pis) {
+        if (p.moreOrLessBp == null) {
+          p.moreOrLessBp = DEFAULT_MORE_OR_LESS_BP;
+          changed = true;
+        }
+      }
+      return changed;
     },
   },
 ];
@@ -160,6 +185,8 @@ export type SchemaState =
 
 let schema: SchemaState = { kind: "ok" };
 let readOnly = false;
+/** 这次载入是否真的改动了账套（版本号跨了，或补上了缺的字段）。决定要不要回写 */
+let migrated = false;
 
 export const schemaState = () => schema;
 /** 只读态下所有写入都被丢弃，UI 该拦在前面并给出说明 */
@@ -178,11 +205,22 @@ function migrate(saved: Database): Database {
     return db;
   }
 
+  /* 每一条都无条件跑一遍，不按版本号跳过。
+     迁移按约定都是幂等的（`if (x == null) x = 默认值`），重复执行没有副作用；
+     而"只信版本号"有一个修不回来的坑：只要版本号被盖上、对应的迁移却没跑过
+     （发布顺序出错、热替换拿到半新半旧的模块、有人手改过记录），
+     那条迁移就**永远**不会再执行 —— 字段永久性地缺着，而且毫无迹象。
+     这是实测踩到的：记录标着 v15，moreOrLessBp 却是 null。
+     几千行数据多跑两个 if 的代价，换"不可能漏"，很划算。
+
+     `steps` 里只列真正跨版本的那几条 —— 那是要讲给用户听的，
+     而例行的幂等重跑不是。 */
   const steps: string[] = [];
+  migrated = from !== DB_VERSION;
   for (const m of MIGRATIONS) {
-    if (from >= m.to) continue;
-    m.up(db);
-    steps.push(`v${m.to} · ${m.note}`);
+    // 真补了字段就要回写 —— 版本号早已盖上、字段却是空的，正是上面说的那个坑
+    if (m.up(db)) migrated = true;
+    if (from < m.to) steps.push(`v${m.to} · ${m.note}`);
   }
   db.version = DB_VERSION;
   schema = steps.length ? { kind: "migrated", from, steps } : { kind: "ok" };
@@ -213,10 +251,10 @@ export async function load(): Promise<Database> {
       if (before) void takeSnapshot(before, "migrate", from).catch(() => undefined);
       // 先备份再让用户开始改：备份的价值全在于它是"我搞砸之前"那一份
       void autoSnapshot(current);
-      /* 版本号本身就是一处要落盘的改动。
-         漏了这一步，存储里的版本号永远停在老值 —— 每次打开都重爬一遍阶梯、
-         每次都再存一份迁移备份，而且迁移是否幂等这件事会被反复考验。 */
-      if (from !== DB_VERSION) scheduleSave();
+      /* 迁移动过就回写。
+         只看 `from !== DB_VERSION` 是不够的：版本号已经是新的、字段却没补上
+         （见 migrate 里的说明）时，那次自愈补的东西会留在内存里、下次打开又没了。 */
+      if (migrated) scheduleSave();
       return current;
     }
 

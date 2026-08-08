@@ -21,6 +21,7 @@
 import type { Attachment, Customer, Database, Pi, PiLine, SellerEntity } from "@/data/types";
 import { lineAmount, lineCartons } from "@/data/types";
 import type { Contact } from "@/data/types";
+import { batchInvoiceNo, resolveShipLines } from "@/data/shipment-lines";
 import { countryEn } from "@/lib/geo";
 
 export type DocKind = "PI" | "CI" | "PL";
@@ -91,39 +92,73 @@ export type DocModel = {
 /** 毛重减 8% 当净重。真实系统里净重该单独填，这里给一个业内常用的估算并标明 */
 const NET_RATIO = 0.92;
 
-export function buildDoc(db: Database, pi: Pi, kind: DocKind): DocModel | null {
+/**
+ * 生成一张单据。
+ *
+ * ── shipmentId：这张单是给整票货开的，还是给某一批开的 ──
+ * 不传 = 按整张 PI 出，跟以前完全一样（一次出完的单子就该这样）。
+ * 传了 = CI / PL 按**这一批实际装的货**出。
+ *
+ * 这是这个函数存在过的最大的错：一张 PI 分 4 批出运，给第 4 批开装箱单，
+ * 打出来的是整张 PI 的 8 万件和总箱数 —— 柜号对、数量错，而那张纸是要
+ * 拿去清关的。PI 本身永远是整票的（它是合同，不随出运拆分）。
+ */
+export function buildDoc(db: Database, pi: Pi, kind: DocKind, shipmentId?: string | null): DocModel | null {
   const seller = db.sellerEntities.find((e) => e.id === pi.sellerEntityId) ?? db.sellerEntities[0];
   if (!seller) return null;
   const buyer = db.customers.find((c) => c.id === pi.customerId) ?? null;
   const contact = buyer ? db.contacts.find((c) => c.customerId === buyer.id && c.primary) ?? null : null;
-  const rows = db.piLines.filter((l) => l.piId === pi.id).sort((a, b) => a.seq - b.seq);
   const quote = pi.quoteId ? db.presales.quotes.find((q) => q.id === pi.quoteId) : undefined;
 
-  const lines = rows.map((l: PiLine): DocLine => {
-    const cartons = lineCartons(l);
-    const grossKg = (cartons * l.grossWeightG) / 1000;
-    return {
-      seq: l.seq,
-      desc: l.nameEn || l.name,
-      hsCode: l.hsCode,
-      qty: l.qty,
-      unit: unitEn(l.unit),
-      price: l.unitPriceE4 / 10_000,
-      amountCents: lineAmount(l),
-      cartons,
-      netKg: grossKg * NET_RATIO,
-      grossKg,
-      cbm: (cartons * l.volumeCm3) / 1_000_000,
-    };
-  });
+  // PI 是合同，永远整票；CI/PL 跟着货走，指定了批次就只出这一批
+  const batch = kind === "PI" || !shipmentId ? null : (db.shipments.find((s) => s.id === shipmentId) ?? null);
+  const batchLines = batch ? resolveShipLines(db, batch.id) : null;
+
+  const lines: DocLine[] = batchLines
+    ? batchLines.map((r, i) => ({
+        seq: i + 1,
+        desc: r.piLine.nameEn || r.piLine.name,
+        hsCode: r.piLine.hsCode,
+        qty: r.qty,
+        unit: unitEn(r.piLine.unit),
+        price: r.piLine.unitPriceE4 / 10_000,
+        // 单价照旧、数量按本批 —— 金额必须由这两者算出，不能拿整票金额分摊
+        amountCents: Math.round((r.qty * r.piLine.unitPriceE4) / 100),
+        cartons: r.cartons,
+        netKg: r.grossKg * NET_RATIO,
+        grossKg: r.grossKg,
+        cbm: r.cbm,
+      }))
+    : db.piLines
+        .filter((l) => l.piId === pi.id)
+        .sort((a, b) => a.seq - b.seq)
+        .map((l: PiLine): DocLine => {
+          const cartons = lineCartons(l);
+          const grossKg = (cartons * l.grossWeightG) / 1000;
+          return {
+            seq: l.seq,
+            desc: l.nameEn || l.name,
+            hsCode: l.hsCode,
+            qty: l.qty,
+            unit: unitEn(l.unit),
+            price: l.unitPriceE4 / 10_000,
+            amountCents: lineAmount(l),
+            cartons,
+            netKg: grossKg * NET_RATIO,
+            grossKg,
+            cbm: (cartons * l.volumeCm3) / 1_000_000,
+          };
+        });
 
   const sum = <K extends keyof DocLine>(k: K) => lines.reduce((s, l) => s + (l[k] as number), 0);
 
   return {
     kind,
     /* 单据号从 PI 号派生，不另起一套流水 —— 客户和清关行是靠这个号把
-       PI、发票、装箱单、报关单串起来的，三张纸各有各的号只会让人对不上 */
-    no: kind === "PI" ? pi.piNo : `${pi.piNo}-${kind}`,
+       PI、发票、装箱单、报关单串起来的，三张纸各有各的号只会让人对不上。
+       分批时用批次自己的号（MT26X04118-4-CI）：4 批共用一个发票号，
+       客户财务和清关行都对不上是哪一票货。 */
+    no: kind === "PI" ? pi.piNo : batch ? `${batchInvoiceNo(batch)}-${kind}` : `${pi.piNo}-${kind}`,
     date: kind === "PI" ? pi.signedOn ?? pi.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
     seller,
     buyer,

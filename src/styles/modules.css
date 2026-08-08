@@ -1168,3 +1168,70 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
   .setup-list .btn, .setup-ok { margin-left: auto; }
 }
 @media print { .setup { display: none; } }
+
+/* ── PI 出运进度 ────────────────────────────────────────────── */
+.shipprog {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.shipprog-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.shipprog-head b { font-size: var(--fs-sm); }
+.shipprog-head .muted { font-size: var(--fs-xs); }
+.shipprog-note {
+  display: flex;
+  gap: 7px;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--amber-soft);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  border-bottom: 1px solid var(--line-soft);
+}
+.shipprog-note svg { flex: none; margin-top: 2px; color: var(--amber); }
+
+.shipprog-list { list-style: none; margin: 0; padding: 0; }
+.shipprog-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-xs);
+}
+.shipprog-list li:first-child { border-top: 0; }
+.shipprog-name { flex: 1 1 30%; min-width: 0; font-weight: 600; }
+
+.shipprog-bar {
+  flex: 1 1 26%;
+  min-width: 60px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--mute-soft);
+  overflow: hidden;
+}
+.shipprog-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.shipprog-list li[data-state="done"] .shipprog-bar i { background: var(--jade); }
+/* 超装条走满并换成琥珀 —— 条子本身表达不了「超过 100%」 */
+.shipprog-list li[data-state="over"] .shipprog-bar i { background: var(--amber); }
+
+.shipprog-num { flex: none; min-width: 108px; text-align: right; font-weight: 650; }
+.shipprog-num em { font-style: normal; font-weight: 400; color: var(--text-3); }
+.shipprog-rest { flex: none; min-width: 74px; text-align: right; color: var(--text-3); }
+
+@media (max-width: 560px) {
+  .shipprog-list li { flex-wrap: wrap; }
+  .shipprog-name { flex-basis: 100%; }
+  .shipprog-bar { flex-basis: 100%; order: 3; }
+}
+/* 溢装的数字标出来 —— 在允许范围内也是事实，不该跟"正好"长一个样 */
+.shipprog-rest[data-over="1"] { color: var(--amber); font-weight: 650; }

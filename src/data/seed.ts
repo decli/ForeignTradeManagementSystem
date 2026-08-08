@@ -621,6 +621,7 @@ export function buildSeed(): Database {
   const base: Database = {
     version: DB_VERSION,
     seededAt: now,
+    lastExportAt: null,
     users,
     customers,
     contacts: buildContacts(customers, id),

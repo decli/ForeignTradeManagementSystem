@@ -390,9 +390,15 @@ export type Database = {
   presales: import("./presales-types").PresalesData;
   /** 审批 / 通知 / 往来 / 自定义字段，见 flow-types.ts */
   flow: import("./flow-types").FlowData;
+  /**
+   * 上次导出 JSON 的时刻。
+   * 本地备份挡不住换电脑和清空站点数据，导出文件才挡得住 ——
+   * 所以「多久没导出了」是个要盯着的指标，不是流水账。
+   */
+  lastExportAt: string | null;
 };
 
-export const DB_VERSION = 13;
+export const DB_VERSION = 14;
 
 /** 演示口令：登录页会直接写出来，没什么好藏的 */
 export const DEMO_PASSWORD = "demo1234";

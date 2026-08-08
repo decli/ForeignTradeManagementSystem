@@ -1043,3 +1043,42 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
   color: var(--text-3);
   font-size: 10px;
 }
+
+/* ── 系统级横幅 ────────────────────────────────────────────────
+   关于账套本身的话。夹在顶栏和内容之间、跟着内容一起滚走 ——
+   它不是常驻工具条，是"这次打开有件事要告诉你"。 */
+.sysbanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.sysbanner-ico { flex: none; width: 17px; height: 17px; margin-top: 1px; }
+.sysbanner-text { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.sysbanner-text b { font-size: var(--fs-sm); }
+.sysbanner-text span { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.6; }
+.sysbanner-act { flex: none; height: 30px; }
+.sysbanner-x { flex: none; }
+
+.sysbanner-danger {
+  border-color: color-mix(in srgb, var(--coral) 40%, var(--line));
+  background: var(--coral-soft);
+}
+.sysbanner-danger .sysbanner-ico { color: var(--coral); }
+.sysbanner-warn {
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--line));
+  background: var(--amber-soft);
+}
+.sysbanner-warn .sysbanner-ico { color: var(--amber); }
+.sysbanner-info {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: var(--accent-soft);
+}
+.sysbanner-info .sysbanner-ico { color: var(--accent-ink); }
+
+/* 打印时不要把它带进单据 */
+@media print { .sysbanner { display: none; } }

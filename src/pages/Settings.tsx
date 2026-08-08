@@ -7,11 +7,11 @@ import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
 import { googleConfigured, GOOGLE_CLIENT_ID } from "@/auth/google";
 import { useDb } from "@/data/DataProvider";
 import { useT } from "@/i18n";
-import { clearAll, exportJson, importJson, isPersistent, resetToSeed } from "@/data/db";
+import { clearAll, exportJson, importJson, isPersistent, markExported, resetToSeed } from "@/data/db";
 import { setCustomRate } from "@/data/mutations";
 import { customRate, marketRate } from "@/data/queries";
 import { useDensity, useTheme, type Density, type Theme } from "@/lib/theme";
-import { BackupSection, CustomFieldSection, ImportSection, SyncSection } from "@/components/settings/DataOps";
+import { BackupSection, CustomFieldSection, ImportSection, StorageSection, SyncSection } from "@/components/settings/DataOps";
 
 export default function Settings() {
   const { t } = useT();
@@ -39,6 +39,7 @@ export default function Settings() {
     a.download = `tradeflow_账套_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+    markExported();
     toast("账套已导出（不含登录凭据）");
   };
 
@@ -164,7 +165,9 @@ export default function Settings() {
           <div className="card-head">
             <h3>{t("账套数据")}</h3>
             <span className="spacer" />
-            <Pill tone={isPersistent() ? "jade" : "amber"}>{isPersistent() ? t("已持久化到 IndexedDB") : t("浏览器禁用了存储 · 仅本次会话有效")}</Pill>
+            {/* 说的是"存下来了"，跟「存储健康」里那个浏览器授权的「持久化存储」不是一回事。
+                两处都叫"持久化"会让人以为自相矛盾，这里改口径明确的说法 */}
+            <Pill tone={isPersistent() ? "jade" : "amber"}>{isPersistent() ? t("已存入本机 IndexedDB") : t("浏览器禁用了存储 · 仅本次会话有效")}</Pill>
           </div>
           <div className="card-body">
             <div className="row wrap" style={{ gap: 8, marginBottom: 14 }}>
@@ -241,6 +244,7 @@ export default function Settings() {
           </div>
         </section>
 
+        <StorageSection />
         <BackupSection />
         <SyncSection />
         <CustomFieldSection />

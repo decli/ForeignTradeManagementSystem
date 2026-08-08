@@ -13,7 +13,9 @@ import { ImportWizard } from "@/components/ImportWizard";
 import { useDb } from "@/data/DataProvider";
 import { restoreSnapshot, snapshot } from "@/data/db";
 import { dropSnapshot, listSnapshots, readSnapshot, storageEstimate, takeSnapshot, type SnapshotMeta } from "@/data/backup";
+import { requestPersist } from "@/data/idb";
 import { syncStatus, watchSync } from "@/data/sync";
+import { EXPORT_STALE_DAYS, QUOTA_WARN, readStorageHealth, type StorageHealth } from "@/lib/storage-health";
 import { addCustomField, patchCustomField, removeCustomField } from "@/data/flow-mutations";
 import { CF_ENTITIES, CF_TYPES } from "@/data/flow-types";
 import { canAdmin } from "@/lib/perms";
@@ -27,6 +29,109 @@ function Text({ value, onChange, label, placeholder }: { value: string; onChange
   const f = useTextField(value, onChange);
   return (
     <input className="input" value={f.value} onChange={f.onChange} onCompositionStart={f.onCompositionStart} onCompositionEnd={f.onCompositionEnd} aria-label={label} placeholder={placeholder} />
+  );
+}
+
+/* ═══════════════════ 存储健康 ═══════════════════ */
+
+/**
+ * 账套存在浏览器里这件事，用户有权知道它有多脆。
+ *
+ * 三行都是**实测值**，不是承诺：持久化到底给没给、配额用了多少、
+ * 上次导出是什么时候。尤其是持久化 —— 各家浏览器给不给、什么条件给
+ * 都不一样，与其解释一堆，不如把真实结果摆出来。
+ */
+export function StorageSection() {
+  const { t } = useT();
+  const db = useDb();
+  const [health, setHealth] = useState<StorageHealth | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = async () => setHealth(await readStorageHealth(db.lastExportAt ?? null));
+  useEffect(() => {
+    void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db.lastExportAt]);
+
+  const persistLabel =
+    health?.persisted === true
+      ? t("已授予")
+      : health?.persisted === false
+        ? t("未授予")
+        : t("此浏览器不支持");
+  const persistTone = health?.persisted === true ? "jade" : health?.persisted === false ? "amber" : "mute";
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h3>{t("存储健康")}</h3>
+        <span className="card-sub">{t("账套存在这台机器的浏览器里")}</span>
+        <span className="spacer" />
+        {health?.atRisk ? (
+          <Pill tone="amber" dot={false}>
+            {t("需要注意")}
+          </Pill>
+        ) : null}
+      </div>
+      <div className="card-body">
+        <div className="setting">
+          <div className="setting-t">
+            <b>{t("持久化存储")}</b>
+            <small>
+              {health?.persisted === true
+                ? t("浏览器不会在空间紧张时自动清掉这个站点的数据。但手动清除站点数据、换电脑、硬盘坏依然会丢 —— 导出文件才是真正的保险。")
+                : health?.persisted === false
+                  ? t("浏览器可以在空间紧张时随时清掉本站数据；Safari 更是 7 天不访问就清。点右边申请一次，通过与否由浏览器决定。")
+                  : t("这个浏览器没有提供持久化存储的开关，只能靠定期导出来兜底。")}
+            </small>
+          </div>
+          <Pill tone={persistTone} dot={false}>
+            {persistLabel}
+          </Pill>
+          {health?.persisted === false ? (
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                const ok = await requestPersist();
+                await refresh();
+                setBusy(false);
+                // 申请被拒不是错误，是浏览器的正常判断，别用红色报错吓人
+                if (ok) toast(t("已获得持久化存储"));
+                else toast(t("浏览器暂时没有授予。多用几次、或把本站加入书签后再试"));
+              }}
+            >
+              {t("申请")}
+            </button>
+          ) : null}
+        </div>
+
+        <div className="setting">
+          <div className="setting-t">
+            <b>{t("已用空间")}</b>
+            <small>{t("附件本体和备份快照都占这里的配额，写满之后备份会静默失败")}</small>
+          </div>
+          <Pill tone={health && health.usedRatio != null && health.usedRatio > QUOTA_WARN ? "amber" : "mute"} dot={false}>
+            {health
+              ? health.quota
+                ? t("{u} / {q}", { u: formatBytes(health.used), q: formatBytes(health.quota) })
+                : formatBytes(health.used)
+              : "—"}
+          </Pill>
+        </div>
+
+        <div className="setting">
+          <div className="setting-t">
+            <b>{t("上次导出")}</b>
+            <small>{t("本地备份挡不住换电脑和清空站点数据，导出的 JSON 文件才挡得住。建议每周一次存到网盘。")}</small>
+          </div>
+          <Pill tone={health?.lastExportAt ? ((health.daysSinceExport ?? 0) > EXPORT_STALE_DAYS ? "amber" : "jade") : "coral"} dot={false}>
+            {health?.lastExportAt ? relativeTime(health.lastExportAt) : t("从未导出")}
+          </Pill>
+        </div>
+      </div>
+    </section>
   );
 }
 

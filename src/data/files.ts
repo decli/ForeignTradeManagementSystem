@@ -146,5 +146,7 @@ export async function openPreview(a: Attachment) {
 export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  // GB 这一档不是可选的：浏览器配额动辄二十几 G，只到 MB 就会打出「22205.1 MB」
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(1)} GB`;
 }

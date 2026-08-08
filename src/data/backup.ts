@@ -23,6 +23,11 @@ import type { Database } from "./types";
 const PREFIX = "snap_";
 /** 保留几份。7 份覆盖一周，配额压力也还行 */
 const KEEP = 7;
+/** 迁移前的备份单独留几份，不跟日常备份抢名额 */
+const KEEP_MIGRATE = 3;
+
+/** manual = 手工点的；auto = 每天自动；migrate = 升级结构之前 */
+export type SnapshotBy = "auto" | "manual" | "migrate";
 
 export type SnapshotMeta = {
   key: string;
@@ -32,8 +37,9 @@ export type SnapshotMeta = {
   counts: { pis: number; shipments: number; customers: number; payments: number };
   /** 序列化后的大概字节数 */
   bytes: number;
-  /** manual = 手工点的；auto = 每天自动 */
-  by: string;
+  by: SnapshotBy;
+  /** migrate 专用：从哪个结构版本升上来的 */
+  fromVersion?: number;
 };
 
 type Envelope = { meta: SnapshotMeta; db: Database };
@@ -66,24 +72,32 @@ export async function listSnapshots(): Promise<SnapshotMeta[]> {
  * 存一份。同一天重复调用会覆盖当天那份 —— 一天一个节点。
  * 口令摘要不进备份：它属于这台机器上的这个人，跟业务数据不是一回事。
  */
-export async function takeSnapshot(db: Database, by: "auto" | "manual" = "manual") {
+export async function takeSnapshot(db: Database, by: SnapshotBy = "manual", fromVersion?: number) {
   const { credentials: _drop, ...rest } = db;
   const body = rest as Database;
+  /* 迁移前那一份不能占用当天的槽位 —— 否则同一天的日常备份会把它盖掉，
+     而它恰恰是"升级把我搞砸了"唯一的退路 */
+  const key = by === "migrate" ? `${PREFIX}migrate-${new Date().toISOString().replace(/[:.]/g, "-")}` : dayKey();
   const meta: SnapshotMeta = {
-    key: dayKey(),
+    key,
     at: new Date().toISOString(),
     counts: countsOf(db),
     bytes: JSON.stringify(body).length,
     by,
+    ...(fromVersion == null ? {} : { fromVersion }),
   };
   await snapPut(meta.key, { meta, db: body } satisfies Envelope);
   await prune();
   return meta;
 }
 
+/** 两条独立的保留线：日常备份留 7 份，迁移备份另外留 3 份，互不挤占 */
 async function prune() {
   const all = await listSnapshots();
-  for (const m of all.slice(KEEP)) await snapDel(m.key).catch(() => undefined);
+  const keep = new Set<string>();
+  for (const m of all.filter((x) => x.by === "migrate").slice(0, KEEP_MIGRATE)) keep.add(m.key);
+  for (const m of all.filter((x) => x.by !== "migrate").slice(0, KEEP)) keep.add(m.key);
+  for (const m of all) if (!keep.has(m.key)) await snapDel(m.key).catch(() => undefined);
 }
 
 export async function readSnapshot(key: string) {

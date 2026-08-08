@@ -9,6 +9,7 @@ import { useDb } from "@/data/DataProvider";
 import { useHotkey, useIsMobile, useStored } from "@/lib/hooks";
 import { CommandPalette } from "./CommandPalette";
 import { Sidebar } from "./Sidebar";
+import { SystemBanner } from "./SystemBanner";
 import { Topbar } from "./Topbar";
 import { useT } from "@/i18n";
 
@@ -61,6 +62,7 @@ export function AppShell() {
       <div className="main">
         <Topbar onOpenPalette={() => setPaletteOpen(true)} onOpenNav={() => setMobileOpen(true)} />
         <div className="canvas" ref={canvasRef} id="main">
+          <SystemBanner />
           <Outlet />
         </div>
       </div>

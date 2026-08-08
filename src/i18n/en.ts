@@ -1189,8 +1189,8 @@ export const EN: Record<string, string> = {
   "{n} 地在上班": "{n} at work",
   "昨": "yd",
   "明": "tm",
-  "亮块是对方上班的时间段（当地 9:00–18:00），按你这边的钟摆好；竖线是此刻。":
-    "Bars mark when each city is at work (9:00–18:00 their time), laid out on your clock. The line is now.",
+  "色块 = 对方的上班时段（当地 9:00–18:00），按你的钟摆放；空心 = 当天是对方的休息日；竖线 = 此刻。":
+    "Filled = their working hours (9:00–18:00 local), laid out on your clock. Hollow = a rest day there. The line is now.",
   "本地": "Local",
   "添加城市": "Add a city",
   "搜城市或国家…": "Search city or country…",

@@ -728,6 +728,9 @@ button.rail-group-h:hover .rail-group-n {
   height: 14px;
   color: var(--text-3);
 }
+.clock-chip-city {
+  color: var(--text-2);
+}
 .clock-chip-sep {
   width: 1px;
   height: 12px;
@@ -832,10 +835,20 @@ button.rail-group-h:hover .rail-group-n {
   font-weight: 600;
 }
 .tz-time i {
-  margin-left: 3px;
+  margin-left: 4px;
   font-style: normal;
   font-size: 9.5px;
   color: var(--text-4);
+}
+/* 休息日的星期几做成一个小标签，读起来是**状态**不是装饰。
+   为什么要写出是星期几：利雅得周日是**上班**的（沙特周末在五六），
+   只说「休」的话，看到中国的周末就会顺手以为全世界都在休。 */
+.tz-row[data-off="1"] .tz-time i {
+  padding: 1px 4px;
+  border-radius: var(--r-xs);
+  background: var(--mute-soft);
+  color: var(--text-3);
+  font-weight: 600;
 }
 .tz-band {
   grid-column: 3;
@@ -850,6 +863,25 @@ button.rail-group-h:hover .rail-group-n {
 .tz-row[data-home="1"] .tz-work {
   background: transparent;
   border: 1.5px dashed color-mix(in srgb, var(--text-3) 55%, transparent);
+}
+/* 当天是对方的休息日：整行压暗，色块画成空心。
+   ── 这里原来是错的 ──
+   色块本来无条件按 9:00–18:00 画，周六和周二长得一模一样，配上「亮块是对方
+   上班的时间段」那句话，等于在说迪拜周六在上班。现在休息日只留一个轮廓：
+   位置还在（你仍然看得出他们平时几点上班），但一眼就知道今天找不到人。 */
+.tz-row[data-off="1"] {
+  color: var(--text-4);
+}
+/* 用斜纹而不是纯空心。纯描边在 8px 高的条子上太弱，一整屏全是休息日时
+   面板看着像没加载出来；斜纹是「此处不适用」的通用画法，一眼认得出，
+   而且位置和长度都还在 —— 你仍然看得出他们平时几点上班。 */
+.tz-row[data-off="1"] .tz-work {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 3px,
+    color-mix(in srgb, var(--text-4) 42%, transparent) 3px 4.5px
+  ) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-4) 22%, transparent);
 }
 .tz-work {
   position: absolute;
@@ -1150,6 +1182,8 @@ button.rail-group-h:hover .rail-group-n {
    真正在用的信息，最后才让 */
 @media (max-width: 1080px) {
   .clock-chip-n,
+  .clock-chip-city,
+  .clock-chip-sep,
   .fx-mine {
     display: none;
   }

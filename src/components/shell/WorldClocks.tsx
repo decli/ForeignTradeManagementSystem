@@ -82,16 +82,63 @@ export const CITY_BOOK = [
  * 挑了「厦门」存下来再读回来会变成「北京」。
  */
 const cityKey = (c: { tz: string; alt?: number }) => (c.alt ? `${c.tz}#${c.alt}` : c.tz);
-const findCity = (key: string) => CITY_BOOK.find((c) => cityKey(c) === key);
 
-/** 默认：北京在前（本地），后面是客户密集的几个时区 */
-const DEFAULT_CITIES = ["Asia/Shanghai", "America/Lima", "America/New_York", "America/Argentina/Buenos_Aires", "Europe/London", "Asia/Dubai"];
+type City = { tz: string; name: string; en: string; cc: string; alt?: number };
+
+/**
+ * 书里没有的时区也要能显示。用户可能在苏黎世、在赫尔辛基 ——
+ * 城市表收了四十个外贸口岸，覆盖不到全世界。这时按 `tz:Europe/Zurich` 造一条：
+ * 名字取时区 id 的最后一段，国别码留空（Flag 会退成一个地球）。
+ * 宁可显示「Zurich」也不要默认成北京 —— 那条横轴是**你的**一天，认错了整张表都是错的。
+ */
+function findCity(key: string): City | undefined {
+  const hit = CITY_BOOK.find((c) => cityKey(c) === key);
+  if (hit) return hit;
+  if (!key.startsWith("tz:")) return undefined;
+  const tz = key.slice(3);
+  const label = tz.split("/").pop()!.replace(/_/g, " ");
+  return { tz, name: label, en: label, cc: "" };
+}
+
+/** 浏览器所在时区对应的城市。书里有就用书里的（Asia/Shanghai → 北京），没有就临时造 */
+function localCity() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const hit = CITY_BOOK.find((c) => c.tz === tz);
+    return hit ? cityKey(hit) : `tz:${tz}`;
+  } catch {
+    return "Asia/Shanghai";
+  }
+}
+
+/** 客户密集的几个时区。本地那条由浏览器决定，插在最前面 */
+const PARTNERS = ["Asia/Shanghai", "America/Lima", "America/New_York", "America/Argentina/Buenos_Aires", "Europe/London", "Asia/Dubai"];
+
+/* 默认列表 = 你所在的城市 + 上面那几个（去重）。
+   模块级算一次就够 —— 一次会话里浏览器时区不会变。 */
+const HOME = localCity();
+const DEFAULT_CITIES = [HOME, ...PARTNERS.filter((k) => k !== HOME)];
 
 /** 对方按当地 9:00–18:00 上班。跟 localClock 里的口径保持一致 */
 const WORK_FROM = 9;
 const WORK_TO = 18;
 
-type Zone = { offset: number; min: number; day: number; weekend: boolean; weekday: string };
+/**
+ * 周末不是哪儿都是六日。
+ *
+ * 沙特、埃及、以色列是**周五 + 周六**，伊朗是周四 + 周五。
+ * 阿联酋 2022 年 1 月把周末从「五六」改成了「六日」，所以迪拜走默认。
+ * 原来一句 `/Sat|Sun/` 走天下，结果是利雅得周日被标成休息（人家在上班）、
+ * 周五反倒算上班 —— 一个专门做外贸的工具，把中东客户的作息搞反了很难交代。
+ *
+ * 0 = 周日 … 6 = 周六。
+ */
+const WEEKEND: Record<string, number[]> = { SA: [5, 6], EG: [5, 6], IL: [5, 6], IR: [4, 5] };
+const weekendOf = (cc: string) => WEEKEND[cc] ?? [6, 0];
+
+const DOW: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+type Zone = { offset: number; min: number; day: number; dow: number; weekday: string };
 
 /**
  * 某个时区此刻的墙上时间和它相对 UTC 的偏移。
@@ -126,7 +173,7 @@ function zoneInfo(tz: string, now: Date, locale: string): Zone | null {
       offset: Math.round((Date.UTC(y, mo, d, hour, Number(get("minute"))) - Math.floor(now.getTime() / 60000) * 60000) / 60000),
       min: hour * 60 + Number(get("minute")),
       day: Date.UTC(y, mo, d),
-      weekend: /Sat|Sun/.test(get("weekday")),
+      dow: DOW[get("weekday")] ?? 0,
       weekday: new Intl.DateTimeFormat(locale, { timeZone: tz, weekday: "short" }).format(now),
     };
   } catch {
@@ -153,7 +200,9 @@ type Row = {
   home: boolean;
   time: string;
   working: boolean;
-  /** 周末就把星期几标出来 —— 否则「全员灰着」看不出是深夜还是放假 */
+  /** 今天是这座城市的休息日。整行压暗，时间带画成空心 */
+  off: boolean;
+  /** 休息日就把星期几标出来 —— 否则「全员灰着」看不出是深夜还是放假 */
   weekday: string | null;
   /** 相对本地的日期差：-1 昨天 / 0 今天 / +1 明天 */
   dayDelta: number;
@@ -173,7 +222,7 @@ function toSpans(from: number, to: number): Row["spans"] {
 function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[]; nowMin: number; workingCount: number } {
   const locale = lang === "en" ? "en-US" : "zh-CN";
   // 列表第一个就是本地：那条横轴属于它
-  const cities = keys.map((k) => findCity(k)).filter((c): c is (typeof CITY_BOOK)[number] => !!c);
+  const cities = keys.map((k) => findCity(k)).filter((c): c is City => !!c);
   const home = cities[0] ? zoneInfo(cities[0].tz, now, locale) : null;
   const nowMin = home?.min ?? 0;
 
@@ -182,7 +231,7 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
     const label = lang === "en" ? c.en : c.name;
     const key = cityKey(c);
     if (!z || !home) {
-      return { key, label, cc: c.cc, home: i === 0, time: "--:--", working: false, weekday: null, dayDelta: 0, spans: [] };
+      return { key, label, cc: c.cc, home: i === 0, time: "--:--", working: false, off: false, weekday: null, dayDelta: 0, spans: [] };
     }
     /* 时差用两边的 UTC 偏移相减，不能用墙上时间相减。
        厦门 +8、利马 −5，真实差是 −13 小时；拿墙上分钟数去减再折回 ±12 小时，
@@ -194,14 +243,17 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
     const from = (((WORK_FROM * 60 - diff) % 1440) + 1440) % 1440;
     const to = from + (WORK_TO - WORK_FROM) * 60;
 
+    const off = weekendOf(c.cc).includes(z.dow);
+
     return {
       key,
       label,
       cc: c.cc,
       home: i === 0,
       time: hhmm(z.min),
-      working: !z.weekend && z.min >= WORK_FROM * 60 && z.min < WORK_TO * 60,
-      weekday: z.weekend ? z.weekday : null,
+      working: !off && z.min >= WORK_FROM * 60 && z.min < WORK_TO * 60,
+      off,
+      weekday: off ? z.weekday : null,
       dayDelta: Math.round((z.day - home.day) / 86_400_000),
       spans: toSpans(from, to),
     };
@@ -229,13 +281,17 @@ export function WorldClocks() {
       align="end"
       width={420}
       trigger={(p) => (
+        /* 芯片上原来是个地球，于是「16:00」到底是哪儿的时间没人说得准。
+           换成本地那座城市的国旗 + 城市名：这个数是**你**的时间，一眼就定了性。
+           顶栏挤起来时城市名先让位，国旗留着 —— 它用 18px 就把「哪儿」讲清楚了。 */
         <button
           className="clock-chip"
           {...p}
           ref={p.ref}
-          aria-label={`${t("世界时间")} · ${t("{n} 地在上班", { n: workingCount })}`}
+          aria-label={`${home?.label ?? ""} ${home?.time ?? ""} · ${t("{n} 地在上班", { n: workingCount })}`}
         >
-          <Icon name="globe" />
+          <Flag cc={home?.cc} />
+          <span className="clock-chip-city">{home?.label ?? ""}</span>
           <b>{home?.time ?? "--:--"}</b>
           <span className="clock-chip-sep" aria-hidden="true" />
           <span className="clock-chip-n" data-on={workingCount > 0 ? "1" : "0"}>
@@ -287,7 +343,13 @@ export function WorldClocks() {
 
             <div className="tz-rows">
               {rows.map((r) => (
-                <div className="tz-row" key={r.key} data-home={r.home ? "1" : "0"} data-working={r.working ? "1" : "0"}>
+                <div
+                  className="tz-row"
+                  key={r.key}
+                  data-home={r.home ? "1" : "0"}
+                  data-working={r.working ? "1" : "0"}
+                  data-off={r.off ? "1" : "0"}
+                >
                   <span className="tz-city">
                     <Flag cc={r.cc} />
                     <span className="truncate">{r.label}</span>
@@ -337,7 +399,7 @@ export function WorldClocks() {
                 {t("添加城市")}
               </button>
             </footer>
-            <p className="tz-foot">{t("亮块是对方上班的时间段（当地 9:00–18:00），按你这边的钟摆好；竖线是此刻。")}</p>
+            <p className="tz-foot">{t("色块 = 对方的上班时段（当地 9:00–18:00），按你的钟摆放；空心 = 当天是对方的休息日；竖线 = 此刻。")}</p>
           </div>
         )
       }

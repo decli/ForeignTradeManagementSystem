@@ -7,7 +7,7 @@
  */
 
 import { hashPassword } from "@/auth/password";
-import { idbAvailable, idbDel, idbGet, idbSet, requestPersist } from "./idb";
+import { consumeRecovery, idbAvailable, idbDel, idbGet, idbSet, requestPersist } from "./idb";
 import { buildSeed } from "./seed";
 import { buildEmpty } from "./empty";
 import { activeProfile, dbKeyFor, setActiveProfile, type ProfileId } from "./profile";
@@ -264,6 +264,9 @@ export function load(): Promise<Database> {
 
 async function doLoad(): Promise<Database> {
   if (current) return current;
+  /* 必须排在 idbAvailable() 前面：一旦发出过 open 请求，那条请求就会
+     一直挂在连接队列里挡住删除，而 IndexedDB 没有取消请求的办法。 */
+  await consumeRecovery();
   persistent = await idbAvailable();
   startSync(adoptRemote);
 

@@ -255,26 +255,55 @@ export async function idbAvailable() {
 /**
  * 把锁死的主库删掉重建。
  *
- * 只在 `wedged` 时才该调用。库里的数据本来就读不出来 —— 删掉不会让用户
- * 多损失什么，而不删就永远停在"改了不保存"的状态。
- * 调用方必须先让用户确认：这是不可逆的。
+ * ── 为什么不能当场删，必须重载一次 ──
+ * 实测过：直接调 `deleteDatabase` 一定被 blocked，而挡住它的**正是本页自己**。
+ * `idbAvailable()` 那次 open 虽然 6 秒后超时、promise 已经 reject 了，
+ * 但底层的 `IDBOpenDBRequest` 还挂在连接队列里 —— 而 IndexedDB 没有
+ * 取消请求的 API。只要这一帧还活着，删除就永远排在它后面。
+ *
+ * 所以拆成两步：这里只记一个标记然后重载；真正的删除在下一次启动、
+ * **任何人碰 IndexedDB 之前**执行（见 `consumeRecovery`）。
  */
-export function resetWedgedDb(): Promise<boolean> {
+const RECOVER_FLAG = "mt.recover";
+
+export function requestRecovery() {
+  try {
+    sessionStorage.setItem(RECOVER_FLAG, "1");
+  } catch {
+    /* 存不下就算了，下面照样重载，只是这次修不成 */
+  }
+  window.location.reload();
+}
+
+/**
+ * 启动最早期调用，必须在任何 open 之前。
+ * 有标记就把主库删掉 —— 此时本页还没发出过任何 open 请求，删得掉。
+ */
+export function consumeRecovery(): Promise<void> {
+  let flagged = false;
+  try {
+    flagged = sessionStorage.getItem(RECOVER_FLAG) === "1";
+    sessionStorage.removeItem(RECOVER_FLAG);
+  } catch {
+    /* 读不到就当没有 */
+  }
+  if (!flagged) return Promise.resolve();
+
   return new Promise((resolve) => {
     try {
       pool.delete(DB_NAME);
       const req = indexedDB.deleteDatabase(DB_NAME);
-      // 删除请求同样可能被挂起，给它一个上限，别让按钮转到天荒地老
-      const timer = setTimeout(() => resolve(false), OPEN_TIMEOUT);
-      const done = (ok: boolean) => {
+      // 删除也可能挂住（比如别的标签页开着），给上限，别把启动卡死
+      const timer = setTimeout(resolve, OPEN_TIMEOUT);
+      const done = () => {
         clearTimeout(timer);
-        resolve(ok);
+        resolve();
       };
-      req.onsuccess = () => done(true);
-      req.onerror = () => done(false);
-      req.onblocked = () => done(false);
+      req.onsuccess = done;
+      req.onerror = done;
+      req.onblocked = done;
     } catch {
-      resolve(false);
+      resolve();
     }
   });
 }

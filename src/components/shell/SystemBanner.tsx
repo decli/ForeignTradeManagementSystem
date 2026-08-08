@@ -17,7 +17,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { useDb } from "@/data/DataProvider";
 import { isPersistent, isReadOnly, schemaState } from "@/data/db";
 import { formatBytes } from "@/data/files";
-import { resetWedgedDb, storageFault } from "@/data/idb";
+import { requestRecovery, storageFault } from "@/data/idb";
 import { readStorageHealth, type StorageHealth } from "@/lib/storage-health";
 import { useT } from "@/i18n";
 
@@ -87,10 +87,9 @@ export function SystemBanner() {
             label: t("删掉重建"),
             run: () => {
               if (!window.confirm(t("这个库已经打不开，里面的数据读不出来了。删掉后会重新建一个空的，然后你可以导入之前的 JSON 备份。确定吗？"))) return;
-              void resetWedgedDb().then((ok) => {
-                if (ok) window.location.reload();
-                else window.alert(t("删除被其他标签页挡住了。关掉本站的所有其他标签页，再试一次。"));
-              });
+              /* 不在这里删 —— 本页自己那条挂住的 open 请求会挡住删除，
+                 而且没法取消。改成记个标记、重载，在下次启动最早期删。 */
+              requestRecovery();
             },
           }
         : undefined,

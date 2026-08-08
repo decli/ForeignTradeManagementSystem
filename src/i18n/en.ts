@@ -1755,4 +1755,211 @@ export const EN: Record<string, string> = {
   "采购生产": "Sourcing",
   "出运跟单": "Shipping",
   "收付退税": "Cash & VAT",
+
+  /* ── 上一版遗漏：表格摘要条 ── */
+  "当前": "Showing",
+  "金额合计": "Total value",
+  "要紧": "Critical",
+  "留意": "Watch",
+  "该跟进": "Follow up",
+  "还没有询盘。": "No inquiries yet.",
+
+  /* ── 账套：演示 / 我的 ── */
+  "账套": "Account set",
+  "演示和真实数据分开存，互不覆盖": "Demo and real data live separately and never overwrite each other",
+  "两套数据存在不同的地方。切换不会删任何东西 —— 想回来看样例、给同事演示，随时切回演示账套。":
+    "The two sets are stored separately. Switching deletes nothing — come back to the demo any time to review examples or show a colleague.",
+  "演示数据": "Demo data",
+  "演示账套": "Demo account set",
+  "我的账套": "My account set",
+  "正在用：演示数据": "Using: demo data",
+  "正在用：我的账套": "Using: my account set",
+  "切过去": "Switch to it",
+  "使用中": "In use",
+  "开始用我的账套": "Start my account set",
+  "这是演示数据。去「系统设置」切换到我的账套": "This is demo data. Go to Settings to switch to your own account set",
+  "24 个客户、63 张 PI 的完整样例，用来摸清流程和试功能。改坏了也不要紧，随时可以重灌。":
+    "A full sample of 24 customers and 63 PIs for learning the flow and trying features. Break it freely — you can reseed any time.",
+  "从空白开始录真实业务。第一次进去会带上你这个账号（管理员）和汇率设置，其余全空 —— 看板上会有四步引导。":
+    "Start blank with your real business. Your account (as admin) and FX settings carry over; everything else is empty — the dashboard walks you through four steps.",
+
+  /* ── 空账套引导 ── */
+  "把系统跑起来，还差 {n} 步": "{n} steps left to get running",
+  "按顺序来 —— 后面几步要用到前面建的资料。做完这一条会自己勾上。":
+    "Work in order — later steps use what earlier ones create. Each ticks itself off when done.",
+  "已完成": "Done",
+  "已完成 {a}/{b}": "{a} of {b} done",
+  "去设置": "Set up",
+  "建卖方主体": "Add a seller entity",
+  "录入客户": "Add customers",
+  "录入产品": "Add products",
+  "开第一张 PI": "Issue your first PI",
+  "抬头、银行账户、签章。PI、发票、装箱单全都从这里取，不建就一张单据也开不出来。":
+    "Letterhead, bank account, seal. Every PI, invoice and packing list reads from here — without one you cannot issue any document.",
+  "可以从 Excel 直接粘贴导入。客户的账期和信用等级会决定应收账龄怎么算。":
+    "Paste straight from Excel. Payment terms and credit grade drive how receivables aging is calculated.",
+  "HS 编码和退税率挂在产品上，报价核算器和退税计算直接取这两个数。":
+    "HS codes and VAT refund rates live on products; the quote calculator and refund figures read them directly.",
+  "取号即建档。后面的采购、出运、收款、退税全靠这个号串起来。":
+    "Taking a number creates the record. Sourcing, shipping, payment and VAT refund are all threaded by it.",
+
+  /* ── 存储健康 ── */
+  "存储健康": "Storage health",
+  "账套存在这台机器的浏览器里": "Your data lives in this browser, on this machine",
+  "持久化存储": "Persistent storage",
+  "已授予": "Granted",
+  "未授予": "Not granted",
+  "此浏览器不支持": "Not supported here",
+  "申请": "Request",
+  "已获得持久化存储": "Persistent storage granted",
+  "浏览器暂时没有授予。多用几次、或把本站加入书签后再试":
+    "The browser declined for now. Use the app a few more times, or bookmark it, then try again",
+  "浏览器不会在空间紧张时自动清掉这个站点的数据。但手动清除站点数据、换电脑、硬盘坏依然会丢 —— 导出文件才是真正的保险。":
+    "The browser will not evict this site's data when disk runs low. Clearing site data, switching computers or a dead drive still lose it — an exported file is the only real insurance.",
+  "浏览器可以在空间紧张时随时清掉本站数据；Safari 更是 7 天不访问就清。点右边申请一次，通过与否由浏览器决定。":
+    "The browser may evict this site's data when disk runs low; Safari clears it after 7 days without a visit. Request it here — granting is the browser's call.",
+  "这个浏览器没有提供持久化存储的开关，只能靠定期导出来兜底。":
+    "This browser offers no persistence switch, so regular exports are the only safeguard.",
+  "已用空间": "Space used",
+  "附件本体和备份快照都占这里的配额，写满之后备份会静默失败":
+    "Attachments and backup snapshots share this quota; once full, backups fail silently",
+  "上次导出": "Last export",
+  "从未导出": "Never exported",
+  "本地备份挡不住换电脑和清空站点数据，导出的 JSON 文件才挡得住。建议每周一次存到网盘。":
+    "Local backups cannot survive a new computer or cleared site data — an exported JSON can. Save one to cloud storage weekly.",
+  "需要注意": "Needs attention",
+  "已存入本机 IndexedDB": "Saved to this machine's IndexedDB",
+  "账套还没有异地备份": "No off-machine backup yet",
+  "这个账套还从来没有导出过。本地备份挡不住清空站点数据和换电脑 —— 导出一份 JSON 存到网盘，几秒钟的事。":
+    "This account set has never been exported. Local backups cannot survive cleared site data or a new computer — export a JSON to cloud storage; it takes seconds.",
+  "距上次导出已经 {n} 天。本地备份挡不住清空站点数据和换电脑，建议每周导出一份存到网盘。":
+    "{n} days since the last export. Local backups cannot survive cleared site data or a new computer — export weekly to cloud storage.",
+  "浏览器存储快满了": "Browser storage nearly full",
+  "浏览器给这个站点的空间快用完了（{u} / {q}）。写满之后备份和附件会静默失败，先导出一份、再清理些附件。":
+    "This site is close to its storage limit ({u} / {q}). Once full, backups and attachments fail silently — export a copy, then clear some attachments.",
+  "去导出": "Export now",
+  "知道了": "Dismiss",
+
+  /* ── 迁移与只读 ── */
+  "账套已升级到新结构，数据原样保留": "Account set upgraded; your data is untouched",
+  "从 v{from} 升上来，跑了 {n} 步：{steps}。升级前的那一份已存进备份，可在「系统设置 › 数据」回滚。":
+    "Upgraded from v{from} in {n} steps: {steps}. A pre-upgrade copy is in your backups — roll back from Settings › Data.",
+  "账套结构比当前页面新，已切换为只读": "Account set is newer than this page; switched to read-only",
+  "这份账套是 v{saved} 存下的，当前页面只认到 v{app} —— 多半是浏览器用了缓存的旧版本。为避免把新字段写没，这里不会保存任何改动。请强制刷新（⇧+刷新）拿到最新版本。":
+    "This data was saved by v{saved} but this page only knows v{app} — most likely a cached older build. To avoid erasing newer fields, nothing will be saved. Hard-refresh (Shift+Reload) to get the latest version.",
+  "强制刷新": "Hard refresh",
+  "升级前": "Pre-upgrade",
+
+  /* ── 分批出运 ── */
+  "出运进度": "Shipping progress",
+  "按明细行对账 · 溢短装 ±{n}%": "Reconciled per line · {n}% more or less",
+  "未出": "Not shipped",
+  "部分": "Partial",
+  "已出完": "Shipped",
+  "超装": "Over-shipped",
+  "已出 {p}%": "{p}% shipped",
+  "待出 {n}": "{n} to go",
+  "溢 {n}": "+{n} over",
+  "正好": "Exact",
+  "还没排批次": "No batches yet",
+  "{n} 个批次未登记内容": "{n} batches have no contents logged",
+  "这张 PI 有 {n} 个出运批次，但没有登记每批装了什么。不登记的话，按批次开的商业发票和装箱单只能按整票数量出 —— 那个数拿去清关是错的。":
+    "This PI has {n} shipment batches but no per-batch contents. Without them, per-batch invoices and packing lists fall back to whole-order quantities — and those numbers are wrong at customs.",
+  "开本批单据": "Documents for this batch",
+  "正在按批次 {no} 出单：数量、箱数、毛重都是这一批的实际值，不是整张 PI 的。形式发票是合同，仍按整票出。":
+    "Issuing for batch {no}: quantities, cartons and weights are this batch's actuals, not the whole PI. The proforma invoice is the contract and stays whole-order.",
+  "批次 {no} 还没有登记装了哪些货、各多少。按批次开的商业发票和装箱单要用这一批的实际数量 —— 没有它只能按整票出，那个数拿去清关是错的。":
+    "Batch {no} has no contents logged. A per-batch invoice and packing list need this batch's actual quantities — without them only whole-order figures are available, and those are wrong at customs.",
+  "去 PI 详情的「出运进度」里补登，或者从这张 PI 整票出单。":
+    "Log them under Shipping progress in the PI, or issue whole-order documents instead.",
+
+  /* ── 收款计划 ── */
+  "收款计划": "Payment schedule",
+  "到期日由触发事件推出来，事件没发生就没有到期日":
+    "Due dates derive from trigger events — no event, no due date",
+  "这张 PI 还没有收款计划。没有它，应收账龄只能拿客户的默认账期从提单日一刀切 —— 定金那部分一定算错，因为定金是签约就该付的，不是发货后 N 天。":
+    "No payment schedule on this PI. Without one, aging applies the customer's default terms from the B/L date to everything — which always gets the deposit wrong, since a deposit is due on signing, not N days after shipment.",
+  "加一期": "Add an instalment",
+  "删掉这一期": "Remove this instalment",
+  "套用模板": "Apply a template",
+  "套用模板…": "Apply a template…",
+  "已套用「{n}」": "Applied \u201c{n}\u201d",
+  "合计 100%": "Totals 100%",
+  "还差 {p}%": "{p}% short",
+  "超出 {p}%": "{p}% over",
+  "比例": "Share",
+  "触发事件": "Trigger",
+  "事件后天数": "Days after",
+  "卡放货": "Holds release",
+  "这一期不到账就不放单，跟单表上会拦下来":
+    "Goods are not released until this instalment lands; the shipment view will block it",
+  "比例没凑满 100%，差的那部分不会出现在任何一期里，也就永远不会有人去催":
+    "The shares do not add up to 100% — whatever is missing belongs to no instalment, so nobody will ever chase it",
+  "签约后": "On signing",
+  "见提单副本": "Against B/L copy",
+  "见正本提单": "Against original B/L",
+  "开船后": "After departure",
+  "到港后": "After arrival",
+  "签收后": "After delivery",
+  "指定日期": "Fixed date",
+  "待签约": "Awaiting signing",
+  "待出提单": "Awaiting B/L",
+  "待出正本提单": "Awaiting original B/L",
+  "待开船": "Awaiting departure",
+  "待到港": "Awaiting arrival",
+  "待签收": "Awaiting delivery",
+  "未指定日期": "No date set",
+  "30% 定金 + 70% 见提单副本": "30% deposit + 70% against B/L copy",
+  "100% 前 T/T（款到发货）": "100% T/T in advance",
+  "30% 定金 + 70% 见提单后 30 天": "30% deposit + 70% at 30 days after B/L",
+  "开船后 60 天（老客户放账）": "60 days after departure (open account)",
+  "待触发": "Not yet triggered",
+  "待定": "TBD",
+  "第 {n} 期": "Instalment {n}",
+  "期次": "Instalment",
+  "整单": "Whole order",
+  "不收不放单": "Holds release",
+  "逾 {n}": "{n} late",
+  "{ev} {n} 天": "{ev} + {n} days",
+  "+{n} 天": "+{n} days",
+  "未收合计": "Outstanding",
+  "尾款未到，勿放单": "Balance unpaid — do not release",
+  "{note}还差 {amt}{when}": "{note}{amt} outstanding{when}",
+  "（应收于 {d}）": " (due {d})",
+  "按收款计划的触发事件起算。事件还没发生就没有起算日 —— 这里不会编一个":
+    "Counted from the payment schedule's trigger event. No event yet means no start date — and none is invented here",
+
+  /* ── 报价单 / 合同 / 签章 ── */
+  "销售合同": "Sales contract",
+  "生成报价单": "Generate quotation",
+  "还没有建卖方主体，开不出单据。抬头、银行账户、签章都从那里取。":
+    "No seller entity yet, so no document can be issued. Letterhead, bank account and seal all come from there.",
+  "这张报价单还没有商品明细行 —— 先在核算器里把要报的货和数量填上。":
+    "This quotation has no line items — add the goods and quantities in the calculator first.",
+  "报价单是发给客户的，所以默认英文。有效期至 {d}，过期后这张纸不作数。":
+    "Quotations go to the customer, so English is the default. Valid until {d}; after that this document no longer stands.",
+  "这是第 {v} 版，单据号后面带 -V{v} —— 客户手里同时有好几版时不会拿错。有效期至 {d}。":
+    "This is revision {v}, so the number carries -V{v} — customers holding several revisions will not mix them up. Valid until {d}.",
+  "⚠️ 这一版报价已经过期 {n} 天（有效期至 {d}）。发出去之前先改有效期，否则客户拿着它回来压价，你没有立场。":
+    "\u26a0\ufe0f This revision expired {n} days ago (valid until {d}). Update the validity before sending, or the customer can come back with it to push the price and you have no ground to stand on.",
+  "{n} days after order confirmed": "{n} days after order confirmed",
+  "公司 Logo": "Company logo",
+  "电子签章": "Company seal",
+  "打在单据左上角，最宽 62mm。PNG 或 JPG，2MB 以内。":
+    "Printed top-left on documents, 62mm max width. PNG or JPG, under 2MB.",
+  "压在签字栏上。请用透明底 PNG —— 白底方块盖上去一眼就看得出是贴的。":
+    "Overlaid on the signature block. Use a transparent PNG — a white box is obviously pasted on.",
+  "上传": "Upload",
+  "换一张": "Replace",
+  "Logo 已更新": "Logo updated",
+  "签章已更新": "Seal updated",
+  "只能传图片": "Images only",
+  "图片太大了，控制在 2MB 以内": "Image too large — keep it under 2MB",
+  "存不下，浏览器存储空间可能不够": "Could not save — the browser may be out of storage",
+  "图片存在本机浏览器里，导出 JSON 不含图片本体 —— 换电脑后需要重新上传一次。":
+    "Images live in this browser; exported JSON does not include the files — you will need to re-upload after switching computers.",
+
+  /* ── 相对时间：分钟 / 小时。「刚刚」「{n} 天前」在上面通用区已有 ── */
+  "{n} 分钟前": "{n}m ago",
+  "{n} 小时前": "{n}h ago",
 };

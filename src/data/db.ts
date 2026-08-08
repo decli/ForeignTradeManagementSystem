@@ -199,6 +199,8 @@ let schema: SchemaState = { kind: "ok" };
 let readOnly = false;
 /** 这次载入是否真的改动了账套（版本号跨了，或补上了缺的字段）。决定要不要回写 */
 let migrated = false;
+/** 正在进行的载入。并发调用共用它，见 load() */
+let loading: Promise<Database> | null = null;
 
 export const schemaState = () => schema;
 /** 只读态下所有写入都被丢弃，UI 该拦在前面并给出说明 */
@@ -243,7 +245,24 @@ function migrate(saved: Database): Database {
 const looksLikeDb = (v: unknown): v is Database =>
   !!v && typeof v === "object" && Array.isArray((v as Database).pis) && Array.isArray((v as Database).shipments);
 
-export async function load(): Promise<Database> {
+/**
+ * 载入账套。并发调用共用同一次载入。
+ *
+ * `if (current) return current` 挡不住并发：`current` 要等 await 链走完才赋值，
+ * 在那之前进来的第二个调用者看到的还是 null，于是**整个载入跑第二遍** ——
+ * 包括深拷贝整份账套、再存一份迁移备份。
+ * 实测现象：一次刷新留下两份 `migrate from v13` 快照，白白占掉两个备份槽位。
+ * React StrictMode 在开发环境下必然触发；生产环境只要有两处同时调 load() 也会。
+ */
+export function load(): Promise<Database> {
+  if (current) return Promise.resolve(current);
+  loading ??= doLoad().finally(() => {
+    loading = null;
+  });
+  return loading;
+}
+
+async function doLoad(): Promise<Database> {
   if (current) return current;
   persistent = await idbAvailable();
   startSync(adoptRemote);

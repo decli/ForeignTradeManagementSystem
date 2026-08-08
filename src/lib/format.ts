@@ -3,6 +3,8 @@
  * 汇率以 E6（× 1_000_000）存整数。
  */
 
+import { tr } from "@/i18n";
+
 export const centsToYuan = (cents: number) => cents / 100;
 
 export const formatMoney = (yuan: number, symbol = "$") =>
@@ -55,24 +57,27 @@ export function humanDate(d: string | Date | null | undefined, today = new Date(
   const x = parseDate(d);
   if (!x) return "";
   const days = Math.round((utcOf(today) - utcOf(x)) / DAY);
-  if (days === 0) return "今天";
-  if (days === 1) return "昨天";
-  if (days === -1) return "明天";
-  if (days > 1 && days < 7) return `${days} 天前`;
+  if (days === 0) return tr("今天");
+  if (days === 1) return tr("昨天");
+  if (days === -1) return tr("明天");
+  if (days > 1 && days < 7) return tr("{n} 天前", { n: days });
   return isoDate(x).slice(5);
 }
 
 /** 审计日志用：「3 分钟前 / 2 小时前 / 08-04 15:20」 */
+
 export function relativeTime(iso: string, now = Date.now()) {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "";
+  /* 相对时间散落在备份列表、附件、往来、审计等十几处，
+     写死中文的话英文界面上到处是「3 天前」。走词条表。 */
   const mins = Math.round((now - t) / 60_000);
-  if (mins < 1) return "刚刚";
-  if (mins < 60) return `${mins} 分钟前`;
+  if (mins < 1) return tr("刚刚");
+  if (mins < 60) return tr("{n} 分钟前", { n: mins });
   const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours} 小时前`;
+  if (hours < 24) return tr("{n} 小时前", { n: hours });
   const days = Math.round(hours / 24);
-  if (days < 7) return `${days} 天前`;
+  if (days < 7) return tr("{n} 天前", { n: days });
   const dt = new Date(iso);
   const p = (v: number) => String(v).padStart(2, "0");
   return `${p(dt.getMonth() + 1)}-${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;

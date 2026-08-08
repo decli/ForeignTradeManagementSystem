@@ -26,6 +26,19 @@ import { formatBytes } from "@/data/files";
 import { useAuth } from "@/auth/AuthProvider";
 import { useT } from "@/i18n";
 
+/**
+ * 备份在列表里怎么称呼。
+ *
+ * 迁移备份的键带时间戳（`snap_migrate-2026-...`），直接剥掉前缀会露出一串
+ * 机器码。而它恰恰是最需要被认出来的一份 —— 用户来找的就是"升级之前那个样子"。
+ */
+function snapLabel(m: SnapshotMeta) {
+  if (m.by === "migrate") return m.at.slice(0, 16).replace("T", " ");
+  return m.key.replace("snap_", "");
+}
+
+const SNAP_BY: Record<string, string> = { auto: "自动", manual: "手动", migrate: "升级前" };
+
 function Text({ value, onChange, label, placeholder }: { value: string; onChange: (v: string) => void; label: string; placeholder?: string }) {
   const f = useTextField(value, onChange);
   return (
@@ -266,14 +279,16 @@ export function BackupSection() {
             {snaps.map((s) => (
               <li key={s.key}>
                 <span className="snap-when">
-                  <b>{s.key.replace("snap_", "")}</b>
+                  <b>{snapLabel(s)}</b>
                   <i>{relativeTime(s.at)}</i>
                 </span>
                 <span className="snap-n">
                   {t("{p} 张 PI · {s} 个批次 · {c} 个客户", { p: s.counts.pis, s: s.counts.shipments, c: s.counts.customers })}
                 </span>
-                <Pill tone="mute" dot={false}>
-                  {s.by === "auto" ? t("自动") : t("手动")}
+                {/* 「升级前」要醒目：用户来翻备份列表，多半就是为了找它 */}
+                <Pill tone={s.by === "migrate" ? "amber" : "mute"} dot={false}>
+                  {t(SNAP_BY[s.by] ?? s.by)}
+                  {s.by === "migrate" && s.fromVersion != null ? ` v${s.fromVersion}` : ""}
                 </Pill>
                 <span className="spacer" />
                 <span className="muted num">{formatBytes(s.bytes)}</span>
@@ -318,7 +333,7 @@ export function BackupSection() {
                 await restoreSnapshot(db);
                 setConfirming(null);
                 await refresh();
-                toast(t("已回滚到 {d}，当前状态也备了一份", { d: confirming.key.replace("snap_", "") }));
+                toast(t("已回滚到 {d}，当前状态也备了一份", { d: snapLabel(confirming) }));
               }}
             >
               {t("确认回滚")}
@@ -327,7 +342,7 @@ export function BackupSection() {
         }
       >
         <p className="modal-lead">
-          {t("会把整个账套换成 {d} 那一份。之后所有的改动都会消失。", { d: confirming?.key.replace("snap_", "") ?? "" })}
+          {t("会把整个账套换成 {d} 那一份。之后所有的改动都会消失。", { d: confirming ? snapLabel(confirming) : "" })}
         </p>
         {/* 回滚前自动再备一份 —— 用户点回滚往往是慌的，回错了还得能回来 */}
         <p className="modal-lead">{t("放心：回滚之前系统会先把**当前状态**也备一份，回错了还能再回来。")}</p>

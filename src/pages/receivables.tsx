@@ -135,7 +135,7 @@ export default function ReceivablesPage() {
         tip: t("按收款计划的触发事件起算。事件还没发生就没有起算日 —— 这里不会编一个"),
         render: (r) => (
           <>
-            <div className="num">{r.startOn ? shortDate(r.startOn) : <span className="muted">{r.pending ?? "—"}</span>}</div>
+            <div className="num">{r.startOn ? shortDate(r.startOn) : <span className="muted">{r.pending ? t(r.pending) : "—"}</span>}</div>
             <div className="cell-sub">
               {/* 起算说明写事件名，不是「款到发货」——
                   定金那一期 offsetDays 是 0，照旧文案会全都显示成「款到发货」 */}
@@ -171,7 +171,7 @@ export default function ReceivablesPage() {
         render: (r) => (
           <div style={{ display: "grid", gap: 3, justifyItems: "end" }}>
             <Pill tone={bucketTone(r.bucket)} dot={false}>
-              {r.bucket === "待触发" ? (r.pending ?? t("待触发")) : r.overdue > 0 ? t("{n} 天", { n: r.overdue }) : t("未到期")}
+              {r.bucket === "待触发" ? t(r.pending ?? "待触发") : r.overdue > 0 ? t("{n} 天", { n: r.overdue }) : t("未到期")}
             </Pill>
             <span className="cell-sub">{t(r.bucket)}</span>
           </div>
@@ -194,7 +194,7 @@ export default function ReceivablesPage() {
               [
                 { header: t("PI 号"), value: (r: AgingRow) => r.piNo, width: 16 },
                 { header: t("期次"), value: (r: AgingRow) => r.termLabel ?? t("整单"), width: 8 },
-                { header: t("状态"), value: (r: AgingRow) => r.pending ?? "", width: 12 },
+                { header: t("状态"), value: (r: AgingRow) => (r.pending ? t(r.pending) : ""), width: 12 },
                 { header: t("客户"), value: (r: AgingRow) => r.customer, width: 24 },
                 { header: t("国家"), value: (r: AgingRow) => r.country, width: 12 },
                 { header: t("业务员"), value: (r: AgingRow) => r.salesName, width: 12 },

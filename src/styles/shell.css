@@ -771,7 +771,8 @@ button.rail-group-h:hover .rail-group-n {
 .tz {
   /* 第四列放悬停才出现的删除 / 设为本地。它必须是**列**不是绝对定位 ——
      刻度、亮块、竖线三条轨道共用这个模板，多一列会一起收窄，轴才对得上 */
-  --tz-cols: 74px 74px minmax(0, 1fr) 40px;
+  /* 城市列要装得下「布宜诺斯艾利斯」+ 国旗，7 个汉字 88px 加图标 24px */
+  --tz-cols: 114px 72px minmax(0, 1fr) 38px;
   --tz-pad: 6px;
 }
 .tz-scale,
@@ -1346,9 +1347,12 @@ button.rail-group-h:hover .rail-group-n {
 }
 .fxp-row {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto 52px 20px;
+  /* 牌价和涨跌两列必须**定宽**。每一行都是各自独立的 grid，
+     写 auto 的话两行的数字长短不同就各自撑各自的宽度，小数点对不齐 ——
+     一列数字不对齐，扫一眼看量级这件事就没了。 */
+  grid-template-columns: 18px 58px minmax(0, 1fr) 42px 62px 54px 18px;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   height: 28px;
   padding: 0 6px;
   border-radius: var(--r-xs);
@@ -1403,12 +1407,19 @@ button.rail-group-h:hover .rail-group-n {
 .fxp-custom {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   margin-top: 6px;
   padding: 8px 6px 0;
   border-top: 1px solid var(--line-2);
   font-size: var(--fs-sm);
   color: var(--text-2);
+}
+.fxp-custom svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-4);
+  flex: none;
+  margin: 0 2px;
 }
 .fxp-custom b {
   font-family: var(--mono);
@@ -1552,4 +1563,71 @@ button.rail-group-h:hover .rail-group-n {
   display: flex;
   justify-content: flex-end;
   gap: 1px;
+}
+
+/* ── 国旗 ──
+   emoji 是系统字体画的，宽高比大约 4:3；这里只固定一个 18px 的方位，
+   不做圆形裁切 —— 裁成圆会把左右两条边切掉，秘鲁、奥地利这种竖条旗
+   一裁就认不出来了。 */
+.flag {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  font-size: 14px;
+  /* 让系统去挑有旗帜的那套字体，别落到正文字体上 */
+  font-family: "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", sans-serif;
+}
+.flag i {
+  font-style: normal;
+}
+/* 这台机器不渲染旗帜（Windows）：退成两位国别码色块。
+   「PE」比一对方框清楚，也不至于让一行里的图标忽大忽小。 */
+.flag-cc {
+  border-radius: 3px;
+  background: var(--surface-3);
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── 迷你趋势线 ── */
+.spark {
+  overflow: visible;
+}
+.spark path {
+  fill: none;
+  stroke: var(--text-4);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.spark circle {
+  fill: var(--text-4);
+}
+.spark[data-dir="up"] path,
+.spark[data-dir="up"] circle {
+  stroke: var(--coral);
+  fill: var(--coral);
+}
+.spark[data-dir="down"] path,
+.spark[data-dir="down"] circle {
+  stroke: var(--jade);
+  fill: var(--jade);
+}
+.spark[data-dir="up"] path,
+.spark[data-dir="down"] path {
+  fill: none;
+}
+
+/* 时钟行的城市名跟国旗并排 */
+.tz-city {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }

@@ -170,11 +170,17 @@ export function useTextField(value: string, onChange: (v: string) => void) {
 
 /** 每分钟走一次的时钟，顶栏的世界时间用 */
 export function useTick(ms = 30_000) {
-  const [, set] = useState(0);
+  const [n, set] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => set((n) => n + 1), ms);
+    const t = setInterval(() => set((v) => v + 1), ms);
     return () => clearInterval(t);
   }, [ms]);
+  /* 一定要把计数**返回出去**。
+     早先写成 `const [, set]`，只靠重渲染推动界面 —— 而世界时间那边把行数据
+     包在 useMemo([keys, lang]) 里，依赖里没有时间，缓存就永远不失效：
+     顶栏每 30 秒确实重渲染一次，读到的却还是首帧那份，钟停在了打开页面的那一刻。
+     计时器要想真的驱动谁，它的读数就得是那个 memo 的依赖。 */
+  return n;
 }
 
 /** 拖拽改尺寸：返回 onPointerDown，拖动中把 dragging 置 1 */

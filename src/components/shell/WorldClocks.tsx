@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { Flag } from "@/components/Flag";
 import { Menu } from "@/components/ui/Menu";
 import { PickList } from "@/components/shell/PickList";
-import { useStored } from "@/lib/hooks";
+import { useStored, useTick } from "@/lib/hooks";
 import { useT } from "@/i18n";
 
 /**
@@ -32,47 +33,47 @@ import { useT } from "@/i18n";
 
 /** 可选城市。挑的是外贸真会打交道的港口、口岸和客户所在地 */
 export const CITY_BOOK = [
-  { tz: "Asia/Shanghai", name: "北京", en: "Beijing" },
-  { tz: "Asia/Shanghai", name: "上海", en: "Shanghai", alt: 1 },
-  { tz: "Asia/Shanghai", name: "厦门", en: "Xiamen", alt: 2 },
-  { tz: "Asia/Shanghai", name: "深圳", en: "Shenzhen", alt: 3 },
-  { tz: "Asia/Hong_Kong", name: "香港", en: "Hong Kong" },
-  { tz: "Asia/Taipei", name: "台北", en: "Taipei" },
-  { tz: "Asia/Tokyo", name: "东京", en: "Tokyo" },
-  { tz: "Asia/Seoul", name: "首尔", en: "Seoul" },
-  { tz: "Asia/Singapore", name: "新加坡", en: "Singapore" },
-  { tz: "Asia/Bangkok", name: "曼谷", en: "Bangkok" },
-  { tz: "Asia/Ho_Chi_Minh", name: "胡志明市", en: "Ho Chi Minh City" },
-  { tz: "Asia/Jakarta", name: "雅加达", en: "Jakarta" },
-  { tz: "Asia/Manila", name: "马尼拉", en: "Manila" },
-  { tz: "Asia/Kuala_Lumpur", name: "吉隆坡", en: "Kuala Lumpur" },
-  { tz: "Asia/Kolkata", name: "孟买", en: "Mumbai" },
-  { tz: "Asia/Karachi", name: "卡拉奇", en: "Karachi" },
-  { tz: "Asia/Dubai", name: "迪拜", en: "Dubai" },
-  { tz: "Asia/Riyadh", name: "利雅得", en: "Riyadh" },
-  { tz: "Europe/Istanbul", name: "伊斯坦布尔", en: "Istanbul" },
-  { tz: "Europe/Moscow", name: "莫斯科", en: "Moscow" },
-  { tz: "Europe/Warsaw", name: "华沙", en: "Warsaw" },
-  { tz: "Europe/Berlin", name: "汉堡", en: "Hamburg" },
-  { tz: "Europe/Paris", name: "巴黎", en: "Paris" },
-  { tz: "Europe/Amsterdam", name: "鹿特丹", en: "Rotterdam" },
-  { tz: "Europe/Madrid", name: "马德里", en: "Madrid" },
-  { tz: "Europe/London", name: "伦敦", en: "London" },
-  { tz: "Africa/Johannesburg", name: "约翰内斯堡", en: "Johannesburg" },
-  { tz: "Africa/Lagos", name: "拉各斯", en: "Lagos" },
-  { tz: "Africa/Cairo", name: "开罗", en: "Cairo" },
-  { tz: "America/Sao_Paulo", name: "圣保罗", en: "São Paulo" },
-  { tz: "America/Argentina/Buenos_Aires", name: "布宜诺斯艾利斯", en: "Buenos Aires" },
-  { tz: "America/Santiago", name: "圣地亚哥", en: "Santiago" },
-  { tz: "America/Lima", name: "利马", en: "Lima" },
-  { tz: "America/Bogota", name: "波哥大", en: "Bogotá" },
-  { tz: "America/Mexico_City", name: "墨西哥城", en: "Mexico City" },
-  { tz: "America/New_York", name: "纽约", en: "New York" },
-  { tz: "America/Chicago", name: "芝加哥", en: "Chicago" },
-  { tz: "America/Los_Angeles", name: "洛杉矶", en: "Los Angeles" },
-  { tz: "America/Vancouver", name: "温哥华", en: "Vancouver" },
-  { tz: "Australia/Sydney", name: "悉尼", en: "Sydney" },
-  { tz: "Pacific/Auckland", name: "奥克兰", en: "Auckland" },
+  { tz: "Asia/Shanghai", name: "北京", en: "Beijing", cc: "CN" },
+  { tz: "Asia/Shanghai", name: "上海", en: "Shanghai", alt: 1, cc: "CN" },
+  { tz: "Asia/Shanghai", name: "厦门", en: "Xiamen", alt: 2, cc: "CN" },
+  { tz: "Asia/Shanghai", name: "深圳", en: "Shenzhen", alt: 3, cc: "CN" },
+  { tz: "Asia/Hong_Kong", name: "香港", en: "Hong Kong", cc: "HK" },
+  { tz: "Asia/Taipei", name: "台北", en: "Taipei", cc: "TW" },
+  { tz: "Asia/Tokyo", name: "东京", en: "Tokyo", cc: "JP" },
+  { tz: "Asia/Seoul", name: "首尔", en: "Seoul", cc: "KR" },
+  { tz: "Asia/Singapore", name: "新加坡", en: "Singapore", cc: "SG" },
+  { tz: "Asia/Bangkok", name: "曼谷", en: "Bangkok", cc: "TH" },
+  { tz: "Asia/Ho_Chi_Minh", name: "胡志明市", en: "Ho Chi Minh City", cc: "VN" },
+  { tz: "Asia/Jakarta", name: "雅加达", en: "Jakarta", cc: "ID" },
+  { tz: "Asia/Manila", name: "马尼拉", en: "Manila", cc: "PH" },
+  { tz: "Asia/Kuala_Lumpur", name: "吉隆坡", en: "Kuala Lumpur", cc: "MY" },
+  { tz: "Asia/Kolkata", name: "孟买", en: "Mumbai", cc: "IN" },
+  { tz: "Asia/Karachi", name: "卡拉奇", en: "Karachi", cc: "PK" },
+  { tz: "Asia/Dubai", name: "迪拜", en: "Dubai", cc: "AE" },
+  { tz: "Asia/Riyadh", name: "利雅得", en: "Riyadh", cc: "SA" },
+  { tz: "Europe/Istanbul", name: "伊斯坦布尔", en: "Istanbul", cc: "TR" },
+  { tz: "Europe/Moscow", name: "莫斯科", en: "Moscow", cc: "RU" },
+  { tz: "Europe/Warsaw", name: "华沙", en: "Warsaw", cc: "PL" },
+  { tz: "Europe/Berlin", name: "汉堡", en: "Hamburg", cc: "DE" },
+  { tz: "Europe/Paris", name: "巴黎", en: "Paris", cc: "FR" },
+  { tz: "Europe/Amsterdam", name: "鹿特丹", en: "Rotterdam", cc: "NL" },
+  { tz: "Europe/Madrid", name: "马德里", en: "Madrid", cc: "ES" },
+  { tz: "Europe/London", name: "伦敦", en: "London", cc: "GB" },
+  { tz: "Africa/Johannesburg", name: "约翰内斯堡", en: "Johannesburg", cc: "ZA" },
+  { tz: "Africa/Lagos", name: "拉各斯", en: "Lagos", cc: "NG" },
+  { tz: "Africa/Cairo", name: "开罗", en: "Cairo", cc: "EG" },
+  { tz: "America/Sao_Paulo", name: "圣保罗", en: "São Paulo", cc: "BR" },
+  { tz: "America/Argentina/Buenos_Aires", name: "布宜诺斯艾利斯", en: "Buenos Aires", cc: "AR" },
+  { tz: "America/Santiago", name: "圣地亚哥", en: "Santiago", cc: "CL" },
+  { tz: "America/Lima", name: "利马", en: "Lima", cc: "PE" },
+  { tz: "America/Bogota", name: "波哥大", en: "Bogotá", cc: "CO" },
+  { tz: "America/Mexico_City", name: "墨西哥城", en: "Mexico City", cc: "MX" },
+  { tz: "America/New_York", name: "纽约", en: "New York", cc: "US" },
+  { tz: "America/Chicago", name: "芝加哥", en: "Chicago", cc: "US" },
+  { tz: "America/Los_Angeles", name: "洛杉矶", en: "Los Angeles", cc: "US" },
+  { tz: "America/Vancouver", name: "温哥华", en: "Vancouver", cc: "CA" },
+  { tz: "Australia/Sydney", name: "悉尼", en: "Sydney", cc: "AU" },
+  { tz: "Pacific/Auckland", name: "奥克兰", en: "Auckland", cc: "NZ" },
 ];
 
 /**
@@ -148,6 +149,7 @@ const pct = (min: number) => `${((min / 1440) * 100).toFixed(3)}%`;
 type Row = {
   key: string;
   label: string;
+  cc: string;
   home: boolean;
   time: string;
   working: boolean;
@@ -180,7 +182,7 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
     const label = lang === "en" ? c.en : c.name;
     const key = cityKey(c);
     if (!z || !home) {
-      return { key, label, home: i === 0, time: "--:--", working: false, weekday: null, dayDelta: 0, spans: [] };
+      return { key, label, cc: c.cc, home: i === 0, time: "--:--", working: false, weekday: null, dayDelta: 0, spans: [] };
     }
     /* 时差用两边的 UTC 偏移相减，不能用墙上时间相减。
        厦门 +8、利马 −5，真实差是 −13 小时；拿墙上分钟数去减再折回 ±12 小时，
@@ -195,6 +197,7 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
     return {
       key,
       label,
+      cc: c.cc,
       home: i === 0,
       time: hhmm(z.min),
       working: !z.weekend && z.min >= WORK_FROM * 60 && z.min < WORK_TO * 60,
@@ -211,8 +214,10 @@ export function WorldClocks() {
   const { t, lang } = useT();
   const [keys, setKeys] = useStored<string[]>("mt.clocks", DEFAULT_CITIES);
   const [adding, setAdding] = useState(false);
-  // 父组件里的 useTick 每 30 秒推一次渲染，这里跟着重算就行
-  const { rows, nowMin, workingCount } = useMemo(() => buildRows(keys, new Date(), lang), [keys, lang]);
+  /* 自己走表，不蹭父组件的。20 秒一格：显示到分钟，最多晚 20 秒，
+     而且此刻那条竖线也跟着往右挪，看得出它是活的。 */
+  const tick = useTick(20_000);
+  const { rows, nowMin, workingCount } = useMemo(() => buildRows(keys, new Date(), lang), [keys, lang, tick]);
   const home = rows[0];
 
   /** 换本地 = 把它挪到第一位。整条横轴跟着换，其余城市的亮块自动重算 */
@@ -222,7 +227,7 @@ export function WorldClocks() {
     <Menu
       hover
       align="end"
-      width={392}
+      width={420}
       trigger={(p) => (
         <button
           className="clock-chip"
@@ -253,6 +258,7 @@ export function WorldClocks() {
             }}
             render={(c) => (
               <>
+                <Flag cc={c.cc} />
                 <span className="truncate">{lang === "en" ? c.en : c.name}</span>
                 <span className="spacer" />
                 <span className="pick-hint">{zoneNow(c.tz)}</span>
@@ -282,7 +288,10 @@ export function WorldClocks() {
             <div className="tz-rows">
               {rows.map((r) => (
                 <div className="tz-row" key={r.key} data-home={r.home ? "1" : "0"} data-working={r.working ? "1" : "0"}>
-                  <span className="truncate">{r.label}</span>
+                  <span className="tz-city">
+                    <Flag cc={r.cc} />
+                    <span className="truncate">{r.label}</span>
+                  </span>
                   <span className="tz-time">
                     {r.time}
                     {r.dayDelta ? <i>{t(r.dayDelta > 0 ? "明" : "昨")}</i> : null}

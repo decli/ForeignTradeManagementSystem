@@ -22,6 +22,7 @@ import type {
   OrderCosting,
   Pi,
   PiLine,
+  PaymentTerm,
   ReleaseState,
   SellerEntity,
   ShipMode,
@@ -33,6 +34,7 @@ import type {
   User,
 } from "./types";
 import { DB_VERSION, DEFAULT_MORE_OR_LESS_BP, lineAmount } from "./types";
+import { TERM_TEMPLATES } from "./payment-terms";
 import { buildOpsSeed } from "./ops-seed";
 import { PRODUCT_SEED, buildProducts } from "./catalog";
 import { emptyPresales } from "./presales-types";
@@ -662,6 +664,18 @@ export function buildSeed(): Database {
     }
   }
 
+  /* ── 收款计划 ──────────────────────────────────────────────
+     原来 PI 上只有一句自由文本的付款方式。拆成分期之后，定金和尾款
+     各有各的触发事件和到期日 —— 应收账龄才能按期催，而不是按单一刀切。
+     分布照着真实业务来：多数 30/70 见提单，少数款到发货和放账。 */
+  const paymentTerms: PaymentTerm[] = [];
+  for (const p of pis) {
+    const roll = rand();
+    const tpl =
+      roll < 0.62 ? TERM_TEMPLATES[0] : roll < 0.78 ? TERM_TEMPLATES[2] : roll < 0.9 ? TERM_TEMPLATES[1] : TERM_TEMPLATES[3];
+    for (const t of tpl.terms) paymentTerms.push({ ...t, id: id("pt"), piId: p.id });
+  }
+
   const base: Database = {
     version: DB_VERSION,
     seededAt: now,
@@ -673,6 +687,7 @@ export function buildSeed(): Database {
     pis,
     piLines,
     costings,
+    paymentTerms,
     shipments,
     shipmentLines,
     milestones,

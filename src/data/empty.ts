@@ -56,6 +56,7 @@ export function buildEmpty(opts: { user?: User | null; credential?: Credential |
     pis: [],
     piLines: [],
     costings: [],
+    paymentTerms: [],
     shipments: [],
     shipmentLines: [],
     milestones: [],

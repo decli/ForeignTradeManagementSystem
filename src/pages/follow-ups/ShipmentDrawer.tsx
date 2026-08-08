@@ -12,6 +12,7 @@ import { tr, useT } from "@/i18n";
 import { getShipmentDetail } from "@/data/queries";
 import { setMilestone, setRelease, toggleTodo, updateNote } from "@/data/mutations";
 import { formatMoney, humanDate, localClock, todayIso } from "@/lib/format";
+import { releaseBlockers } from "@/data/payment-terms";
 import { PHRASES, RELEASE_STATES, RELEASE_TONE } from "@/lib/rules";
 
 /** 单证齐套检查表：真实项目里应该来自「单证备案」模块，这里按批次特征推出来 */
@@ -48,6 +49,11 @@ export function ShipmentDrawer({
   const actor = { id: user?.id ?? null, name: user?.name ?? "—" };
   const readOnly = !can("write");
   const batchPi = detail?.piId ? (db.pis.find((p) => p.id === detail.piId) ?? null) : null;
+  /* 放货闸口。这替掉了跟单表备注里手写的那句「待客户付尾款后电放」——
+     那句话系统不认识，人一交接就漏，而漏了就是货款两空。 */
+  const blockers = batchPi
+    ? releaseBlockers(db, batchPi, db.costings.find((c) => c.piId === batchPi.id)?.receivableCents ?? 0)
+    : [];
 
   if (!detail) return null;
   const clock = localClock(detail.customerTz);
@@ -147,6 +153,28 @@ export function ShipmentDrawer({
     >
       {tab === "overview" ? (
         <>
+          {/* 尾款没到就别放单。这是能直接造成货款两空的一条，
+              所以放在抽屉最上面，而不是埋在某个折叠区里 */}
+          {blockers.length ? (
+            <div className="release-block" role="alert">
+              <Icon name="alert" size={15} />
+              <div>
+                <b>{t("尾款未到，勿放单")}</b>
+                <span>
+                  {blockers
+                    .map((b) =>
+                      t("{note}还差 {amt}{when}", {
+                        note: b.term.note ? `${b.term.note}：` : "",
+                        amt: formatMoney(b.dueCents / 100, "$"),
+                        when: b.dueOn ? t("（应收于 {d}）", { d: b.dueOn }) : t("（{p}）", { p: b.pending ?? "" }),
+                      }),
+                    )
+                    .join("；")}
+                </span>
+              </div>
+            </div>
+          ) : null}
+
           <div className="sect">
             <div className="sect-h">
               <Icon name="ship" size={14} />

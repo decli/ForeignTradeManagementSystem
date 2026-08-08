@@ -4,6 +4,7 @@
 
 import { daysSince, isoDate } from "@/lib/format";
 import type { Database } from "./types";
+import { TRIGGER_LABEL, resolveTerms } from "./payment-terms";
 import type { ApprovalRequest, Message } from "./flow-types";
 import { APPROVAL_KINDS } from "./flow-types";
 import type { Viewer } from "./queries";
@@ -62,8 +63,15 @@ export function approvalKpis(rows: ApprovalRow[], viewer: Viewer) {
 
 /* ═══════════════════ 应收账龄 ═══════════════════ */
 
-/** 账龄分桶。名字就是老板嘴里那几个词，不要发明新说法 */
-export const AGING_BUCKETS = ["未到期", "逾期 1–30 天", "逾期 31–60 天", "逾期 61–90 天", "逾期 90 天以上"] as const;
+/**
+ * 账龄分桶。名字就是老板嘴里那几个词，不要发明新说法。
+ *
+ * 「待触发」是新加的一档，专门装**触发事件还没发生**的期次：
+ * 「见提单副本 30 天」在开船之前根本没有到期日。旧口径把这种也算进
+ * 「未到期」，看着像"日子还早"，其实是"日子还不存在" —— 一个能催，
+ * 一个只能等，混在一起老板就分不清哪些钱是真的在路上。
+ */
+export const AGING_BUCKETS = ["待触发", "未到期", "逾期 1–30 天", "逾期 31–60 天", "逾期 61–90 天", "逾期 90 天以上"] as const;
 export type AgingBucket = (typeof AGING_BUCKETS)[number];
 
 export type AgingRow = {
@@ -81,13 +89,24 @@ export type AgingRow = {
   paidCents: number;
   /** 未收，分 */
   openCents: number;
-  /** 起算日：有提单日就用提单日，否则用签约日 */
-  startOn: string;
+  /** 触发事件发生的日期。null = 事件还没发生 */
+  startOn: string | null;
   termDays: number;
-  dueOn: string;
-  /** 逾期天数，负数 = 还没到期 */
+  /** 到期日。**事件没发生时是 null，不编** */
+  dueOn: string | null;
+  /** 逾期天数。没有到期日时是 0，配合 bucket="待触发" 一起看 */
   overdue: number;
   bucket: AgingBucket;
+  /* ── 分期相关。没有收款计划的老单子退回整单口径，下面几项为 null ── */
+  /** 第几期，如「1/2」。null = 整单口径 */
+  termLabel: string | null;
+  /** 在等什么事件，如「待开船」。null = 已经有到期日了 */
+  pending: string | null;
+  /** 起算事件的名字，如「见提单副本」。整单口径时是 null */
+  triggerLabel: string | null;
+  /** 这一期不收到就不放单 */
+  blocksRelease: boolean;
+  note: string | null;
 };
 
 const bucketOf = (overdue: number): AgingBucket =>
@@ -116,19 +135,7 @@ export function listAging(db: Database, viewer: Viewer, f: { q?: string; bucket?
     if (openCents <= 0) continue;
 
     const cust = db.customers.find((c) => c.id === pi.customerId);
-    // 该 PI 名下所有出运批次里最早的 ATD —— 账期从第一次实际发货起算
-    const atds = db.shipments
-      .filter((s) => s.piId === pi.id)
-      .flatMap((s) => db.milestones.filter((m) => m.shipmentId === s.id && m.kind === "ATD" && m.actualOn))
-      .map((m) => m.actualOn!)
-      .sort();
-    const startOn = atds[0] ?? pi.signedOn ?? pi.createdAt.slice(0, 10);
-    const termDays = cust?.termDays ?? 30;
-    const dueOn = new Date(Date.parse(startOn) + termDays * 86_400_000).toISOString().slice(0, 10);
-    const overdue = daysSince(dueOn, today);
-
-    out.push({
-      id: pi.id,
+    const common = {
       piNo: pi.piNo,
       customerId: pi.customerId,
       customer: cust?.name ?? "—",
@@ -138,12 +145,67 @@ export function listAging(db: Database, viewer: Viewer, f: { q?: string; bucket?
       salesName: db.users.find((u) => u.id === pi.salesId)?.name ?? "—",
       amountCents: pi.amountCents,
       paidCents: cst.receivableCents,
-      openCents,
-      startOn,
-      termDays,
-      dueOn,
-      overdue,
-      bucket: bucketOf(overdue),
+    };
+
+    const states = resolveTerms(db, pi, today);
+
+    /* 没有收款计划的单子（老账套迁移上来、或还没配）退回整单口径 ——
+       口径变了不等于数据就没了，宁可粗一点也不能让这些钱从催收清单里消失。 */
+    if (states.length === 0) {
+      const atds = db.shipments
+        .filter((s) => s.piId === pi.id)
+        .flatMap((s) => db.milestones.filter((m) => m.shipmentId === s.id && m.kind === "ATD" && m.actualOn))
+        .map((m) => m.actualOn as string)
+        .sort();
+      const startOn = atds[0] ?? pi.signedOn ?? pi.createdAt.slice(0, 10);
+      const termDays = cust?.termDays ?? 30;
+      const dueOn = new Date(Date.parse(startOn) + termDays * 86_400_000).toISOString().slice(0, 10);
+      const overdue = daysSince(dueOn, today);
+      out.push({
+        ...common,
+        id: pi.id,
+        openCents,
+        startOn,
+        termDays,
+        dueOn,
+        overdue,
+        bucket: bucketOf(overdue),
+        termLabel: null,
+        pending: null,
+        triggerLabel: null,
+        blocksRelease: false,
+        note: null,
+      });
+      continue;
+    }
+
+    /* 按期次顺序核销已收款：先冲定金，再冲尾款。
+       已经收满的期不进清单 —— 催收清单上只该有还没收到的钱。 */
+    let covered = cst.receivableCents;
+    states.forEach((s, i) => {
+      if (covered >= s.dueCents) {
+        covered -= s.dueCents;
+        return;
+      }
+      const openThis = s.dueCents - covered;
+      covered = 0;
+      out.push({
+        ...common,
+        // 一张 PI 会出现多行，id 必须带期次，否则表格 key 撞车
+        id: `${pi.id}:${s.term.id}`,
+        openCents: openThis,
+        startOn: s.startOn,
+        termDays: s.term.offsetDays,
+        dueOn: s.dueOn,
+        overdue: s.overdue ?? 0,
+        // 事件没发生 = 没有到期日 = 不能算"未到期"，单列一档
+        bucket: s.dueOn ? bucketOf(s.overdue ?? 0) : "待触发",
+        termLabel: `${i + 1}/${states.length}`,
+        pending: s.pending,
+        triggerLabel: TRIGGER_LABEL[s.term.trigger],
+        blocksRelease: s.blocksRelease,
+        note: s.term.note,
+      });
     });
   }
 

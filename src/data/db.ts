@@ -114,6 +114,7 @@ function hydrate(db: Database): Database {
     contacts: db.contacts ?? [],
     piLines: db.piLines ?? [],
     shipmentLines: db.shipmentLines ?? [],
+    paymentTerms: db.paymentTerms ?? [],
     attachments: db.attachments ?? [],
     savedViews: db.savedViews ?? [],
     presales: db.presales ?? emptyPresales(),
@@ -172,6 +173,17 @@ const MIGRATIONS: Migration[] = [
         }
       }
       return changed;
+    },
+  },
+  {
+    to: 16,
+    note: "结构化收款计划",
+    up: (db) => {
+      if (Array.isArray(db.paymentTerms)) return false;
+      /* 不替老单子瞎猜分期。付款方式原来是自由文本，解析它等于用正则
+         猜钱什么时候该到 —— 猜错比没有更坏。空着，界面上提示去补。 */
+      db.paymentTerms = [];
+      return true;
     },
   },
 ];

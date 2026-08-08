@@ -35,7 +35,7 @@ import { useT } from "@/i18n";
 const SYM: Record<string, string> = { USD: "$", EUR: "€", CNY: "¥" };
 const symOf = (c: string) => SYM[c] ?? `${c} `;
 
-const bucketTone = (b: string) => (b === "未到期" ? "mute" : b === "逾期 1–30 天" ? "accent" : b === "逾期 31–60 天" ? "amber" : "coral");
+const bucketTone = (b: string) => (b === "待触发" ? "mute" : b === "未到期" ? "accent" : b === "逾期 1–30 天" ? "accent" : b === "逾期 31–60 天" ? "amber" : "coral");
 
 /**
  * 催收话术。
@@ -85,6 +85,8 @@ export default function ReceivablesPage() {
             </div>
             <div className="cell-sub">
               <span className="num">{r.piNo}</span>
+              {/* 一张 PI 现在会拆成好几行，不标期次根本分不清哪行是哪笔钱 */}
+              {r.termLabel ? <span className="cell-term">{t("第 {n} 期", { n: r.termLabel })}</span> : null}
               <span>·</span>
               <Pill tone={r.creditLevel === "A" ? "jade" : r.creditLevel === "B" ? "accent" : "amber"} dot={false}>
                 {r.creditLevel}
@@ -129,13 +131,24 @@ export default function ReceivablesPage() {
       {
         key: "start",
         title: t("起算 / 账期"),
-        width: 142,
-        tip: t("账期从提单日起算；还没出货的退回签约日"),
+        width: 150,
+        tip: t("按收款计划的触发事件起算。事件还没发生就没有起算日 —— 这里不会编一个"),
         render: (r) => (
           <>
-            <div className="num">{shortDate(r.startOn)}</div>
+            <div className="num">{r.startOn ? shortDate(r.startOn) : <span className="muted">{r.pending ?? "—"}</span>}</div>
             <div className="cell-sub">
-              <span>{r.termDays ? t("账期 {n} 天", { n: r.termDays }) : t("款到发货")}</span>
+              {/* 起算说明写事件名，不是「款到发货」——
+                  定金那一期 offsetDays 是 0，照旧文案会全都显示成「款到发货」 */}
+              <span>
+                {r.triggerLabel
+                  ? r.termDays
+                    ? t("{ev} {n} 天", { ev: t(r.triggerLabel), n: r.termDays })
+                    : t(r.triggerLabel)
+                  : r.termDays
+                    ? t("账期 {n} 天", { n: r.termDays })
+                    : t("款到发货")}
+              </span>
+              {r.blocksRelease ? <span className="cell-flag">{t("不收不放单")}</span> : null}
             </div>
           </>
         ),
@@ -143,9 +156,11 @@ export default function ReceivablesPage() {
       {
         key: "due",
         title: t("到期日"),
-        width: 110,
-        sort: (a, b) => a.dueOn.localeCompare(b.dueOn),
-        render: (r) => <span className="num">{shortDate(r.dueOn)}</span>,
+        width: 112,
+        // 没有到期日的排最后：它们不是"最早到期"，是"还不知道什么时候到期"
+        sort: (a, b) => (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999"),
+        render: (r) =>
+          r.dueOn ? <span className="num">{shortDate(r.dueOn)}</span> : <span className="muted">{t("待定")}</span>,
       },
       {
         key: "overdue",
@@ -156,7 +171,7 @@ export default function ReceivablesPage() {
         render: (r) => (
           <div style={{ display: "grid", gap: 3, justifyItems: "end" }}>
             <Pill tone={bucketTone(r.bucket)} dot={false}>
-              {r.overdue > 0 ? t("{n} 天", { n: r.overdue }) : t("未到期")}
+              {r.bucket === "待触发" ? (r.pending ?? t("待触发")) : r.overdue > 0 ? t("{n} 天", { n: r.overdue }) : t("未到期")}
             </Pill>
             <span className="cell-sub">{t(r.bucket)}</span>
           </div>
@@ -178,6 +193,8 @@ export default function ReceivablesPage() {
               stampName("应收账龄"),
               [
                 { header: t("PI 号"), value: (r: AgingRow) => r.piNo, width: 16 },
+                { header: t("期次"), value: (r: AgingRow) => r.termLabel ?? t("整单"), width: 8 },
+                { header: t("状态"), value: (r: AgingRow) => r.pending ?? "", width: 12 },
                 { header: t("客户"), value: (r: AgingRow) => r.customer, width: 24 },
                 { header: t("国家"), value: (r: AgingRow) => r.country, width: 12 },
                 { header: t("业务员"), value: (r: AgingRow) => r.salesName, width: 12 },

@@ -263,6 +263,34 @@ export type OrderCosting = {
   updatedAt: string;
 };
 
+/**
+ * 收款的触发事件。
+ *
+ * 外贸的付款条件几乎从不写死日期，写的是「见提单副本 30 天」这种
+ * **事件 + 天数**。所以到期日必须由事件推出来，而事件没发生时
+ * 就是没有到期日 —— 详见 data/payment-terms.ts 顶部。
+ */
+export type PaymentTrigger = "signed" | "bl_copy" | "bl_original" | "atd" | "eta" | "delivered" | "fixed";
+
+/** 一期收款。一张 PI 的各期合计构成完整的收款计划 */
+export type PaymentTerm = {
+  id: string;
+  piId: string;
+  seq: number;
+  /** 占合同额的比例，基点。3000 = 30% */
+  ratioBp: number;
+  /** 直接指定金额（分）。填了就以它为准 —— 尾款常带零头，比例算不出整数 */
+  amountCents: number | null;
+  trigger: PaymentTrigger;
+  /** 事件之后第几天。「见提单副本 30 天」= bl_copy + 30 */
+  offsetDays: number;
+  /** trigger = fixed 时的固定日期 */
+  fixedOn: string | null;
+  /** 这一期不到账就不放单。跟单表上会拦下来 */
+  blocksRelease: boolean;
+  note: string | null;
+};
+
 export type ReleaseState = "已放行" | "未放行" | "待报关";
 export type ShipMode = "海运" | "空运" | "陆运" | "快递";
 
@@ -427,6 +455,8 @@ export type Database = {
   pis: Pi[];
   piLines: PiLine[];
   costings: OrderCosting[];
+  /** 结构化收款计划，见 data/payment-terms.ts */
+  paymentTerms: PaymentTerm[];
   shipments: Shipment[];
   /** 每批实际装了什么。见 ShipmentLine —— 分批 CI/PL 的数量来源 */
   shipmentLines: ShipmentLine[];
@@ -452,7 +482,7 @@ export type Database = {
   lastExportAt: string | null;
 };
 
-export const DB_VERSION = 15;
+export const DB_VERSION = 16;
 
 /** 溢短装默认 ±5%，外贸合同上最常见的一档 */
 export const DEFAULT_MORE_OR_LESS_BP = 500;

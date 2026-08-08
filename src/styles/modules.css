@@ -1282,3 +1282,99 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
   line-height: 1.5;
 }
 .brand-note svg { flex: none; margin-top: 2px; }
+/* 账龄行上的期次标记。一张 PI 拆成几行，不标就分不清哪行是哪笔钱 */
+.cell-term {
+  padding: 0 4px;
+  border-radius: var(--r-xs);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 10px;
+  font-weight: 650;
+}
+/* 「不收不放单」—— 这一条以前是写在跟单表备注里的一句话，系统不认识 */
+.cell-flag {
+  padding: 0 4px;
+  border-radius: var(--r-xs);
+  background: var(--coral-soft);
+  color: var(--coral);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+/* 放货闸口警告。放在抽屉最上面 —— 漏看这一条的代价是货款两空 */
+.release-block {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--coral) 42%, var(--line));
+  border-radius: var(--r-md);
+  background: var(--coral-soft);
+}
+.release-block svg { flex: none; margin-top: 1px; color: var(--coral); }
+.release-block b { display: block; font-size: var(--fs-sm); color: var(--coral); }
+.release-block span { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.6; }
+
+/* ── PI 收款计划 ────────────────────────────────────────────── */
+.payplan {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.payplan-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.payplan-head b { font-size: var(--fs-sm); }
+.payplan-head .muted { font-size: var(--fs-xs); }
+.payplan-empty { padding: 12px; }
+.payplan-empty p { margin: 0 0 10px; color: var(--text-2); font-size: var(--fs-xs); line-height: 1.65; }
+.payplan-tpls { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.payplan-list { list-style: none; margin: 0; padding: 0; }
+.payplan-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-xs);
+}
+.payplan-list li:first-child { border-top: 0; }
+.payplan-seq {
+  flex: none; width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--mute-soft);
+  color: var(--text-3);
+  font-size: 10px; font-weight: 700;
+}
+.payplan-ratio { flex: none; width: 62px; }
+.payplan-ratio.num { text-align: right; font-weight: 650; }
+.payplan-amt { flex: none; width: 96px; text-align: right; font-weight: 650; }
+.payplan-trig { flex: 1 1 auto; min-width: 96px; }
+.payplan-off { flex: none; width: 68px; }
+.payplan-off.num { text-align: right; color: var(--text-3); }
+.payplan-due { flex: none; width: 108px; text-align: right; }
+.payplan-late { font-style: normal; margin-left: 4px; color: var(--coral); font-weight: 650; }
+.payplan-gate { flex: none; display: inline-flex; align-items: center; gap: 4px; color: var(--text-3); cursor: pointer; }
+.payplan-gate input { accent-color: var(--coral); }
+
+.payplan-foot {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.payplan-warn {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--coral); font-size: 11px; line-height: 1.4;
+}
+@media (max-width: 720px) {
+  .payplan-list li { flex-wrap: wrap; }
+  .payplan-trig { flex-basis: 100%; order: 5; }
+}

@@ -3,7 +3,9 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "MT 通商 · TRADEFLOW — 外贸业务管理系统（纯静态 · 浏览器本地存储 · GitHub Pages）",
+  "description": "信风 Tradewind — 外贸业务全流程：询盘、报价、跟单、核算、收汇、退税（纯静态 · 浏览器本地存储 · GitHub Pages）",
+  "author": "decli",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

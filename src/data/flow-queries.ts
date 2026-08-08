@@ -260,11 +260,19 @@ export type NoticeRow = { id: string; kind: string; title: string; body: string;
  *    单子改好了它自己就消失，不需要谁去手工关掉 —— 这是它比"生成一条通知记录"
  *    强的地方：一个已经处理完却还挂在那里的红点，比没有红点更糟。
  */
+/**
+ * 这里**不截断**。
+ *
+ * 原来结尾是 `.slice(0, 40)`，而铃铛上那个数是从返回值里数出来的 ——
+ * 于是攒到第 41 条以后，红点会停在 40 不动，跟真实待办数悄悄脱钩。
+ * 一个会撒谎的红点比没有红点更糟。
+ * 要不要少画几行是**渲染**的事，交给调用方；计数必须拿全量算。
+ */
 export function listNotices(db: Database, viewer: Viewer, derived: NoticeRow[]): NoticeRow[] {
   const stored = db.flow.notifications
     .filter((n) => n.userId === null || n.userId === viewer.id)
     .map((n): NoticeRow => ({ ...n, derived: false }));
-  return [...stored, ...derived].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 40);
+  return [...stored, ...derived].sort((a, b) => b.at.localeCompare(a.at));
 }
 
 /* ═══════════════════ 往来沟通 ═══════════════════ */

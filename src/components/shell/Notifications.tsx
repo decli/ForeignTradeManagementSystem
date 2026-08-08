@@ -44,6 +44,9 @@ const ICON: Record<string, IconName> = {
   assign: "user",
 };
 
+/** 一次最多画多少行。超出的部分明说，不是悄悄吞掉 */
+const SHOW = 40;
+
 export function Notifications() {
   const db = useDb();
   const { user } = useAuth();
@@ -52,8 +55,12 @@ export function Notifications() {
   const viewer = viewerOf(user);
 
   const derived = useMemo(() => deriveNotices(db, viewer), [db, viewer]);
-  const rows = useMemo(() => listNotices(db, viewer, derived), [db, viewer, derived]);
-  const unread = rows.filter((r) => r.derived || !r.read).length;
+  const all = useMemo(() => listNotices(db, viewer, derived), [db, viewer, derived]);
+  /* 红点数从**全量**里算，画多少行是另一回事 —— 两件事混在一起，
+     数字就会跟着渲染上限走，而不是跟着真实待办走。 */
+  const unread = all.filter((r) => r.derived || !r.read).length;
+  const rows = all.slice(0, SHOW);
+  const hidden = all.length - rows.length;
 
   return (
     <Menu
@@ -108,6 +115,8 @@ export function Notifications() {
                 </button>
               ))
             )}
+            {/* 截断了就说出来。少画几行没关系，让人以为「就这些」才是问题 */}
+            {hidden > 0 ? <p className="ntf-more">{t("还有 {n} 条更早的没有列出", { n: hidden })}</p> : null}
           </div>
         </div>
       )}

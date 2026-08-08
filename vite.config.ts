@@ -1,10 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { copyFileSync } from "node:fs";
+import { copyFileSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
+
+/* 版本号从 package.json 注入，不在源码里再写一遍 ——
+   写两遍就一定会有一天对不上，而「关于」页上一个错的版本号比没有更糟。 */
+const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as { version: string };
 
 /**
  * GitHub Pages 没有服务端，刷新 /follow-ups 这种深链接会 404。
@@ -25,6 +29,7 @@ export default defineConfig({
   // 默认按用户站点（decli.github.io 根路径）构建；
   // 项目站点用 `npm run build:project` 覆盖成 /ForeignTradeManagementSystem/
   base: "/",
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [react(), spaFallback()],
   resolve: {
     alias: { "@": resolve(root, "src") },

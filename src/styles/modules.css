@@ -1005,7 +1005,21 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
   box-shadow: 0 0 0 2px var(--surface);
 }
 
-.ntf { display: grid; max-height: min(70vh, 560px); }
+/* ── 为什么要写 minmax(0, 1fr) ──
+   这里原来是 `display: grid` + `max-height: 560px`，列表那格给了 `overflow: auto`，
+   看起来该滚了 —— 但没有。grid 项的 `min-height` 默认是 `auto`，
+   意思是「不许缩到内容以下」；于是行高按 21 条通知撑到 1287px，
+   面板自己被 max-height 剪成 560px，多出来的 700 多像素**溢出到屏幕外面**，
+   而 `overflow: auto` 因为格子从来没被压缩过，一次也没触发。
+
+   后果不是「不好看」，是**红点说 21 条，能够着的只有 13 条**。
+   剩下 8 条既滚不到也点不开，用户唯一的感觉就是这个数字在骗人。
+   minmax(0, …) 把下限从「内容高度」改成 0，格子才肯缩，滚动条才出得来。 */
+.ntf {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: min(70vh, 560px);
+}
 .ntf-head {
   display: flex;
   align-items: center;
@@ -1014,7 +1028,7 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
   border-bottom: 1px solid var(--line);
 }
 .ntf-head b { font-size: var(--fs-sm); }
-.ntf-list { overflow: auto; display: grid; }
+.ntf-list { overflow-y: auto; min-height: 0; display: grid; align-content: start; overscroll-behavior: contain; }
 .ntf-row {
   display: flex;
   gap: 9px;
@@ -1048,6 +1062,7 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
 .ntf-main span { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.5; }
 .ntf-when { color: var(--text-4); font-size: 10.5px; }
 .ntf-empty { padding: 30px 16px; text-align: center; color: var(--text-3); font-size: var(--fs-sm); }
+.ntf-more { padding: 10px 14px; text-align: center; color: var(--text-4); font-size: var(--fs-xs); border-top: 1px solid var(--line-2); }
 /* 派生型通知（实时算出来的）标一下 —— 它们不能"标记已读"，
    因为它们会在问题解决时自己消失，这一点要让用户看得出来 */
 .ntf-live {
@@ -1393,4 +1408,37 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
 @media (max-width: 720px) {
   .payplan-list li { flex-wrap: wrap; }
   .payplan-trig { flex-basis: 100%; order: 5; }
+}
+
+/* ── 设置页「关于」里的版权行 ──
+   一行铺开的元数据条：谁做的、哪一版、哪一年。跟上面的正文段落分开，
+   因为它不是要读的话，是要查的事实 —— 排成等宽小字，扫一眼就找到。 */
+.about-legal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-2);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.about-legal span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.about-legal b {
+  color: var(--text-2);
+  font-weight: 620;
+}
+.about-legal em {
+  font-family: var(--mono);
+  font-style: normal;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  color: var(--text-3);
+  font-size: 10px;
 }

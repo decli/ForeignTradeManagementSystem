@@ -202,10 +202,19 @@ type Row = {
   working: boolean;
   /** 今天是这座城市的休息日。整行压暗，时间带画成空心 */
   off: boolean;
-  /** 休息日就把星期几标出来 —— 否则「全员灰着」看不出是深夜还是放假 */
-  weekday: string | null;
-  /** 相对本地的日期差：-1 昨天 / 0 今天 / +1 明天 */
-  dayDelta: number;
+  /**
+   * 时间右边那一个标签。
+   *
+   * ── 原来是两个 ──
+   * 一个写日期差（昨 / 明），一个写星期几（周六），休息日又碰上跨日期的行
+   * 就同时挂两个。时间列是定宽的，两个标签塞不下，第二个换行顶到时间上面，
+   * 整行叠成一团 —— 而它们说的还是同一件事：北京周日 00:32，利马是「昨天」，
+   * 昨天就是「周六」，两个标签互为同义反复。
+   *
+   * 现在只留星期几。同一天、又不是对方休息日，就什么都不显示 ——
+   * 没有需要提醒的事就别占位置。
+   */
+  mark: string | null;
   /** 对方的上班时段换算到本地这条轴上，跨零点会被切成两段 */
   spans: { from: number; to: number; cut: "l" | "r" | null }[];
 };
@@ -231,7 +240,7 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
     const label = lang === "en" ? c.en : c.name;
     const key = cityKey(c);
     if (!z || !home) {
-      return { key, label, cc: c.cc, home: i === 0, time: "--:--", working: false, off: false, weekday: null, dayDelta: 0, spans: [] };
+      return { key, label, cc: c.cc, home: i === 0, time: "--:--", working: false, off: false, mark: null, spans: [] };
     }
     /* 时差用两边的 UTC 偏移相减，不能用墙上时间相减。
        厦门 +8、利马 −5，真实差是 −13 小时；拿墙上分钟数去减再折回 ±12 小时，
@@ -245,6 +254,15 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
 
     const off = weekendOf(c.cc).includes(z.dow);
 
+    /* 只留星期几这一个标签。
+       「昨」和「周六」并排挂着是同义反复 —— 本地这行写着周日，那边写着周六，
+       「差一天」是看出来的，不用再标一次。所以本地这行**总是**显示星期几：
+       它是参照物，其余行才有得比。
+       为什么非要写星期几而不是一个「休」字：利雅得周日是**上班**的
+       （沙特周末在周五周六），只标「休」，看到中国的周末就会顺手以为全世界都在休。 */
+    const delta = Math.round((z.day - home.day) / 86_400_000);
+    const mark = i === 0 || delta !== 0 || off ? z.weekday : null;
+
     return {
       key,
       label,
@@ -253,8 +271,7 @@ function buildRows(keys: string[], now: Date, lang: "zh" | "en"): { rows: Row[];
       time: hhmm(z.min),
       working: !off && z.min >= WORK_FROM * 60 && z.min < WORK_TO * 60,
       off,
-      weekday: off ? z.weekday : null,
-      dayDelta: Math.round((z.day - home.day) / 86_400_000),
+      mark,
       spans: toSpans(from, to),
     };
   });
@@ -355,9 +372,8 @@ export function WorldClocks() {
                     <span className="truncate">{r.label}</span>
                   </span>
                   <span className="tz-time">
-                    {r.time}
-                    {r.dayDelta ? <i>{t(r.dayDelta > 0 ? "明" : "昨")}</i> : null}
-                    {r.weekday ? <i>{r.weekday}</i> : null}
+                    <b>{r.time}</b>
+                    {r.mark ? <i>{r.mark}</i> : null}
                   </span>
                   <span className="tz-band">
                     {r.spans.map((s, i) => (

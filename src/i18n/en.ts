@@ -542,8 +542,13 @@ export const EN: Record<string, string> = {
   "校验中…": "Checking…",
   "演示数据在你自己的浏览器里生成与保存，不会上传任何内容":
     "Demo data is generated and stored in your own browser. Nothing is uploaded.",
-  "每一票货，都看得见": "Every shipment, in plain sight",
-  "外贸全流程管理": "End-to-end export trade management",
+  /* 口号与一句话定位不走词条表 —— 它们在 Brand.tsx 里中英成对定义。
+     一句品牌文案的英文不是「翻译」，是另写一句，硬塞进 key→value 反而会被当成可直译的普通文案。 */
+  "演示版本 · 数据仅存于本机": "Demo build · data never leaves this device",
+  "作者": "Author",
+  "保留所有权利": "All rights reserved",
+  "月度出运柜量与签约额": "Monthly shipments and contracted value",
+  "还有 {n} 条更早的没有列出": "{n} older items not shown",
 
   /* ── 采购协同 / 财务 / 库存 / 单证 / 主档 与既有页面正文 ── */
   " · 今天没有需要处理的异常": " · nothing needs attention today",

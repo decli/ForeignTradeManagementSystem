@@ -264,6 +264,38 @@ button.rail-group-h:hover .rail-group-n {
   border-radius: 2px;
   background: var(--accent-hi);
 }
+/* ── 落地提示 ──
+   从别处（首页待办、⌘K、面包屑）跳进来时侧栏会自动滚一段。
+   滚完视线还在页面中央，得让当前项自己招一下手，否则又要从头扫一遍。
+   一圈扩散的光晕，1 秒就收 —— 常驻的话它就变成了第二种"选中"，反而更乱。 */
+.rail-item[data-landed="1"]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--r-sm);
+  pointer-events: none;
+  animation: rail-land 1s cubic-bezier(0.22, 0.9, 0.3, 1) 1 both;
+}
+@keyframes rail-land {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 0%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 4px transparent;
+    background: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-item[data-landed="1"]::after {
+    animation: none;
+  }
+}
+
 /* 置顶区是快捷方式，不是位置：给淡一档的选中样式，
    同一个页面才不会看起来像同时待在两个地方。 */
 .rail-item[data-shortcut="1"][aria-current="page"] {
@@ -775,7 +807,9 @@ button.rail-group-h:hover .rail-group-n {
   /* 第四列放悬停才出现的删除 / 设为本地。它必须是**列**不是绝对定位 ——
      刻度、亮块、竖线三条轨道共用这个模板，多一列会一起收窄，轴才对得上 */
   /* 城市列要装得下「布宜诺斯艾利斯」+ 国旗，7 个汉字 88px 加图标 24px */
-  --tz-cols: 114px 72px minmax(0, 1fr) 38px;
+  /* 城市列比最长的名字（布宜诺斯艾利斯，7 个汉字 + 国旗）多留一点：
+     贴着下一列的数字读起来像两个字段黏在了一起。 */
+  --tz-cols: 122px 76px minmax(0, 1fr) 34px;
   --tz-pad: 6px;
 }
 .tz-scale,
@@ -825,24 +859,33 @@ button.rail-group-h:hover .rail-group-n {
   color: var(--text);
   font-weight: 600;
 }
+/* 时间和星期标必须在同一行、不许换行：这一格是定宽的，
+   一换行标签就顶到时间上面去（之前挂两个标签时就是这么叠成一团的）。 */
 .tz-time {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
+}
+.tz-time b {
+  font-weight: inherit;
 }
 .tz-row[data-working="1"] .tz-time {
   color: var(--jade);
   font-weight: 600;
 }
 .tz-time i {
-  margin-left: 4px;
+  flex: none;
   font-style: normal;
   font-size: 9.5px;
   color: var(--text-4);
 }
-/* 休息日的星期几做成一个小标签，读起来是**状态**不是装饰。
-   为什么要写出是星期几：利雅得周日是**上班**的（沙特周末在五六），
-   只说「休」的话，看到中国的周末就会顺手以为全世界都在休。 */
+/* 休息日的星期几做成一个填色小标签，读起来是**状态**不是日期；
+   不休息但跨了日期的那些，同一个位置只给一行淡字，不抢注意力。 */
 .tz-row[data-off="1"] .tz-time i {
   padding: 1px 4px;
   border-radius: var(--r-xs);
@@ -1664,4 +1707,6 @@ button.rail-group-h:hover .rail-group-n {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  /* 长名字宁可省略号，也不要顶到时间那一列上 */
+  padding-right: 8px;
 }

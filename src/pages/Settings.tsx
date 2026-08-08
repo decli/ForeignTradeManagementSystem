@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { toast, toastError } from "@/components/ui/Toast";
 import { Field, Pill, Segmented } from "@/components/ui/bits";
+import { BRAND, copyright } from "@/components/Brand";
 import { changePassword } from "@/auth/accounts";
 import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
 import { googleConfigured, GOOGLE_CLIENT_ID } from "@/auth/google";
@@ -293,6 +294,21 @@ export default function Settings() {
             <p className="muted">
               {t("也就是说：")}<b>{t("不要把真实业务数据放进这个演示站")}</b>{t("。它没有备份、没有多人协作、没有服务端校验。要用在真实业务上，把")} <code className="num">src/data/db.ts</code>{t(" 换成对接后端的 fetch 即可，上层的查询与页面代码不用动。")}
             </p>
+            {/* 版权的正式落点。登录页那行是「在场」，这里才是「可查」——
+                谁做的、哪一年、什么版本，一个地方说全。 */}
+            <div className="about-legal">
+              <span>
+                <b>
+                  {BRAND.zh} {BRAND.en}
+                </b>
+                <em>v{__APP_VERSION__}</em>
+              </span>
+              <span>
+                {t("作者")} <b>{BRAND.author}</b>
+              </span>
+              <span>{copyright()}</span>
+              <span className="muted">{t("保留所有权利")}</span>
+            </div>
           </div>
         </section>
       </div>

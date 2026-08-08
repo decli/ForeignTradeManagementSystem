@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { Wordmark } from "@/components/Brand";
@@ -18,6 +18,45 @@ import { useT } from "@/i18n";
  */
 /** 「常用」的折叠状态跟别的分组存在一起，用一个不会跟分组名撞车的键 */
 const PIN_KEY = "__pins__";
+
+/**
+ * 把某个节点滚进侧栏的可视区 —— Word 导航窗格那套「正文跳到哪，目录跟到哪」。
+ *
+ * 不用 `scrollIntoView()` 有两个原因：
+ *  1. 它会顺手滚动**所有**可滚动祖先，窄屏浮层态下会把整页也带着动；
+ *  2. `block: "nearest"` 会把目标顶到边上贴着，`block: "center"` 又在本来
+ *     就看得见的时候也硬滚一下。这里要的是「看不见才滚，滚完不贴边」。
+ */
+function revealInto(box: HTMLElement, el: HTMLElement, smooth: boolean) {
+  const b = box.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  /* 上面留得比下面多：上面那点空当正好是分组头，「你在这一组的第几项」一起看见 */
+  const padT = 12;
+  const padB = 12;
+  let delta = 0;
+  if (r.top < b.top + padT) delta = r.top - b.top - padT;
+  else if (r.bottom > b.bottom - padB) delta = r.bottom - b.bottom + padB;
+  if (!delta) return false;
+  const max = box.scrollHeight - box.clientHeight;
+  let top = Math.max(0, Math.min(max, box.scrollTop + delta));
+  /* 差一点点就到顶了就直接到顶。停在 40px 的位置只会让上面那一组露出半行，
+     看着像没滚干净 —— 而那点距离本来也没有隐藏任何东西。 */
+  if (top < 56) top = 0;
+  const from = box.scrollTop;
+  if (Math.abs(top - from) < 1) return false;
+  box.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+  /* 平滑滚动是会**静默失败**的：标签页在后台时合成器停摆，动画一帧都不跑，
+     scrollTop 原地不动，而调用方毫不知情 —— 结果就是"高亮标在那儿，
+     但那一行还在折叠线以下"，比不做还糟。
+     等一拍回头看：完全没动就直接跳过去。只在「一点没动」时兜底 ——
+     用户中途自己滚了不算失败，那时候把他拽回来才是真的讨厌。 */
+  if (smooth) {
+    window.setTimeout(() => {
+      if (box.scrollTop === from) box.scrollTop = top;
+    }, 320);
+  }
+  return true;
+}
 
 export function Sidebar({
   collapsed,
@@ -75,6 +114,57 @@ export function Sidebar({
 
   const pinsOpen = !closedGroups.includes(PIN_KEY);
 
+  /* ── 侧栏跟随当前页 ──
+     从首页那排待办点进「应收账龄」，页面是打开了，但侧栏还停在最上面，
+     「收付退税」那一组连同高亮项都在折叠线以下 —— 人一眼看不出自己在哪儿，
+     也没法从当前位置继续往旁边走。Word 的导航窗格不是这样：跳到哪一节，
+     左边的目录就展开那一支并滚过去。这里照做，三件事：
+       1. 当前页所在分组如果是收起的，展开它；
+       2. 当前项不在可视区就滚过去；
+       3. 落地后闪一下，告诉眼睛"停在这儿了"—— 滚动结束时视线还在页面中间，
+          不给个落点的话得自己再找一遍。 */
+  const navRef = useRef<HTMLElement>(null);
+  /* 首帧也要定位：刷新一次就丢失方位感，跟点进来是同一个问题 */
+  const wantReveal = useRef<string | null>(currentSlug);
+  const [landed, setLanded] = useState("");
+
+  useEffect(() => {
+    wantReveal.current = currentSlug;
+    /* 只在**路由变了**的时候展开。挂在 currentSlug 上而不是每次渲染都做，
+       用户自己在当前页把这组收起来时才不会被顶回去。 */
+    if (currentGroup) setClosedGroups((c) => (c.includes(currentGroup) ? c.filter((x) => x !== currentGroup) : c));
+  }, [currentSlug, currentGroup, setClosedGroups]);
+
+  /* 展开是一次 setState，DOM 要下一帧才有那个节点。所以不挂依赖数组：
+     每次渲染后看一眼「要定位的那一项渲染出来了吗」，出来了就定位一次。 */
+  useEffect(() => {
+    const slug = wantReveal.current;
+    const nav = navRef.current;
+    if (!slug || !nav) return;
+    /* 置顶区是快捷方式不是位置（见 data-shortcut），要定位到它本来那一组里的那一项 */
+    const el = nav.querySelector<HTMLElement>(`[data-slug="${slug}"]:not([data-shortcut])`);
+    /* 分组收起来是靠 CSS 的 `display: none`，节点**还在** DOM 里 ——
+       querySelector 照样找得到，但它没有布局：getBoundingClientRect() 全是 0，
+       按它算出来的滚动位置必然是错的，而且这一趟一跑就把待办标记清掉了，
+       等真正展开的那一帧反而不会再定位。offsetParent 为 null 就是「没布局」，
+       这时候什么都别做，把机会留给下一帧。 */
+    if (!el || el.offsetParent === null) return;
+    wantReveal.current = null;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* 分组整体装得下就带着分组头一起露出来，装不下才只管这一项 */
+    const grp = el.closest<HTMLElement>(".rail-group");
+    const target = grp && grp.offsetHeight <= nav.clientHeight ? grp : el;
+    const moved = revealInto(nav, target, !reduce);
+    /* 本来就在眼皮底下就别闪 —— 没发生位移的高亮属于噪声 */
+    if (moved) setLanded(slug);
+  });
+
+  useEffect(() => {
+    if (!landed) return;
+    const id = window.setTimeout(() => setLanded(""), 1100);
+    return () => window.clearTimeout(id);
+  }, [landed]);
+
   const togglePin = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -93,6 +183,8 @@ export function Sidebar({
           /* 置顶区是快捷方式，不是「位置」。同一页在这儿和它本来的分组里各出现一次，
              两处都画成实心选中，用户会以为这是两个不同的地方。 */
           data-shortcut={inPinned ? "1" : undefined}
+          data-slug={item.slug}
+          data-landed={!inPinned && landed === item.slug ? "1" : undefined}
           data-tip={collapsed ? navTitle(item, lang) : undefined}
           onClick={onNavigate}
           end={href === "/dashboard"}
@@ -142,7 +234,7 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="rail-nav">
+      <nav className="rail-nav" ref={navRef}>
         {/* 置顶多了会把下面的分组挤出屏幕，所以它跟别的分组一样能收起来。
             一条也没置顶时整块不渲染 —— 留一个空的「常用」标题没有任何意义。 */}
         {pinnedItems.length > 0 && !collapsed ? (

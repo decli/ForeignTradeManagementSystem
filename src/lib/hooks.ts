@@ -217,3 +217,39 @@ export function useDragResize(current: () => number, onChange: (v: number) => vo
 
   return { dragging, onPointerDown };
 }
+
+/**
+ * 容器的实际像素宽度。
+ *
+ * SVG 图表要拿它来**按真实像素作图**，而不是画一张固定 viewBox 再让浏览器缩放。
+ * 缩放的问题是：viewBox 里的 1 个单位在宽容器上会变成 3 个 CSS 像素，
+ * 于是 9.5px 的轴标签在宽屏上印成 28px，线宽粗成 6px ——
+ * 图表跟着容器一起"发胖"，跟同一屏上其它 UI 的字号完全脱节。
+ * 拿到真实宽度之后，1 单位就是 1 像素，字号线宽跟全站一致，只有绘图区在伸缩。
+ */
+export function useWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [w, setW] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // 取整之后再比，避免亚像素抖动导致每帧都重渲染
+    const read = () => setW((prev) => {
+      const next = Math.round(el.getBoundingClientRect().width);
+      return prev === next ? prev : next;
+    });
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    read();
+    /* ResizeObserver 的回调挂在渲染步骤上 —— 标签页在后台时渲染步骤是停的，
+       期间改窗口大小不会有任何回调，等切回来那一刻才补。中间这段时间里
+       宽度是旧的：SVG 还按 1100 画，容器只有 313，被 max-width 压扁成一条。
+       window 的 resize 事件不受这个影响，补一个当保险丝。 */
+    window.addEventListener("resize", read, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", read);
+    };
+  }, []);
+  return [ref, w] as const;
+}

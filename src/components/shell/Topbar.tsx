@@ -1,23 +1,19 @@
-import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Icon, type IconName } from "@/components/Icon";
 import { Menu } from "@/components/ui/Menu";
+import { FxRates } from "@/components/shell/FxRates";
 import { WorldClocks } from "@/components/shell/WorldClocks";
-import { useDb } from "@/data/DataProvider";
-import { customRate, marketRate } from "@/data/queries";
 import { useTick } from "@/lib/hooks";
 import { breadcrumb, navTitle } from "@/lib/nav";
 import { ACCENTS, useAccent, useDensity, useThemeCycle, type Density, type Theme } from "@/lib/theme";
 import { useT } from "@/i18n";
 
 export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void; onOpenNav: () => void }) {
-  const db = useDb();
   const { pathname } = useLocation();
   const crumb = breadcrumb(pathname);
   const { t, lang } = useT();
+  // 顶栏的时钟每 30 秒走一格
   useTick(30_000);
-
-  const fx = useMemo(() => ({ market: marketRate(db), custom: customRate(db) }), [db]);
 
   return (
     <header className="topbar">
@@ -36,15 +32,7 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
 
       <span className="spacer" />
 
-      <div className="fx" data-tip={`${t("市场")} ${fx.market} · ${t("自定")} ${fx.custom}`}>
-        <i className="fx-live" />
-        <span className="k">{t("市场")}</span>
-        <b>{fx.market.toFixed(4)}</b>
-        <span className="sep" />
-        <span className="k">{t("自定")}</span>
-        <b>{fx.custom.toFixed(4)}</b>
-      </div>
-
+      <FxRates />
       <WorldClocks />
 
       {/* 右侧控件成组。散着放会有两个后果：

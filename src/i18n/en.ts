@@ -1191,4 +1191,35 @@ export const EN: Record<string, string> = {
   "明": "tm",
   "亮块是对方上班的时间段（当地 9:00–18:00），按你这边的钟摆好；竖线是此刻。":
     "Bars mark when each city is at work (9:00–18:00 their time), laid out on your clock. The line is now.",
+  "本地": "Local",
+  "添加城市": "Add a city",
+  "搜城市或国家…": "Search city or country…",
+  "设为本地": "Make this local",
+  "把 {city} 设为本地": "Make {city} the local zone",
+  "移除": "Remove",
+  "移除 {city}": "Remove {city}",
+  "没搜到「{q}」": "No match for “{q}”",
+
+  /* 汇率牌价 */
+  "汇率牌价": "FX rates",
+  "兑人民币": "against CNY",
+  "刷新频率": "Refresh every",
+  "立即刷新": "Refresh now",
+  "手动刷新": "Manual refresh",
+  "{time} 更新": "updated {time}",
+  "添加币种": "Add a currency",
+  "搜代码或名称…": "Search code or name…",
+  "不再盯它": "Stop watching",
+  "移除 {code}": "Remove {code}",
+  "自定 USD → CNY": "Custom USD → CNY",
+  "核算用": "used for costing",
+  "一个币种都没盯。点下面「添加币种」。": "Nothing on the watchlist. Use “Add a currency” below.",
+  "演示行情：以账套里的市场汇率为锚推算，不联网。":
+    "Demo quotes: derived from the market rate in this account, no network calls.",
+  "30 秒": "30s",
+  "1 分钟": "1 min",
+  "5 分钟": "5 min",
+  "15 分钟": "15 min",
+  "手动": "Manual",
+  // 币种名和城市名不走词条表 —— 它们在 lib/fx.ts / WorldClocks.tsx 里本来就带着 zh/en 两份
 };

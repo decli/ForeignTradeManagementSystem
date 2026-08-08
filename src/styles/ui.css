@@ -166,8 +166,18 @@ textarea.input:focus {
   background-repeat: no-repeat;
   color: var(--text);
 }
+/**
+ * 表单字段。
+ *
+ * ⚠️ `align-content: start` 不能省。
+ * `.field` 是网格项，默认被拉伸到整行最高的那个字段的高度；里面又是一个
+ * auto 行的 grid，多出来的高度会被平摊到「标签 / 输入框 / 提示」三行之间 ——
+ * 结果就是：同一行里带提示的字段把行撑高，不带提示的那个输入框跟着往下掉几像素。
+ * 一排表单看上去像没对齐，其实是被拉伸的。
+ */
 .field {
   display: grid;
+  align-content: start;
   gap: 5px;
 }
 .field > label {
@@ -277,6 +287,10 @@ textarea.input:focus {
   cursor: pointer;
   white-space: nowrap;
 }
+/* 工具条里的开关要跟按钮、下拉一样高（30px）。
+   它的滑块本身只有 18px，但控件行里比的是**整块的高度** ——
+   矮 7px 就会在一排控件里看着往下掉了一截。 */
+.toolbar .switch { height: 30px; }
 .switch input {
   appearance: none;
   width: 30px;

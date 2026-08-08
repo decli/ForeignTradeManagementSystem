@@ -11,6 +11,7 @@ import { clearAll, exportJson, importJson, isPersistent, resetToSeed } from "@/d
 import { setCustomRate } from "@/data/mutations";
 import { customRate, marketRate } from "@/data/queries";
 import { useDensity, useTheme, type Density, type Theme } from "@/lib/theme";
+import { BackupSection, CustomFieldSection, ImportSection, SyncSection } from "@/components/settings/DataOps";
 
 export default function Settings() {
   const { t } = useT();
@@ -202,6 +203,8 @@ export default function Settings() {
               </div>
             </div>
 
+            <ImportSection />
+
             <div className="setting">
               <div className="setting-t">
                 <b>{t("重置演示数据")}</b>
@@ -237,6 +240,10 @@ export default function Settings() {
             </div>
           </div>
         </section>
+
+        <BackupSection />
+        <SyncSection />
+        <CustomFieldSection />
 
         <section className="card">
           <div className="card-head">

@@ -6,6 +6,7 @@
  * 「这一页有哪些列、哪些筛选」，也就是它真正跟别人不一样的地方。
  */
 
+import type { ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Icon, type IconName } from "@/components/Icon";
 import type { Tone } from "@/lib/rules";
@@ -49,12 +50,15 @@ export function Kpi({
   v,
   s,
   tone,
+  spark,
 }: {
   icon: IconName;
   k: string;
   v: string;
   s: string;
   tone?: Tone | string;
+  /** 一条迷你趋势线，画在卡片底部。趋势属于它描述的那个数，不该另找地方摆 */
+  spark?: ReactNode;
 }) {
   return (
     <div className="kpi" data-tone={tone}>
@@ -64,6 +68,7 @@ export function Kpi({
       </span>
       <span className="kpi-v">{v}</span>
       <span className="kpi-s">{s}</span>
+      {spark ? <span className="kpi-spark">{spark}</span> : null}
     </div>
   );
 }

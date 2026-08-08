@@ -1,0 +1,176 @@
+/**
+ * 出口单据的排版与打印样式。
+ *
+ * ── 屏幕上就按纸的样子显示 ──
+ * 所见即所得是这里的硬要求：业务员在屏幕上确认过的东西，
+ * 打出来必须一模一样，否则他会养成"打出来再检查一遍"的习惯，
+ * 那这个功能就只省了一半的事。
+ *
+ * ── 打印时为什么用 visibility 而不是 display ──
+ * display:none 会把元素移出布局，浏览器就丢掉了长表格的分页计算，
+ * 第二页开始表头不再重复。visibility:hidden 保留盒子，分页照常算。
+ */
+
+.doc-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 8px 11px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+}
+.doc-hint svg { flex: none; color: var(--text-3); }
+
+/** A4 宽度（210mm − 2×15mm 页边距 = 180mm ≈ 680px） */
+.doc-sheet {
+  width: 680px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 26px 30px 34px;
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  line-height: 1.5;
+}
+/* 单据永远是白底黑字：它是要打在纸上的，跟界面的明暗主题无关。
+   深色模式下把单据也变成深色，打出来会是一张全黑的纸 */
+:root[data-theme="dark"] .doc-sheet,
+.doc-sheet { color-scheme: light; }
+
+.doc-zh {
+  display: block;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.82em;
+  color: #666;
+}
+
+.doc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #111;
+}
+.doc-seller b { font-size: 15px; letter-spacing: 0.01em; }
+.doc-seller p { margin: 3px 0 0; font-size: 11px; color: #444; }
+.doc-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doc-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 26px;
+  padding: 12px 0;
+}
+.dm-row {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 8px;
+  padding: 2px 0;
+}
+.dm-row > span { color: #555; font-size: 11px; }
+.dm-row > b { font-weight: 600; overflow-wrap: anywhere; }
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+.doc-table th,
+.doc-table td {
+  border: 1px solid #999;
+  padding: 5px 7px;
+  vertical-align: top;
+}
+.doc-table th {
+  background: #f1f1f1;
+  font-weight: 600;
+  font-size: 11px;
+  text-align: left;
+}
+.doc-table .r { text-align: right; }
+.doc-table .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.doc-table tfoot td { background: #f7f7f7; font-weight: 600; }
+
+.doc-words {
+  margin: 10px 0 0;
+  padding: 7px 9px;
+  border: 1px solid #999;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.doc-terms {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 26px;
+  margin-top: 16px;
+}
+.doc-terms b { display: block; margin-top: 9px; font-size: 11px; color: #555; }
+.doc-terms b:first-child { margin-top: 0; }
+.doc-terms p { margin: 2px 0 0; }
+.doc-note { color: #666; font-size: 11px; }
+.doc-sign { display: grid; align-content: start; gap: 4px; text-align: center; }
+.doc-sign > b { display: block; margin: 0; color: #111; font-size: 12px; }
+.doc-sign-line {
+  display: block;
+  height: 52px;
+  border-bottom: 1px solid #111;
+}
+.doc-sign > i { font-style: normal; font-size: 10.5px; color: #666; }
+
+/* ═══════════════════ 打印 ═══════════════════ */
+
+@media print {
+  /* 整页藏起来，只放行单据。visibility 而不是 display —— 见文件顶部 */
+  body * { visibility: hidden; }
+  .doc-sheet,
+  .doc-sheet * { visibility: visible; }
+  .doc-sheet {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    font-size: 11pt;
+  }
+  /* 弹层的遮罩和外壳在打印时是多余的一层灰 */
+  .scrim, .modal-head, .modal-foot, .doc-hint { display: none !important; }
+  .modal {
+    position: static;
+    inset: auto;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    box-shadow: none;
+    border: 0;
+    background: #fff;
+  }
+  .modal-body { overflow: visible; padding: 0; }
+
+  /* 长单据分页：表头每页重复，一行不许被劈成两半 */
+  .doc-table thead { display: table-header-group; }
+  .doc-table tr { break-inside: avoid; }
+  .doc-terms { break-inside: avoid; }
+
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+}

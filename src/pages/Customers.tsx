@@ -10,6 +10,7 @@ import { listCustomers, listOrders } from "@/data/queries";
 import { formatCompact, formatMoney, formatPct, localClock } from "@/lib/format";
 import { useTick } from "@/lib/hooks";
 import { CREDIT_TONE, PROFIT_WARN_PCT, SINOSURE_WARN, sinosureTone } from "@/lib/rules";
+import { CustomerContacts, CustomerMessages } from "@/components/CustomerCrm";
 
 export default function Customers() {
   const { t } = useT();
@@ -139,6 +140,8 @@ export default function Customers() {
                 </div>
               </section>
 
+              <CustomerContacts customerId={active.id} />
+
               <section className="card">
                 <div className="card-head">
                   <h3>{t("中信保额度")}</h3>
@@ -207,6 +210,8 @@ export default function Customers() {
                   )}
                 </div>
               </section>
+
+              <CustomerMessages customerId={active.id} customerName={active.name} />
             </div>
           ) : null}
         </div>

@@ -21,6 +21,7 @@ import type {
   MilestoneKind,
   OrderCosting,
   Pi,
+  PiLine,
   ReleaseState,
   SellerEntity,
   ShipMode,
@@ -30,8 +31,14 @@ import type {
   TaxInvoice,
   User,
 } from "./types";
-import { DB_VERSION } from "./types";
+import { DB_VERSION, lineAmount } from "./types";
 import { buildOpsSeed } from "./ops-seed";
+import { PRODUCT_SEED, buildProducts } from "./catalog";
+import { emptyPresales } from "./presales-types";
+import { emptyFlow } from "./flow-types";
+import { buildPresalesSeed } from "./presales-seed";
+import { buildFlowSeed } from "./flow-seed";
+import { buildContacts, buildDemoAttachments } from "./seed-extra";
 
 /** 原始台账的基准日 */
 const ANCHOR = "2026-08-07";
@@ -93,8 +100,24 @@ export function buildSeed(): Database {
 
   // ───────────────────────── 开票主体 ─────────────────────────
   const sellerEntities: SellerEntity[] = [
-    { id: id("ent"), name: "晓行天下", taxNo: "91350200MA2XXXXX1A", bank: "中国银行厦门分行", active: true },
-    { id: id("ent"), name: "供应链", taxNo: "91350200MA2XXXXX2B", bank: "招商银行厦门分行", active: true },
+    {
+      id: id("ent"), name: "晓行天下", nameEn: "XIAOXING GLOBAL TRADING CO., LTD.",
+      taxNo: "91350200MA2XXXXX1A",
+      bank: "中国银行厦门分行", bankEn: "BANK OF CHINA, XIAMEN BRANCH",
+      bankAcct: "4001 8830 2299 1075", swift: "BKCHCNBJ73A",
+      addr: "厦门市湖里区枋湖东路 128 号 9 层", addrEn: "9F, No.128 Fanghu East Road, Huli District, Xiamen, Fujian, China",
+      tel: "+86 592 5588 100", email: "docs@xiaoxing-global.com",
+      active: true,
+    },
+    {
+      id: id("ent"), name: "供应链", nameEn: "TRADEWIND SUPPLY CHAIN CO., LTD.",
+      taxNo: "91350200MA2XXXXX2B",
+      bank: "招商银行厦门分行", bankEn: "CHINA MERCHANTS BANK, XIAMEN BRANCH",
+      bankAcct: "5919 0288 3301 6644", swift: "CMBCCNBS020",
+      addr: "厦门市思明区展鸿路 82 号 21 层", addrEn: "21F, No.82 Zhanhong Road, Siming District, Xiamen, Fujian, China",
+      tel: "+86 592 5588 200", email: "docs@tradewind-sc.com",
+      active: true,
+    },
   ];
   const [xiaoxing, supply] = sellerEntities;
 
@@ -142,6 +165,9 @@ export function buildSeed(): Database {
     sinosureLimitCents: usd(c.limit),
     sinosureUsedCents: usd(c.used),
     currency: "USD",
+    /* 账期跟信用等级挂钩，这是外贸公司的通行做法：
+       A 级放 60 天，B 级 30 天，C 级款到发货（C 级恰恰是最容易拖的那批） */
+    termDays: c.creditLevel === "A" ? 60 : c.creditLevel === "B" ? 30 : 0,
     timezone: c.tz,
     note: c.note,
     active: true,
@@ -151,9 +177,95 @@ export function buildSeed(): Database {
   }));
   const cus = (name: string) => customers.find((c) => c.name === name)!;
 
-  // ───────────────────────── PI + 订单核算 ─────────────────────────
+  // ───────────────────────── 产品目录 ─────────────────────────
+  /* 产品要在 PI 之前建好 —— PI 的金额是明细行的合计，而明细行要挂产品。
+     采购模块用的是同一批对象（同一组 id），两边才算一套数据。 */
+  const products = buildProducts(id);
+  const sellPrice = (sku: string) => PRODUCT_SEED.find((p) => p.sku === sku)!.sellE4;
+
+  /** 产品描述 → 产品。手写的 PI 上写着「防护服 8 万件」，明细行要落到具体 SKU */
+  const KEYWORDS: Array<[RegExp, string[]]> = [
+    [/N95/i, ["MSK-N95"]],
+    [/口罩/, ["MSK-SUR-3P", "MSK-N95"]],
+    [/防护服/, ["PPE-COV-L", "PPE-COV-XL"]],
+    [/隔离衣/, ["PPE-ISO-BLU"]],
+    [/手术衣/, ["PPE-SRG"]],
+    [/手套/, ["GLV-NIT-M"]],
+    [/面屏/, ["PPE-FSH"]],
+    [/录像机/, ["CCTV-NVR"]],
+    [/摄像机/, ["CCTV-BUL", "CCTV-DOM"]],
+    [/测温/, ["MED-THM"]],
+    [/帽子/, ["PPE-CAP"]],
+    [/鞋套/, ["PPE-SHC"]],
+    [/棉签/, ["MED-SWB"]],
+    [/袖套/, ["PPE-CAP", "PPE-SHC"]],
+  ];
+  const bySku = (sku: string) => products.find((p) => p.sku === sku)!;
+  const matchProducts = (desc: string) => {
+    for (const [re, skus] of KEYWORDS) if (re.test(desc)) return skus.map(bySku);
+    return [pick(products)];
+  };
+
+  // ───────────────────────── PI + 明细行 + 订单核算 ─────────────────────────
   const pis: Pi[] = [];
+  const piLines: PiLine[] = [];
   const costings: OrderCosting[] = [];
+
+  /**
+   * 把一张 PI 的目标金额拆成 1–3 行明细。
+   *
+   * ── 数量取 100 的倍数，不是为了好看 ──
+   * 行金额 = qty × E4 单价 / 100。qty 是 100 的倍数时这个除法整除，
+   * 明细行合计跟 PI 金额**一分不差**。否则每行都四舍五入一次，
+   * 一张三行的单据能差出几十分钱 —— 客户拿计算器一按就发现单据自相矛盾。
+   *
+   * ── 返回真实合计，由它反过来决定 PI 金额 ──
+   * 反过来做（先定 PI 金额再硬凑明细）永远凑不平，除非塞一行「尾差」，
+   * 那种单据没法发给客户。
+   */
+  const makeLines = (piId: string, desc: string, targetUsd: number) => {
+    const cands = matchProducts(desc);
+    const nLines = targetUsd > 40_000 && cands.length > 1 ? (rand() < 0.45 ? 3 : 2) : rand() < 0.28 ? 2 : 1;
+    const chosen: typeof products = [];
+    for (let i = 0; i < nLines; i++) {
+      const p = cands[i % cands.length] ?? pick(products);
+      chosen.push(chosen.includes(p) ? pick(products.filter((x) => x.category === p.category && !chosen.includes(x))) ?? p : p);
+    }
+
+    // 权重：第一行是主角，后面的行是搭售，金额小
+    const weights = chosen.map((_, i) => (i === 0 ? 1 : between(0.18, 0.45)));
+    const wSum = weights.reduce((a, b) => a + b, 0);
+    const out: PiLine[] = [];
+
+    chosen.forEach((prd, i) => {
+      const targetCents = usd((targetUsd * weights[i]) / wSum);
+      // 成交价在标准报价上下浮动 —— 老客户拿到的价格本来就不一样
+      const unitPriceE4 = Math.max(1, Math.round(sellPrice(prd.sku) * between(0.9, 1.08)));
+      const qty = Math.max(100, Math.round((targetCents * 100) / unitPriceE4 / 100) * 100);
+      out.push({
+        id: id("pil"),
+        piId,
+        seq: i + 1,
+        productId: prd.id,
+        name: prd.name,
+        nameEn: prd.nameEn ?? null,
+        hsCode: prd.hsCode,
+        refundRateBp: prd.refundRateBp,
+        qty,
+        unit: prd.unit,
+        unitPriceE4,
+        // 采购价 = 主档最近成本上下浮动。lastCostCents 是「分」，明细行要 E4
+        costE4: Math.round(prd.lastCostCents * 100 * between(0.94, 1.07)),
+        packQty: prd.packQty,
+        grossWeightG: prd.grossWeightG,
+        volumeCm3: prd.volumeCm3,
+        note: null,
+      });
+    });
+
+    piLines.push(...out);
+    return out.reduce((s, l) => s + lineAmount(l), 0);
+  };
 
   const addPi = (p: {
     no: string; cus: string; sales: string; signed: string; amt: number; cost: number;
@@ -161,18 +273,24 @@ export function buildSeed(): Database {
     settled?: boolean; currency?: string;
   }) => {
     const piId = id("pi");
+    /* 明细行先生成，PI 金额由它们的合计决定 —— 单据上的合计必须等于明细行相加，
+       这是客户拿计算器第一件会验的事。下面所有派生字段（应收、期间费用）
+       都改用这个真实合计，不再用手写的 p.amt。 */
+    const amtCents = makeLines(piId, p.prod, p.amt);
+    const amt = amtCents / 100;
     pis.push({
       id: piId,
       piNo: p.no,
       signedOn: d(p.signed),
       currency: p.currency ?? "USD",
-      amountCents: usd(p.amt),
+      amountCents: amtCents,
       product: p.prod,
       destination: cus(p.cus).country,
       status: p.settled ? "closed" : "open",
       customerId: cus(p.cus).id,
       salesId: by(p.sales).id,
       sellerEntityId: p.entity.id,
+      quoteId: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -185,11 +303,14 @@ export function buildSeed(): Database {
          原来这四项分别是 42% / 12% / 8% / 3%，加起来 65% —— 在订单页看成本构成
          堆叠条看不出问题（没人拿它跟应收比），一到费用明细报表算「费用率」
          就变成 775%。金额单位也要留意：这四项是人民币，receivableCents 是美元。 */
-      freightCents: yuan(p.amt * 0.055 * 6.7),
-      customsCents: yuan(p.amt * 0.009 * 6.7),
-      bankCents: yuan(p.amt * 0.011 * 6.7),
-      otherCents: yuan(p.amt * 0.006 * 6.7),
-      receivableCents: usd(p.ar),
+      freightCents: yuan(amt * 0.055 * 6.7),
+      customsCents: yuan(amt * 0.009 * 6.7),
+      bankCents: yuan(amt * 0.011 * 6.7),
+      otherCents: yuan(amt * 0.006 * 6.7),
+      /* 应收按**比例**折算，不用手写的绝对值。
+         明细行合计跟手写的 p.amt 会差几美元，绝对值照抄的话，
+         本来「已全额收款」的单子会变成 99.98%，订单页上就多出一堆假的未收尾款。 */
+      receivableCents: p.ar === 0 ? 0 : Math.round(amtCents * (p.ar / p.amt)),
       payableCents: yuan(p.ap),
       profitRateBp: p.bp,
       reviewState: p.bp < 0 ? "pending_review" : p.settled ? "confirmed" : "draft",
@@ -220,7 +341,9 @@ export function buildSeed(): Database {
   for (const p of corePis) addPi(p);
 
   // 补量：把台账撑到 60+ 单，分页、排序、虚拟滚动才有东西可跑
-  const products = [
+  /* 这是 PI 上那句「一句话产品描述」的语料，不是产品主档 ——
+     明细行由 makeLines 按关键词把它落到具体 SKU 上 */
+  const productDescs = [
     "一次性防护服（XL 码）", "医用外科口罩 50 万只", "N95 防护口罩 12 万只", "一次性隔离衣（蓝色）",
     "丁腈检查手套 60 万只", "防护面屏 8 万件", "一次性帽子 30 万只", "医用鞋套 40 万双",
     "红外测温枪 6000 支", "监控摄像机 2200 台", "网络硬盘录像机 900 台", "一次性手术衣 5 万件",
@@ -246,7 +369,7 @@ export function buildSeed(): Database {
       ar: rand() < 0.3 ? 0 : Math.round(amt * (rand() < 0.5 ? 1 : 0.5)),
       ap: Math.round(amt * 6.7 * between(0.6, 0.88)),
       bp,
-      prod: pick(products),
+      prod: pick(productDescs),
       est: rand() < 0.75,
       entity: rand() < 0.68 ? xiaoxing : supply,
       settled,
@@ -500,8 +623,10 @@ export function buildSeed(): Database {
     seededAt: now,
     users,
     customers,
+    contacts: buildContacts(customers, id),
     sellerEntities,
     pis,
+    piLines,
     costings,
     shipments,
     milestones,
@@ -510,11 +635,18 @@ export function buildSeed(): Database {
     fxRates,
     auditLogs,
     savedViews: [],
+    attachments: [],
     // 口令摘要要跑 PBKDF2，是异步的；seed 保持同步，凭据在 db.load() 里补齐
     credentials: [],
     ops: { suppliers: [], products: [], rfqs: [], rfqQuotes: [], contracts: [], productions: [], payments: [], accounts: [], stock: [], lanes: [], freightQuotes: [], docs: [], logins: [] },
+    presales: emptyPresales(),
+    flow: emptyFlow(),
   };
   // 采购与资金要挂在已有的 PI / 客户上，所以得等主数据齐了再生成
-  base.ops = buildOpsSeed(base);
+  base.ops = buildOpsSeed(base, products);
+  // 售前挂客户和产品；审批 / 通知 / 往来又挂在售前和订单上，顺序不能反
+  base.presales = buildPresalesSeed(base);
+  base.flow = buildFlowSeed(base);
+  base.attachments = buildDemoAttachments(base);
   return base;
 }

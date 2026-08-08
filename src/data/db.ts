@@ -9,6 +9,10 @@
 import { hashPassword } from "@/auth/password";
 import { idbAvailable, idbDel, idbGet, idbSet } from "./idb";
 import { buildSeed } from "./seed";
+import { autoSnapshot, takeSnapshot } from "./backup";
+import { publish, startSync } from "./sync";
+import { emptyPresales } from "./presales-types";
+import { emptyFlow } from "./flow-types";
 import type { AuditLog, Database } from "./types";
 import { DB_VERSION, DEMO_PASSWORD } from "./types";
 
@@ -18,6 +22,8 @@ const SAVE_DEBOUNCE = 220;
 let current: Database | null = null;
 let persistent = true;
 let saveTimer: number | undefined;
+/** 正在接收别处推来的快照。此时不能再广播出去，否则两个标签页会互相弹球 */
+let adopting = false;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -29,12 +35,38 @@ export function subscribe(fn: () => void) {
   return () => listeners.delete(fn);
 }
 
+/**
+ * 落盘即广播 —— 两件事共用一个防抖。
+ * 分开做没有意义：本地存不下的东西也不该让别的标签页信以为真。
+ */
 function scheduleSave() {
-  if (!persistent) return;
+  if (!persistent) {
+    if (!adopting && current) publish(current);
+    return;
+  }
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
-    if (current) void idbSet(KEY, current).catch(() => { persistent = false; });
+    if (!current) return;
+    void idbSet(KEY, current).catch(() => {
+      persistent = false;
+    });
+    if (!adopting) publish(current);
   }, SAVE_DEBOUNCE);
+}
+
+/**
+ * 接住别处（另一个标签页 / 将来的后端）推来的整份快照。
+ *
+ * 不走 mutate —— mutate 会广播，而广播回去就是一个无限来回。
+ * 也不落盘：推给我的那一边自己已经存过了，这里再存一次只是多写一遍。
+ */
+function adoptRemote(db: Database) {
+  // 版本对不上就不接 —— 一个标签页开着旧版本代码时，它推来的结构可能缺表
+  if (!db || db.version !== DB_VERSION) return;
+  adopting = true;
+  current = db;
+  emit();
+  adopting = false;
 }
 
 /** 立刻落盘，用在「导出 / 关页面前」这种等不起防抖的地方 */
@@ -61,15 +93,41 @@ async function ensureCredentials(db: Database) {
   return db;
 }
 
+/**
+ * 补齐缺失的集合。
+ *
+ * 导入的可能是上个版本导出的账套，里面没有 `piLines` / `presales` 这些新表。
+ * 少一个数组，页面上就是一句 `Cannot read properties of undefined` 白屏。
+ * 宁可接一份不完整的旧账套（缺的部分是空的），也不要让用户的导出文件作废。
+ */
+function hydrate(db: Database): Database {
+  return {
+    ...db,
+    contacts: db.contacts ?? [],
+    piLines: db.piLines ?? [],
+    attachments: db.attachments ?? [],
+    savedViews: db.savedViews ?? [],
+    presales: db.presales ?? emptyPresales(),
+    flow: db.flow ?? emptyFlow(),
+  };
+}
+
 export async function load(): Promise<Database> {
   if (current) return current;
   persistent = await idbAvailable();
+  startSync(adoptRemote);
 
   if (persistent) {
     const saved = await idbGet<Database>(KEY).catch(() => undefined);
     // 结构版本对不上就重灌 —— 演示站没有迁移脚本这回事
     if (saved && saved.version === DB_VERSION) {
-      current = await ensureCredentials(saved);
+      /* 版本号对上也要过一遍 hydrate。
+         看起来多余，实际上救过一次：开发中途版本号已经升到新值、
+         而新表还没写进 seed，那一刻存下的账套就是「版本对、表缺」的，
+         读回来直接白屏。版本号只能证明"结构世代"，证明不了"每张表都在"。 */
+      current = await ensureCredentials(hydrate(saved));
+      // 先备份再让用户开始改：备份的价值全在于它是"我搞砸之前"那一份
+      void autoSnapshot(current);
       return current;
     }
   }
@@ -139,11 +197,26 @@ export function exportJson() {
 export async function importJson(text: string) {
   const parsed = JSON.parse(text) as Database;
   if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.shipments)) {
-    throw new Error("这个文件不像是 TRADEFLOW 账套导出的 JSON");
+    throw new Error("这个文件不像是信风账套导出的 JSON");
   }
   // 导入的是业务数据，登录凭据留在本机不动
   const keep = current?.credentials ?? [];
-  current = await ensureCredentials({ ...parsed, version: DB_VERSION, credentials: keep });
+  current = await ensureCredentials(hydrate({ ...parsed, version: DB_VERSION, credentials: keep }));
+  await idbSet(KEY, current).catch(() => undefined);
+  emit();
+  return current;
+}
+
+/**
+ * 从备份回滚。
+ *
+ * 回滚前先把**当前状态**再备一份 —— 用户点回滚往往是慌的，
+ * 点完发现回错了那份还得能回来。这一份的成本是几百 KB，值。
+ */
+export async function restoreSnapshot(db: Database) {
+  const keep = current?.credentials ?? [];
+  if (current) await takeSnapshot(current, "manual").catch(() => undefined);
+  current = await ensureCredentials(hydrate({ ...db, version: DB_VERSION, credentials: keep }));
   await idbSet(KEY, current).catch(() => undefined);
   emit();
   return current;

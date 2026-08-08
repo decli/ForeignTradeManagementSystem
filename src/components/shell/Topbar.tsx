@@ -3,6 +3,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { Menu } from "@/components/ui/Menu";
 import { FxRates } from "@/components/shell/FxRates";
 import { WorldClocks } from "@/components/shell/WorldClocks";
+import { Notifications } from "@/components/shell/Notifications";
 import { useTick } from "@/lib/hooks";
 import { breadcrumb, navTitle } from "@/lib/nav";
 import { ACCENTS, useAccent, useDensity, useThemeCycle, type Density, type Theme } from "@/lib/theme";
@@ -43,6 +44,7 @@ export function Topbar({ onOpenPalette, onOpenNav }: { onOpenPalette: () => void
         <button className="icon-btn" onClick={onOpenPalette} data-tip={`${t("搜索")} · ⌘K`} aria-label={t("全局搜索")}>
           <Icon name="search" />
         </button>
+        <Notifications />
         <LangButton />
         <AppearanceMenu />
       </div>

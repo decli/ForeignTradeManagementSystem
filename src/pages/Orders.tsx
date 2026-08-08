@@ -11,6 +11,7 @@ import { useDb } from "@/data/DataProvider";
 import { useT } from "@/i18n";
 import { customRate, getOrderDetail, listEntities, listOrders, listSalesNames, orderKpis, type OrderRow } from "@/data/queries";
 import { formatCompact, formatMoney, formatPct } from "@/lib/format";
+import { MASK, canSeeCost } from "@/lib/perms";
 import { PROFIT_WARN_PCT, REVIEW_LABEL, RELEASE_TONE, profitTone } from "@/lib/rules";
 import { exportXlsx, stampName } from "@/lib/xlsx";
 
@@ -18,6 +19,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
   const { t } = useT();
   const db = useDb();
   const { viewer, user } = useAuth();
+  const seeCost = canSeeCost(user);
   const [params, setParams] = useSearchParams();
 
   const q = params.get("q") ?? "";
@@ -129,7 +131,16 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         width: 118,
         align: "right",
         sort: (a, b) => a.purchaseCost - b.purchaseCost,
-        render: (r) => <span className="cell-num muted">{r.purchaseCost ? formatMoney(r.purchaseCost, "¥") : "—"}</span>,
+        tip: seeCost ? undefined : t("你的角色看不到采购成本"),
+        /* 字段级权限：业务员看得见这一行，看不见这一列。
+           用 •••• 而不是破折号 —— 破折号会被读成"这单没有成本"，
+           而实际是"有，但不给你看"，核账时这两件事天差地别。见 lib/perms.ts */
+        render: (r) =>
+          seeCost ? (
+            <span className="cell-num muted">{r.purchaseCost ? formatMoney(r.purchaseCost, "¥") : "—"}</span>
+          ) : (
+            <span className="cell-num masked" data-tip={t("你的角色看不到采购成本")}>{MASK}</span>
+          ),
       },
       {
         key: "rate",
@@ -183,7 +194,7 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
         render: (r) => <span className="cell-num">{r.shipmentCount || "—"}</span>,
       },
     ],
-    [],
+    [t, seeCost],
   );
 
   const doExport = async () => {

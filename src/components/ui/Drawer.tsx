@@ -24,6 +24,7 @@ export function Drawer({
   footer,
   children,
   storageKey = "mt.drawer.w",
+  defaultWidth = 580,
 }: {
   open: boolean;
   title: ReactNode;
@@ -37,8 +38,10 @@ export function Drawer({
   footer?: ReactNode;
   children: ReactNode;
   storageKey?: string;
+  /** 首次打开的宽度。带明细表格的抽屉（报价单）默认 580 会把列挤没 */
+  defaultWidth?: number;
 }) {
-  const [width, setWidth] = useStored(storageKey, 580);
+  const [width, setWidth] = useStored(storageKey, defaultWidth);
   const narrow = useIsNarrow();
   useScrollLock(open);
   const bodyRef = useRef<HTMLDivElement>(null);

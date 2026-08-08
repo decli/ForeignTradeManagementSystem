@@ -614,7 +614,16 @@ export function BankJournal() {
       desc={t("按账户的逐笔流水与滚动余额，可直接跟银行对账单核对")}
       kpis={
         <>
-          <Kpi icon="database" k={t("当前余额")} v={formatMoney(lines[0]?.balance ?? centsToYuan(account?.openingCents ?? 0), symbol)} s={account?.name ?? "—"} />
+          {/* 余额走势画在余额卡里。原来它挂在工具条右侧，
+              窄一点就换行跑到账户切换器下面，看着像一张"混进来"的图 ——
+              趋势属于它描述的那个数，不该另找地方摆 */}
+          <Kpi
+            icon="database"
+            k={t("当前余额")}
+            v={formatMoney(lines[0]?.balance ?? centsToYuan(account?.openingCents ?? 0), symbol)}
+            s={account?.name ?? "—"}
+            spark={trend.length > 1 ? <Sparkline values={trend} tone="accent" /> : undefined}
+          />
           <Kpi icon="download" k={t("本期借方")} v={formatMoney(lines.reduce((s, l) => s + l.debit, 0), symbol)} s={t("收入合计")} tone="jade" />
           <Kpi icon="upload" k={t("本期贷方")} v={formatMoney(lines.reduce((s, l) => s + l.credit, 0), symbol)} s={t("支出合计")} />
           <Kpi icon="alert" k={t("未匹配")} v={formatInt(unmatched)} s={t("需人工认领")} tone={unmatched ? "amber" : "jade"} />
@@ -628,12 +637,6 @@ export function BankJournal() {
             options={db.ops.accounts.map((a) => ({ value: a.id, label: `${a.name}` }))}
           />
           <SearchInput value={q} onChange={(v) => set({ q: v })} placeholder={t("搜凭证号 / 对方户名 / 水单号…")} />
-          <span className="spacer" />
-          {trend.length > 1 ? (
-            <span className="journal-trend" title={t("余额走势")}>
-              <Sparkline values={trend} tone="accent" />
-            </span>
-          ) : null}
         </>
       }
     >

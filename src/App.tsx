@@ -21,6 +21,13 @@ const Rfqs = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Rfq
 const Contracts = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Contracts })));
 const Productions = lazy(() => import("./pages/sourcing").then((m) => ({ default: m.Productions })));
 
+// 售前三页打一个包：业务员进来是连着看的 —— 处理询盘、开报价、顺手寄个样
+const Inquiries = lazy(() => import("./pages/presales").then((m) => ({ default: m.Inquiries })));
+const Quotes = lazy(() => import("./pages/presales").then((m) => ({ default: m.Quotes })));
+const SamplesPage = lazy(() => import("./pages/presales").then((m) => ({ default: m.Samples })));
+const Approvals = lazy(() => import("./pages/approvals"));
+const Receivables = lazy(() => import("./pages/receivables"));
+
 const Payments = lazy(() => import("./pages/finance").then((m) => ({ default: m.Payments })));
 const Funds = lazy(() => import("./pages/finance").then((m) => ({ default: m.Funds })));
 const BankJournal = lazy(() => import("./pages/finance").then((m) => ({ default: m.BankJournal })));
@@ -75,6 +82,11 @@ export default function App() {
           <Route path="/tax-refund" element={<TaxRefund />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/pi" element={<PiRegistry />} />
+          <Route path="/inquiries" element={<Inquiries />} />
+          <Route path="/quotes" element={<Quotes />} />
+          <Route path="/samples" element={<SamplesPage />} />
+          <Route path="/approvals" element={<Approvals />} />
+          <Route path="/receivables" element={<Receivables />} />
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/products" element={<Products />} />
           <Route path="/rfq" element={<Rfqs />} />

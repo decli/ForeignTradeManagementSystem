@@ -11,6 +11,7 @@ import { useT } from "@/i18n";
 import { listOrders, type OrderRow } from "@/data/queries";
 import { createPi, nextPiNo } from "@/data/mutations";
 import { formatMoney, todayIso } from "@/lib/format";
+import { PiDrawer } from "@/components/PiDrawer";
 
 /**
  * PI 取号。号段规则 `MT + 两位年 + X + 五位流水`，取号即建档 ——
@@ -26,6 +27,12 @@ export default function PiRegistry() {
   const readOnly = !can("write");
 
   const rows = useMemo(() => listOrders(db, viewer, { q }).slice(0, 400), [db, viewer, q]);
+  const lineCount = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of db.piLines) m.set(l.piId, (m.get(l.piId) ?? 0) + 1);
+    return (id: string) => m.get(id) ?? 0;
+  }, [db.piLines]);
+  const openId = params.get("id");
   const thisYear = String(new Date().getFullYear());
   const yearCount = rows.filter((r) => r.signedOn.startsWith(thisYear)).length;
 
@@ -42,14 +49,28 @@ export default function PiRegistry() {
       },
       { key: "signed", title: t("签约日"), width: 110, sort: (a, b) => a.signedOn.localeCompare(b.signedOn), render: (r) => <span className="num">{r.signedOn}</span> },
       { key: "customer", title: t("客户"), width: 180, sort: (a, b) => a.customerName.localeCompare(b.customerName), render: (r) => <span className="truncate" style={{ display: "block" }}>{r.customerName}</span> },
-      { key: "product", title: t("产品"), width: 260, render: (r) => <span className="truncate" style={{ display: "block" }} title={r.product ?? ""}>{r.product ?? "—"}</span> },
+      { key: "product", title: t("产品"), width: 240, render: (r) => <span className="truncate" style={{ display: "block" }} title={r.product ?? ""}>{r.product ?? "—"}</span> },
+      {
+        key: "lines",
+        title: t("明细行"),
+        width: 96,
+        align: "right",
+        sort: (a, b) => lineCount(a.id) - lineCount(b.id),
+        /* 没有明细行的 PI 开不出发票和装箱单。把它做成一列而不是藏在详情里，
+           是因为"哪几张单还没补明细"是跟单员每天要扫一遍的事 */
+        tip: t("没有明细行就生成不了发票和装箱单"),
+        render: (r) => {
+          const n = lineCount(r.id);
+          return n ? <span className="cell-num">{n}</span> : <Pill tone="amber">{t("待补")}</Pill>;
+        },
+      },
       { key: "amount", title: t("金额"), width: 128, align: "right", sort: (a, b) => a.amount - b.amount, render: (r) => <span className="cell-num">{formatMoney(r.amount, r.currency === "CNY" ? "¥" : "$")}</span> },
       { key: "sales", title: t("取号人"), width: 92, render: (r) => r.salesName },
       { key: "entity", title: t("开票主体"), width: 110, render: (r) => <Pill tone={r.sellerEntity === "供应链" ? "violet" : "accent"}>{r.sellerEntity ?? "—"}</Pill> },
       { key: "status", title: t("状态"), width: 96, render: (r) => <Pill tone={r.status === "closed" ? "jade" : r.status === "archived" ? "mute" : "accent"}>{r.status === "closed" ? t("已完结") : r.status === "archived" ? t("已归档") : t("进行中")}</Pill> },
       { key: "ship", title: t("出运批次"), width: 92, align: "right", sort: (a, b) => a.shipmentCount - b.shipmentCount, render: (r) => <span className="cell-num">{r.shipmentCount || "—"}</span> },
     ],
-    [],
+    [t, lineCount],
   );
 
   return (
@@ -94,8 +115,9 @@ export default function PiRegistry() {
         rows={rows}
         columns={columns}
         empty={<EmptyState icon="tag" title={t("还没有取过号")} desc={t("点右上角「取下一个号」建第一张 PI。")} />}
+        onRowOpen={(r) => setParams((p) => { const n = new URLSearchParams(p); n.set("id", r.id); return n; }, { replace: true })}
         renderCard={(r) => (
-          <div className="rcard" key={r.id}>
+          <button className="rcard" key={r.id} onClick={() => setParams((p) => { const n = new URLSearchParams(p); n.set("id", r.id); return n; }, { replace: true })}>
             <div className="rcard-top">
               <span className="cell-main">{r.piNo}</span>
               <span className="spacer" />
@@ -107,8 +129,13 @@ export default function PiRegistry() {
               <span>{r.salesName}</span>
             </div>
             <div className="rcard-note clamp-2">{r.product ?? "—"}</div>
-          </div>
+          </button>
         )}
+      />
+
+      <PiDrawer
+        piId={openId}
+        onClose={() => setParams((p) => { const n = new URLSearchParams(p); n.delete("id"); return n; }, { replace: true })}
       />
 
       {open ? (

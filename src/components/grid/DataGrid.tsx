@@ -38,6 +38,7 @@ export function DataGrid<T extends { id: string }>({
   renderCard,
   empty,
   bar,
+  summary,
   pageSize: initialPageSize = 50,
   maxHeight,
   getRowLabel,
@@ -54,6 +55,14 @@ export function DataGrid<T extends { id: string }>({
   renderCard?: (row: T) => ReactNode;
   empty: ReactNode;
   bar?: ReactNode;
+  /**
+   * 表头上方那条工具栏里的摘要。
+   *
+   * 原来那一条只放一个「列」按钮，右边一大片空着 —— 一个数据密度极高的台账应用，
+   * 最不该浪费的就是表格正上方这块视线必经之处。放几个当前筛选下的合计
+   * （在跟 21 · 停滞 5 · 利润合计 …），用户不用滚到底也不用心算。
+   */
+  summary?: Array<{ k: string; v: string; tone?: "coral" | "amber" | "jade" }>;
   pageSize?: number;
   maxHeight?: string;
   getRowLabel?: (row: T) => string;
@@ -147,6 +156,29 @@ export function DataGrid<T extends { id: string }>({
     onSelectedChange(next);
   };
 
+  /**
+   * 没给 summary 的表格，用行色调兜一个底。
+   *
+   * 表头正上方那条是视线必经之处，空着是浪费；但也不能凭空编数字 ——
+   * `rowTone` 是页面已经声明过的"这一行有没有问题"，拿它汇总是它本来的含义，
+   * 不是我们替页面猜的。页面给了 summary 就以页面的为准。
+   */
+  const autoSummary = useMemo(() => {
+    if (summary?.length) return summary;
+    if (!rowTone) return [];
+    let bad = 0;
+    let warn = 0;
+    for (const r of rows) {
+      const tone = rowTone(r);
+      if (tone === "coral") bad++;
+      else if (tone === "amber") warn++;
+    }
+    const out: NonNullable<typeof summary> = [{ k: t("当前"), v: String(rows.length) }];
+    if (bad) out.push({ k: t("要紧"), v: String(bad), tone: "coral" });
+    if (warn) out.push({ k: t("留意"), v: String(warn), tone: "amber" });
+    return out;
+  }, [summary, rows, rowTone, t]);
+
   const allChecked = pageRows.length > 0 && pageRows.every((r) => selected?.has(r.id));
   const someChecked = !allChecked && pageRows.some((r) => selected?.has(r.id));
 
@@ -168,6 +200,35 @@ export function DataGrid<T extends { id: string }>({
      去匹配另一个属性（`[data-col=attr(data-hc)]` 不存在）。所以只能在换列时
      给那一列的格子打个 data-hot。事件委托 + 只在列真的变了才写 DOM，
      一页最多五十来个节点，比每格挂一个 onMouseEnter 便宜得多。 */
+  /**
+   * 滚轮轴锁定。
+   *
+   * 触控板两指滑动几乎不可能是纯水平的 —— 横向滑一下总带着几像素的纵向分量，
+   * 于是表格横滚的同时整页也在上下晃。原生滚动没有"锁轴"这回事，只能自己来：
+   * 一次手势按第一帧的主方向定死，横向就只横向、纵向就交还给页面。
+   * 手势之间隔 140ms 没有事件就算结束，下一次重新判定。
+   */
+  /* ⚠️ 必须用原生监听 + passive:false。React 的 onWheel 在根节点上是被动注册的，
+     里面调 preventDefault() 只会得到一句控制台警告，页面照样跟着晃。 */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const axis = { dir: null as "x" | "y" | null, at: 0 };
+    const on = (e: WheelEvent) => {
+      const now = e.timeStamp;
+      if (now - axis.at > 140) axis.dir = null;
+      axis.at = now;
+      if (!axis.dir) axis.dir = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? "x" : "y";
+      if (axis.dir !== "x") return;
+      if (el.scrollWidth <= el.clientWidth) return;
+      // 横向手势：只喂横轴，纵向分量丢掉，页面不跟着晃
+      e.preventDefault();
+      el.scrollLeft += e.deltaX || e.deltaY;
+    };
+    el.addEventListener("wheel", on, { passive: false });
+    return () => el.removeEventListener("wheel", on);
+  }, [narrow]);
+
   const hotCol = useRef("");
   const trackCol = useCallback((e: React.MouseEvent<HTMLTableElement>) => {
     const cell = (e.target as HTMLElement).closest?.("[data-col]") as HTMLElement | null;
@@ -301,12 +362,28 @@ export function DataGrid<T extends { id: string }>({
     <>
     <div className="grid-wrap">
       <div className="grid-bar">
-        {onSelectedChange && selected ? null : null}
         {bar}
+        {autoSummary.length ? (
+          <ul className="grid-sum">
+            {autoSummary.map((s2) => (
+              <li key={s2.k} data-tone={s2.tone}>
+                <span>{s2.k}</span>
+                <b className="num">{s2.v}</b>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <span className="spacer" />
         {columnMenu}
       </div>
 
+      {/* 一行都没有时不渲染表格。
+          空的表头 + 一条横向滚动条是纯噪音：既没有内容可看，又让人以为
+          "是不是滚过去还有东西"。上面的摘要已经写了「当前 0」，
+          筛选条件也在工具条里摆着，表头在这里不提供任何信息。 */}
+      {pageRows.length === 0 ? (
+        <div className="grid-none">{empty}</div>
+      ) : (
       <div
         className="grid-scroll"
         ref={scrollRef}
@@ -382,20 +459,30 @@ export function DataGrid<T extends { id: string }>({
             </tr>
           </thead>
           <tbody>
-            {pageRows.length === 0 ? (
-              <tr>
-                <td colSpan={visible.length + (onSelectedChange ? 1 : 0)} style={{ padding: 0 }}>
-                  {empty}
-                </td>
-              </tr>
-            ) : (
-              pageRows.map((row, i) => (
+            {pageRows.map((row, i) => (
                 <tr
                   key={row.id}
                   data-sel={selected?.has(row.id) ? "1" : "0"}
                   data-focus={focusIdx === i ? "1" : "0"}
                   data-tone={rowTone?.(row)}
+                  data-open={onRowOpen ? "1" : undefined}
                   onMouseDown={() => setFocusIdx(i)}
+                  /* 整行可点开详情。
+                     原来 onRowOpen 只绑了回车键，鼠标用户必须去找行尾那个小图标 ——
+                     而列表里最自然的动作就是"点这一行看看"。
+                     行内还嵌着就地编辑的控件（备注按钮、下拉、复选框），
+                     所以要把来自交互元素的点击排除掉，否则改个状态会顺带弹出抽屉。 */
+                  onClick={
+                    onRowOpen
+                      ? (e) => {
+                          const el = e.target as HTMLElement;
+                          if (el.closest("button, a, input, select, textarea, label, [role='button'], [contenteditable]")) return;
+                          // 拖选文字不该被当成点击
+                          if (window.getSelection()?.toString()) return;
+                          onRowOpen(row);
+                        }
+                      : undefined
+                  }
                 >
                   {onSelectedChange && selected ? (
                     <td data-freeze style={{ ["--fl" as string]: "0px" }}>
@@ -424,16 +511,16 @@ export function DataGrid<T extends { id: string }>({
                     </td>
                   ))}
                 </tr>
-              ))
-            )}
+              ))}
           </tbody>
         </table>
       </div>
+      )}
 
       {pageRows.length > 0 ? footer : null}
     </div>
     {/* fixed 定位，得挂在 .grid-wrap 的 overflow: hidden 之外，不然会被裁掉 */}
-    <StickyXScroll targetRef={scrollRef} />
+    {pageRows.length > 0 ? <StickyXScroll targetRef={scrollRef} /> : null}
     </>
   );
 }

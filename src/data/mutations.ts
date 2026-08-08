@@ -6,7 +6,8 @@
  */
 
 import { mutate, pushAudit } from "./db";
-import type { Database, ReleaseState, Shipment, ShipmentMilestone } from "./types";
+import type { Database, PiLine, ReleaseState, Shipment, ShipmentMilestone } from "./types";
+import { lineAmount } from "./types";
 
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const nowIso = () => new Date().toISOString();
@@ -323,6 +324,7 @@ export function createPi(
         customerId: input.customerId,
         salesId: input.salesId,
         sellerEntityId: input.sellerEntityId,
+        quoteId: null,
         createdAt: nowIso(),
         updatedAt: nowIso(),
       },
@@ -343,6 +345,78 @@ export function createPi(
   });
   if (dup) return { ok: false as const, error: `PI 号 ${input.piNo} 已经存在` };
   return { ok: true as const, id };
+}
+
+// ───────────────────────── PI 商品明细行 ─────────────────────────
+
+/**
+ * 明细行改了，PI 金额跟着重算。
+ *
+ * `Pi.amountCents` 是**明细行合计的缓存**，不是另一个真相。
+ * 单据上打的合计、订单页看到的金额、收款进度的分母必须是同一个数 ——
+ * 允许它们分头维护，迟早会出现"发票上写 19,224，系统里显示 19,180"。
+ */
+function resyncPiAmount(db: Database, piId: string) {
+  const total = db.piLines.filter((l) => l.piId === piId).reduce((s, l) => s + lineAmount(l), 0);
+  db.pis = db.pis.map((p) => (p.id === piId ? { ...p, amountCents: total, updatedAt: nowIso() } : p));
+}
+
+export function addPiLine(actor: Actor, piId: string, productId: string | null) {
+  mutate((db) => {
+    const prd = productId ? db.ops.products.find((p) => p.id === productId) : null;
+    const seq = db.piLines.filter((l) => l.piId === piId).length + 1;
+    db.piLines = [
+      ...db.piLines,
+      {
+        id: rid("pil"),
+        piId,
+        seq,
+        productId: prd?.id ?? null,
+        name: prd?.name ?? "",
+        nameEn: prd?.nameEn ?? null,
+        hsCode: prd?.hsCode ?? null,
+        refundRateBp: prd?.refundRateBp ?? 1300,
+        qty: 0,
+        unit: prd?.unit ?? "pcs",
+        unitPriceE4: 0,
+        costE4: prd ? prd.lastCostCents * 100 : 0,
+        packQty: prd?.packQty ?? 0,
+        grossWeightG: prd?.grossWeightG ?? 0,
+        volumeCm3: prd?.volumeCm3 ?? 0,
+        note: null,
+      },
+    ];
+    resyncPiAmount(db, piId);
+    const pi = db.pis.find((p) => p.id === piId);
+    if (pi) pushAudit(db, { actorId: actor.id, actorName: actor.name, entity: "Pi", entityId: piId, entityLabel: pi.piNo, action: "新增明细行", before: null, after: JSON.stringify({ 品名: prd?.name ?? "空行" }) });
+  });
+}
+
+export function patchPiLine(id: string, patch: Partial<PiLine>) {
+  mutate((db) => {
+    const line = db.piLines.find((l) => l.id === id);
+    if (!line) return;
+    db.piLines = db.piLines.map((l) => (l.id === id ? { ...l, ...patch } : l));
+    resyncPiAmount(db, line.piId);
+  });
+}
+
+export function removePiLine(actor: Actor, id: string) {
+  mutate((db) => {
+    const line = db.piLines.find((l) => l.id === id);
+    if (!line) return;
+    db.piLines = db.piLines.filter((l) => l.id !== id).map((l) => (l.piId === line.piId && l.seq > line.seq ? { ...l, seq: l.seq - 1 } : l));
+    resyncPiAmount(db, line.piId);
+    const pi = db.pis.find((p) => p.id === line.piId);
+    if (pi) pushAudit(db, { actorId: actor.id, actorName: actor.name, entity: "Pi", entityId: line.piId, entityLabel: pi.piNo, action: "删除明细行", before: JSON.stringify({ 品名: line.name }), after: null });
+  });
+}
+
+/** PI 上的自定义字段（唛头之类） */
+export function setPiExt(piId: string, key: string, value: string) {
+  mutate((db) => {
+    db.pis = db.pis.map((p) => (p.id === piId ? { ...p, ext: { ...(p.ext ?? {}), [key]: value } } : p));
+  });
 }
 
 // ───────────────────────── 保存的视图 ─────────────────────────

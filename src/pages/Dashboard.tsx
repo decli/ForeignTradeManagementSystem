@@ -10,23 +10,22 @@ import { useT } from "@/i18n";
 import { dashboardData } from "@/data/queries";
 import { formatCompact, formatPct, humanDate } from "@/lib/format";
 import { PROFIT_WARN_PCT } from "@/lib/rules";
+import { RoleBand } from "@/components/RoleBand";
 
 export default function Dashboard() {
   const { t } = useT();
   const db = useDb();
-  const { viewer, displayName } = useAuth();
+  const { viewer } = useAuth();
   const d = useMemo(() => dashboardData(db, viewer), [db, viewer]);
-
-  const hour = new Date().getHours();
-  const greeting = hour < 6 ? t("还没睡") : hour < 11 ? t("早上好") : hour < 14 ? t("中午好") : hour < 18 ? t("下午好") : t("晚上好");
 
   return (
     <div className="page">
+      {/* 角色条：只属于你的行动清单。下面的经营大盘所有角色一样 */}
+      <RoleBand />
+
       <div className="page-head">
         <div>
-          <h1>
-            {greeting}，{displayName}
-          </h1>
+          <h1>{t("经营大盘")}</h1>
           <p>
             {t("截至 {d} · 数据范围内 {n} 张在跟订单", { d: d.asOf, n: d.kpi.orders })}
             {d.risks.length ? t(" · {n} 件事等你处理", { n: d.risks.length }) : t(" · 今天没有需要处理的异常")}

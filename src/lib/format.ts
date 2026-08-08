@@ -85,6 +85,21 @@ export function daysBetween(a: string | Date, b: string | Date) {
   return Math.floor((utcOf(x) - utcOf(y)) / DAY);
 }
 
+/**
+ * 两个语义明确的包装。
+ *
+ * `daysBetween(a, b)` 算的是 a − b，这个方向从名字上看不出来 ——
+ * 写的时候要在脑子里推一遍"到期日减今天是正还是负"，而一屏代码里推十次
+ * 总有一次推反。推反的后果特别隐蔽：报价全部显示"已过期"、样品全部"还没到期"，
+ * 每个数字看着都合理，只是意思反了。（这两个函数就是为了修这样一批 bug 加的。）
+ *
+ * 用名字把方向钉死：
+ *   daysUntil("2026-09-01") → 还有几天（未来为正）
+ *   daysSince("2026-07-01") → 过了几天（过去为正）
+ */
+export const daysUntil = (iso: string | Date, today: string | Date = new Date()) => daysBetween(iso, today);
+export const daysSince = (iso: string | Date, today: string | Date = new Date()) => daysBetween(today, iso);
+
 export const todayIso = () => {
   const n = new Date();
   const p = (v: number) => String(v).padStart(2, "0");

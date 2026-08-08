@@ -14,6 +14,7 @@ export const ICONS = {
   chevronLeft: "m15 6-6 6 6 6",
   chevronsLeft: "m11 6-6 6 6 6M18 6l-6 6 6 6",
   arrowUp: "M12 19V5M6 11l6-6 6 6",
+  arrowDown: "M12 5v14M6 13l6 6 6-6",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
   sort: "M12 4v16M8 8l4-4 4 4",
   download: "M12 3v12M8 11l4 4 4-4M4 19h16",

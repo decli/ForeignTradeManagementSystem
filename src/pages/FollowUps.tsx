@@ -440,7 +440,7 @@ export default function FollowUps() {
             }
             action={
               activeChips.length ? (
-                <button className="btn btn-sm" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
+                <button className="btn" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
                   {t("清除全部筛选")}
                 </button>
               ) : null
@@ -551,7 +551,7 @@ function SavedViews({
       align="end"
       width={230}
       trigger={(p) => (
-        <button className="btn btn-sm" {...p} ref={p.ref}>
+        <button className="btn" {...p} ref={p.ref}>
           <Icon name="star" />
           {t("视图")}
           {views.length ? <span className="muted">{views.length}</span> : null}

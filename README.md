@@ -84,17 +84,34 @@ Client ID 到 [Google Cloud Console](https://console.cloud.google.com/apis/crede
 
 ## 模块
 
-侧栏 28 个模块**全部接了真实数据**，没有占位页。
+侧栏 33 个模块**全部接了真实数据**，没有占位页。
+
+分组按**单据流转顺序**排，不按部门排 —— 新人照着侧栏从上往下走一遍就是一整趟外贸。
+一个刻意的例外：**档案**（客户 / 产品 / 供应商）单独一组，它们不是流程的一环，
+是流程的输入；混在业务分组里会让人以为「客户管理」是某个步骤。
 
 | 分组 | 模块 | 路由 |
 | --- | --- | --- |
-| 经营 | 数据看板 | `/dashboard` |
-| 业务 | 客户管理 · PI 取号 · 我的订单 · 库存管理 | `/customers` `/pi` `/my-orders` `/stock` |
-| 采购协同 | 询价单 · 生产单 · 采购合同 · 产品管理 · 供应商管理 | `/rfq` `/production` `/purchase-contract` `/products` `/suppliers` |
-| 跟单 | 跟单表 · 运费询价 · 单证备案 | `/follow-ups` `/freight` `/documents` |
-| 财务 | 订单核算跟踪 · 中信保客户信息 · 开票资料 · PI 卖方档案 · 收付款 · 退税管理 · 银行日记账 · 资金汇总 · 费用明细报表 · 账户与科目 | `/orders` `/sinosure` `/invoice-info` `/seller-entities` `/payments` `/tax-refund` `/bank-journal` `/funds` `/expenses` `/accounts` |
-| 分析 | 提成与绩效 · 报表中心 | `/commission` `/reports` |
+| 经营 | 数据看板 · 审批中心 | `/dashboard` `/approvals` |
+| 售前 | 询盘管理 · 报价单 · 样品管理 | `/inquiries` `/quotes` `/samples` |
+| 订单 | PI 取号 · 我的订单 · 订单核算跟踪 | `/pi` `/my-orders` `/orders` |
+| 采购生产 | 询价单 · 采购合同 · 生产单 · 库存管理 | `/rfq` `/purchase-contract` `/production` `/stock` |
+| 出运跟单 | 跟单表 · 运费询价 · 单证备案 | `/follow-ups` `/freight` `/documents` |
+| 收付退税 | 收付款 · 应收账龄 · 退税管理 · 银行日记账 · 资金汇总 · 费用明细报表 · 中信保客户信息 | `/payments` `/receivables` `/tax-refund` `/bank-journal` `/funds` `/expenses` `/sinosure` |
+| 档案 | 客户管理 · 产品管理 · 供应商管理 · PI 卖方档案 · 开票资料 · 账户与科目 | `/customers` `/products` `/suppliers` `/seller-entities` `/invoice-info` `/accounts` |
+| 分析 | 报表中心 · 提成与绩效 | `/reports` `/commission` |
 | 系统 | 系统设置 · 审计日志 · 登录记录 | `/settings` `/audit` `/logins` |
+
+### 售前 → PI → 出运 → 收款，一条链
+
+```
+询盘 ──分配/SLA──▶ 报价（多版本议价）──转──▶ PI ──▶ 采购合同 ──▶ 生产
+  │                      │                    │
+  └── 寄样 ──催反馈───────┘                    └──▶ 出运 ──▶ 收款 ──▶ 退税
+```
+
+PI 详情里的「一单到底」把这条链画成一张图，每个节点可以点进去。
+数据本来就是串起来的（`piId` 贯穿全库），这张图只是让用户看见这件事。
 
 ### 设计原则：每一页回答一个具体问题
 
@@ -162,6 +179,29 @@ Client ID 到 [Google Cloud Console](https://console.cloud.google.com/apis/crede
 让副行始终摆「另一种写法」，两个方向都成立，也说明了这两个名字是一回事。
 
 ---
+
+## 这一版新补的能力
+
+站在「卖给外贸公司」的角度补的，每一项都对应一个真实痛点。
+
+| 能力 | 解决什么 | 关键文件 |
+| --- | --- | --- |
+| **售前漏斗** | 系统原来从 PI 开始，而业务员八成时间花在 PI 之前 | `pages/presales.tsx` |
+| **报价核算器** | FOB/CIF/DDP 正算利润、反算报价；退税按含税价 ÷1.13 算 | `lib/quote-calc.ts` |
+| **议价轨迹** | 同一报价号多版本，让价理由和利润率变化一列排开 | `presales-queries.ts` |
+| **PI 商品明细行** | 原来只有一句话产品描述，开不出发票和装箱单 | `types.ts` `PiLine` |
+| **出口单据** | PI / 商业发票 / 装箱单，浏览器直接打印成 PDF | `lib/docs.ts` |
+| **应收账龄** | 谁欠我多少、欠了多久；账期从提单日起算 | `flow-queries.ts` |
+| **审批流** | 低价单、特价、超额度、大额付款，谁批的都留痕 | `pages/approvals.tsx` |
+| **通知中心** | 预警要追着人跑，不能躺在页面里等人打开 | `lib/notify.ts` |
+| **附件** | 盖章 PI、水单、提单挂到单据上 | `data/files.ts` |
+| **数据导入** | 期初建账刚需；从 Excel 直接粘贴，导前先试运行 | `ImportWizard.tsx` |
+| **本地备份** | 清一次浏览器数据不能让三年台账消失 | `data/backup.ts` |
+| **多标签页同步** | 协同机制跑通，缺的只有网络那一段 | `data/sync.ts` |
+| **字段级权限** | 业务员看得见售价，看不见采购底价 | `lib/perms.ts` |
+| **自定义字段** | 每家公司总有两三个自己的字段 | `flow-types.ts` |
+| **一单到底** | 八个页面的数据接成一条可点的链路 | `OrderTimeline.tsx` |
+| **角色化首页** | 老板看钱，业务员看今天该干什么 | `RoleBand.tsx` |
 
 ## 界面上花了力气的地方
 
@@ -305,10 +345,19 @@ GitHub Pages 没有服务端，刷新 `/follow-ups` 这种深链接会 404。构
 
 ## 从这一版走到生产
 
-这个演示版**不能**直接用在真实业务上：没有备份、没有多人协作、没有服务端校验，
-换台设备就是一套新的账套。要上生产，见
-[`docs/architecture.md`](docs/architecture.md) —— 换掉一个文件即可，
-查询与页面代码不动。
+这个演示版**不能**直接用在真实业务上。说清楚做到了什么、没做到什么：
+
+| | 状态 |
+| --- | --- |
+| 本地备份与回滚 | ✅ 每天自动一份，保留 7 天，可回滚（回滚前再备一份） |
+| 多标签页实时同步 | ✅ 同机多个标签页无刷新同步，冲突规则：最后写入者胜 |
+| **多台电脑共享数据** | ❌ 纯静态托管没有服务端。接口已留好（`data/sync.ts` 的 `SyncAdapter`） |
+| **服务端校验与真会话** | ❌ 权限判断都在浏览器里 —— 字段级权限挡的是「看一眼屏幕」和「顺手导出」，不是加密 |
+| 附件 | ✅ 存本机 IndexedDB。换电脑不跟着走 |
+| 邮箱同步 | ❌ 需要 IMAP/OAuth 和常驻服务。往来记录目前是手工归档，数据结构按同步设计 |
+
+要上生产，见 [`docs/architecture.md`](docs/architecture.md) 第 6 节 ——
+换掉一个文件即可，查询与页面代码不动。
 
 ## 后续排期
 
@@ -316,8 +365,9 @@ GitHub Pages 没有服务端，刷新 `/follow-ups` 这种深链接会 404。构
 
 | 阶段 | 内容 |
 | --- | --- |
-| M1 | 接回服务端（Prisma + SQLite/MySQL）与真正的会话认证 |
-| M2 | Excel **导入**、编辑批次与订单表单 |
-| M3 | 多人协作：并发写冲突处理、变更订阅 |
-| M4 | 单证模块与跟单抽屉里那份齐套检查合并到同一套数据 |
-| M5 | 自定义报表与定时推送 |
+| M1 | 接回服务端（Prisma + SQLite/MySQL）与真正的会话认证；`SyncAdapter` 换成 WebSocket |
+| M2 | 附件与单据落对象存储；`putBlob/getBlob` 换成签名 URL |
+| M3 | 邮箱同步（IMAP/OAuth），往来记录自动归档到客户与订单下 |
+| M4 | 多人并发：从「最后写入者胜」换成 op 级合并 |
+| M5 | 真实数据源：汇率行情、船司/17TRACK 物流轨迹、年度退税率库 |
+| M6 | 信用证 L/C（交单期、效期、不符点）与批次级损益 |

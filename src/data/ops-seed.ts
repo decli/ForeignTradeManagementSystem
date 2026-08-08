@@ -39,7 +39,11 @@ function mulberry32(seed: number) {
   };
 }
 
-export function buildOpsSeed(db: Database): OpsData {
+/**
+ * `products` 由主种子传进来 —— 产品目录现在有两个消费者（产品主档和 PI 明细行），
+ * 而明细行必须先于 PI 生成（PI 金额是明细行的合计），所以它不能再在这里创建。
+ */
+export function buildOpsSeed(db: Database, products: Product[]): OpsData {
   const rand = mulberry32(19260817);
   const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rand() * xs.length)];
   const between = (lo: number, hi: number) => lo + rand() * (hi - lo);
@@ -62,27 +66,6 @@ export function buildOpsSeed(db: Database): OpsData {
     { code: "S-008", name: "山东华康防护科技有限公司", nameEn: "Shandong Huakang Protective", category: "防护用品", contact: "孙鹏", phone: "0531-5566xxx", province: "山东", termDays: 45, score: 81, certExpiry: iso(190), taxNo: "91370100MA6HHHH8E", bank: null, active: true, note: "北方仓，走青岛港比走厦门省两天。" },
   ];
   const suppliers: Supplier[] = supplierSeed.map((s) => ({ ...s, id: id("sup"), createdAt: now.toISOString() }));
-
-  // ───────────── 产品 ─────────────
-  // HS 编码与退税率照真实税则填，退税模块的税额才推得平
-  const productSeed: Array<Omit<Product, "id">> = [
-    { sku: "PPE-COV-L", name: "一次性防护服（L 码）", nameEn: "Disposable coverall (L)", category: "防护服", hsCode: "6210103000", refundRateBp: 1300, unit: "件", lastCostCents: yuan(11.8), packQty: 50, grossWeightG: 9500, volumeCm3: 62000, active: true, note: "SMS 无纺布 60g，欧标 Type 5/6。" },
-    { sku: "PPE-COV-XL", name: "一次性防护服（XL 码）", nameEn: "Disposable coverall (XL)", category: "防护服", hsCode: "6210103000", refundRateBp: 1300, unit: "件", lastCostCents: yuan(12.4), packQty: 50, grossWeightG: 10200, volumeCm3: 66000, active: true, note: null },
-    { sku: "PPE-ISO-BLU", name: "一次性隔离衣 · 蓝色", nameEn: "Isolation gown, blue", category: "防护服", hsCode: "6210103000", refundRateBp: 1300, unit: "件", lastCostCents: yuan(4.6), packQty: 100, grossWeightG: 8200, volumeCm3: 54000, active: true, note: null },
-    { sku: "MSK-SUR-3P", name: "医用外科口罩（三层）", nameEn: "Surgical mask, 3-ply", category: "口罩", hsCode: "6307900000", refundRateBp: 1300, unit: "只", lastCostCents: yuan(0.32), packQty: 2000, grossWeightG: 7600, volumeCm3: 48000, active: true, note: "每 50 只一盒，40 盒一箱。" },
-    { sku: "MSK-N95", name: "N95 防护口罩", nameEn: "N95 respirator", category: "口罩", hsCode: "6307900000", refundRateBp: 1300, unit: "只", lastCostCents: yuan(1.45), packQty: 800, grossWeightG: 6400, volumeCm3: 72000, active: true, note: "NIOSH 认证，美国线专用。" },
-    { sku: "GLV-NIT-M", name: "丁腈检查手套（M 码）", nameEn: "Nitrile exam glove (M)", category: "手套", hsCode: "4015190000", refundRateBp: 1300, unit: "只", lastCostCents: yuan(0.28), packQty: 1000, grossWeightG: 11200, volumeCm3: 41000, active: true, note: "原料随石油价波动，报价有效期只给 7 天。" },
-    { sku: "PPE-FSH", name: "防护面屏", nameEn: "Face shield", category: "防护用品", hsCode: "3926909090", refundRateBp: 1300, unit: "件", lastCostCents: yuan(2.1), packQty: 200, grossWeightG: 9800, volumeCm3: 88000, active: true, note: null },
-    { sku: "PPE-CAP", name: "一次性帽子", nameEn: "Disposable cap", category: "防护用品", hsCode: "6505009900", refundRateBp: 1300, unit: "只", lastCostCents: yuan(0.06), packQty: 5000, grossWeightG: 5200, volumeCm3: 52000, active: true, note: null },
-    { sku: "PPE-SHC", name: "医用鞋套", nameEn: "Shoe cover", category: "防护用品", hsCode: "6307900000", refundRateBp: 1300, unit: "双", lastCostCents: yuan(0.09), packQty: 4000, grossWeightG: 6100, volumeCm3: 46000, active: true, note: null },
-    { sku: "PPE-SRG", name: "一次性手术衣", nameEn: "Surgical gown", category: "防护服", hsCode: "6210103000", refundRateBp: 1300, unit: "件", lastCostCents: yuan(6.8), packQty: 60, grossWeightG: 9100, volumeCm3: 58000, active: true, note: "带袖口弹性，需 EO 灭菌。" },
-    { sku: "CCTV-BUL", name: "枪型网络摄像机", nameEn: "Bullet IP camera", category: "安防电子", hsCode: "8525801390", refundRateBp: 1300, unit: "台", lastCostCents: yuan(96), packQty: 20, grossWeightG: 14500, volumeCm3: 76000, active: true, note: "含 POE 供电，出口需带电池说明。" },
-    { sku: "CCTV-DOM", name: "半球形网络摄像机", nameEn: "Dome IP camera", category: "安防电子", hsCode: "8525801390", refundRateBp: 1300, unit: "台", lastCostCents: yuan(88), packQty: 24, grossWeightG: 13200, volumeCm3: 71000, active: true, note: null },
-    { sku: "CCTV-NVR", name: "网络硬盘录像机", nameEn: "Network video recorder", category: "安防电子", hsCode: "8521901000", refundRateBp: 1300, unit: "台", lastCostCents: yuan(320), packQty: 8, grossWeightG: 18600, volumeCm3: 94000, active: true, note: "含硬盘的型号走空运要报危包。" },
-    { sku: "MED-THM", name: "红外测温枪", nameEn: "Infrared thermometer", category: "医疗器械", hsCode: "9025199090", refundRateBp: 1300, unit: "支", lastCostCents: yuan(23.5), packQty: 100, grossWeightG: 12400, volumeCm3: 68000, active: true, note: "含纽扣电池，海运需申报。" },
-    { sku: "MED-SWB", name: "医用棉签", nameEn: "Medical swab", category: "医疗器械", hsCode: "3005901000", refundRateBp: 1300, unit: "支", lastCostCents: yuan(0.04), packQty: 10000, grossWeightG: 8400, volumeCm3: 44000, active: true, note: null },
-  ];
-  const products: Product[] = productSeed.map((p) => ({ ...p, id: id("prd") }));
 
   // ───────────── 银行账户 ─────────────
   const accounts: BankAccount[] = [

@@ -82,6 +82,15 @@ export type SellerEntity = {
   addrEn?: string;
   tel?: string;
   email?: string;
+  /**
+   * 公司 Logo 与电子签章，指向 files store 里的 blob（见 data/files.ts）。
+   *
+   * 没有抬头 Logo、没有盖章的 PI，客户财务多半是不给付款的 —— 这不是美观问题。
+   * 章建议用透明底 PNG：单据上它要压在签字栏上（mix-blend-mode: multiply），
+   * 白底方块贴上去一眼就是假的。
+   */
+  logoFileId?: string | null;
+  sealFileId?: string | null;
   active: boolean;
 };
 

@@ -18,6 +18,7 @@ import { Icon } from "@/components/Icon";
 import { Flag } from "@/components/Flag";
 import { Drawer } from "@/components/ui/Drawer";
 import { Modal } from "@/components/ui/Modal";
+import { QuoteSheet } from "@/components/presales/QuoteSheet";
 import { Attachments } from "@/components/Attachments";
 import { KV, Pill } from "@/components/ui/bits";
 import { toast, toastError } from "@/components/ui/Toast";
@@ -120,6 +121,7 @@ export function QuoteDrawer({
   const { t, lang } = useT();
   const [tab, setTab] = useState("lines");
   const [revising, setRevising] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [revNote, setRevNote] = useState("");
   const [converting, setConverting] = useState(false);
   const [piNo, setPiNo] = useState("");
@@ -195,6 +197,12 @@ export function QuoteDrawer({
         onTab={setTab}
         footer={
           <>
+            {/* 报价单是客户唯一会收到的售前单据 —— 转成 PI 之后也还要能翻出来，
+                所以这个按钮不放进 locked 的分支里 */}
+            <button className="btn" onClick={() => setPrinting(true)}>
+              <Icon name="file" size={14} />
+              {t("生成报价单")}
+            </button>
             {locked ? (
               <span className="muted">
                 {t("已转成")} <Link to={`/orders?q=${row.piNo ?? ""}`}>{row.piNo}</Link>
@@ -665,6 +673,8 @@ export function QuoteDrawer({
           <span className="field-hint">{t("按号段规则自动取的，也可以自己改")}</span>
         </label>
       </Modal>
+
+      {printing ? <QuoteSheet quote={q} onClose={() => setPrinting(false)} /> : null}
     </>
   );
 }

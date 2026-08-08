@@ -12,18 +12,28 @@
  * 是因为 display:none 会让浏览器丢掉分页计算，长单据的表头就不重复了。
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Modal } from "@/components/ui/Modal";
 import { Segmented } from "@/components/ui/bits";
 import { useDb } from "@/data/DataProvider";
+import { getBlob } from "@/data/files";
 import { isDemo } from "@/data/profile";
 import type { Pi } from "@/data/types";
-import { DOC_TITLES, amountInWords, buildDoc, showsPacking, showsPrice, type DocKind, type DocLang } from "@/lib/docs";
+import { DOC_TITLES, amountInWords, buildDoc, showsPacking, showsPrice, showsSignature, type DocKind, type DocLang } from "@/lib/docs";
 import { formatInt } from "@/lib/format";
 import { useT } from "@/i18n";
 
 const SYM: Record<string, string> = { USD: "$", EUR: "€", CNY: "¥", GBP: "£" };
+
+/** 各类单据的编号栏叫法。清关行和银行认的就是这几个词 */
+const NO_LABEL: Record<DocKind, string> = {
+  QUOTATION: "QUOTATION NO.",
+  CONTRACT: "CONTRACT NO.",
+  PI: "P/I NO.",
+  CI: "INVOICE NO.",
+  PL: "PACKING LIST NO.",
+};
 
 const money = (cents: number, cur: string) =>
   `${SYM[cur] ?? cur} ${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -36,6 +46,52 @@ function L({ en, zh, lang }: { en: string; zh: string; lang: DocLang }) {
       {lang === "both" ? <i className="doc-zh">{zh}</i> : null}
     </>
   );
+}
+
+/**
+ * 把 files store 里的 blob 变成可以喂给 <img> 的临时 URL。
+ * 用完必须 revoke，否则每开一次单据就漏一个对象 URL。
+ */
+function useBlobUrl(fileId?: string | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!fileId) {
+      setUrl(null);
+      return;
+    }
+    let dead = false;
+    let made: string | null = null;
+    void getBlob(fileId).then((b) => {
+      if (dead || !b) return;
+      made = URL.createObjectURL(b);
+      setUrl(made);
+    });
+    return () => {
+      dead = true;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [fileId]);
+  return url;
+}
+
+/**
+ * 打印，并让「另存为 PDF」的默认文件名有意义。
+ *
+ * Chrome 取的是 `document.title`，不改的话所有单据存下来都叫
+ * 「信风 Tradewind · 外贸全流程管理.pdf」。改完必须还原 ——
+ * 标签页标题是全局的，留着不还原，用户回到列表页会看到一个发票号。
+ */
+function printAs(stem: string) {
+  const prev = document.title;
+  document.title = stem;
+  const restore = () => {
+    document.title = prev;
+    window.removeEventListener("afterprint", restore);
+  };
+  window.addEventListener("afterprint", restore);
+  window.print();
+  // afterprint 在个别浏览器里不触发，兜一层定时器，别把标题永久改掉
+  window.setTimeout(restore, 3000);
 }
 
 /**
@@ -52,13 +108,15 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
   const doc = useMemo(() => (pi ? buildDoc(db, pi, kind, batchId) : null), [db, pi, kind, batchId]);
   const batch = batchId ? db.shipments.find((s) => s.id === batchId) : null;
   const batchUnlogged = !!batch && !db.shipmentLines.some((l) => l.shipmentId === batch.id);
+  const logoUrl = useBlobUrl(doc?.seller.logoFileId);
+  const sealUrl = useBlobUrl(doc?.seller.sealFileId);
 
   if (!pi) return null;
   if (!doc) return null;
 
   /* 有批次、但没登记这批装了什么 —— 这时候绝不能默默按整票数量出单。
      那张纸是要拿去清关的，数量错了是实打实的麻烦。 */
-  if (batch && batchUnlogged && kind !== "PI") {
+  if (batch && batchUnlogged && (kind === "CI" || kind === "PL")) {
     return (
       <Modal open title={t("生成单据")} onClose={onClose} width={560}>
         <p className="modal-lead">
@@ -96,6 +154,7 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
             onChange={(v) => setKind(v as DocKind)}
             options={[
               { value: "PI", label: t("形式发票") },
+              { value: "CONTRACT", label: t("销售合同") },
               { value: "CI", label: t("商业发票") },
               { value: "PL", label: t("装箱单") },
             ]}
@@ -112,7 +171,7 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
             label={t("单据语言")}
           />
           <span className="spacer" />
-          <button className="btn btn-primary" onClick={() => window.print()}>
+          <button className="btn btn-primary" onClick={() => printAs(doc.fileStem)}>
             <Icon name="download" size={14} />
             {t("打印 / 存为 PDF")}
           </button>
@@ -121,7 +180,7 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
     >
       <p className="doc-hint">
         <Icon name="info" size={13} />
-        {batch && kind !== "PI"
+        {batch && (kind === "CI" || kind === "PL")
           ? t("正在按批次 {no} 出单：数量、箱数、毛重都是这一批的实际值，不是整张 PI 的。形式发票是合同，仍按整票出。", { no: batch.batchNo })
           : t("单据发给客户和清关行，所以默认英文 —— 界面切成中文不会改变发出去的单据。「中英对照」是给内部复核用的。")}
       </p>
@@ -133,6 +192,10 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
         {/* ── 抬头 ── */}
         <header className="doc-head">
           <div className="doc-seller">
+            {/* ⚠️ 必须是 <img>，不能用 background-image：
+                浏览器默认不打印背景图，Logo 和签章会在 PDF 里凭空消失。
+                这是套打最经典的坑，屏幕上一切正常，打出来什么都没有。 */}
+            {logoUrl ? <img className="doc-logo" src={logoUrl} alt="" /> : null}
             <b>{doc.seller.nameEn ?? doc.seller.name}</b>
             {lang === "both" ? <i className="doc-zh">{doc.seller.name}</i> : null}
             <p>{doc.seller.addrEn}</p>
@@ -177,7 +240,9 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
           <div>
             <div className="dm-row">
               <span>
-                <L en={kind === "PI" ? "P/I NO." : kind === "CI" ? "INVOICE NO." : "PACKING LIST NO."} zh="单据号" lang={lang} />
+                {/* 每种单据的编号叫法不同。漏一种就会出现「销售合同」上写着
+                    PACKING LIST NO. 这种一眼假的纸 */}
+                <L en={NO_LABEL[kind]} zh="单据号" lang={lang} />
               </span>
               <b className="num">{doc.no}</b>
             </div>
@@ -321,14 +386,28 @@ export function DocSheet({ pi, batchId, onClose }: { pi: Pi | null; batchId?: st
               </p>
             </div>
           )}
-          {/* 签章位留白，用户打印后盖章。电子签章要有可信时间戳，这个项目不做假的 */}
+          {/* 签章位。配了签章图就压在签字线上 —— 没有章的 PI，
+              客户财务多半不给付款，这不是美观问题。
+              章用 <img> 而不是背景图，否则打印时会静默消失。 */}
           <div className="doc-sign">
             <b>{doc.seller.nameEn ?? doc.seller.name}</b>
+            {sealUrl ? <img className="doc-seal" src={sealUrl} alt="" /> : null}
             <span className="doc-sign-line" />
             <i>
               <L en="Authorized signature & company seal" zh="授权签字及公司盖章" lang={lang} />
             </i>
           </div>
+
+          {/* 合同和报价单要买方回签，跟着货走的三张不要 */}
+          {showsSignature(kind) ? (
+            <div className="doc-sign doc-sign-buyer">
+              <b>{doc.buyer?.name ?? "THE BUYER"}</b>
+              <span className="doc-sign-line" />
+              <i>
+                <L en="Buyer's signature & company seal" zh="买方签字及盖章" lang={lang} />
+              </i>
+            </div>
+          ) : null}
         </section>
       </div>
     </Modal>

@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Icon, type IconName } from "@/components/Icon";
 import { BarList } from "@/components/charts";
+import { BrandAssets } from "@/components/BrandAssets";
 import { DataGrid, type Column } from "@/components/grid/DataGrid";
 import { Kpi, Page, Panel, useParam } from "@/components/ui/PageKit";
 import { Avatar, Bar, EmptyState, Pill, SearchInput, Segmented } from "@/components/ui/bits";
@@ -89,6 +90,8 @@ export function SellerEntities() {
                   <span>{t("退税发票")}</span>
                 </div>
               </div>
+              {/* 抬头和章：没有它们，这个主体开出来的单据客户财务不认 */}
+              <BrandAssets entity={e} />
               <Bar value={e.cny} max={Math.max(total, 1)} tone="accent" />
               <p className="entity-foot muted">
                 {t("占全部签约额的 {p}", { p: formatPct(total ? (e.cny / total) * 100 : 0, 1) })}

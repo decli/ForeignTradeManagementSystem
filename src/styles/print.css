@@ -197,3 +197,35 @@ body[data-demo="1"] .doc-sheet::after {
   pointer-events: none;
   z-index: 5;
 }
+
+/* ── Logo 与电子签章 ────────────────────────────────────────────
+   ⚠️ 两者都必须是 <img>。用 background-image 的话，浏览器打印默认
+   不带背景图 —— 屏幕上好好的，打出来的 PDF 上什么都没有，而且没有报错。 */
+.doc-logo {
+  display: block;
+  max-height: 17mm;
+  max-width: 62mm;
+  margin-bottom: 6px;
+  object-fit: contain;
+}
+
+/* 章压在签字线上，multiply 让白底也能透出下面的线条 ——
+   贴一个白色方块上去，一眼就是假的 */
+.doc-seal {
+  position: absolute;
+  right: 4mm;
+  /* 压在签字线上，但别盖住下面那行说明文字 —— 真章也是盖在线上，不是盖在字上 */
+  bottom: 7mm;
+  width: 34mm;
+  height: 34mm;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.doc-sign { position: relative; }
+/* 买方回签栏。合同和报价单才有，见 showsSignature() */
+.doc-sign-buyer { margin-left: 12mm; }
+
+@media print {
+  .doc-logo, .doc-seal { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

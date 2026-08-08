@@ -1235,3 +1235,50 @@ a.otl-node:hover .otl-main b { color: var(--accent-ink); }
 }
 /* 溢装的数字标出来 —— 在允许范围内也是事实，不该跟"正好"长一个样 */
 .shipprog-rest[data-over="1"] { color: var(--amber); font-weight: 650; }
+
+/* ── 卖方主体的 Logo / 签章 ────────────────────────────────── */
+.brand-assets {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.brand-slot { display: flex; align-items: center; gap: 10px; }
+.brand-preview {
+  flex: none;
+  width: 52px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-4);
+  overflow: hidden;
+}
+.brand-preview[data-has="1"] { border-style: solid; }
+.brand-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* 章多半是透明底红色，浅色格子背景才看得清边界 */
+.brand-preview[data-slot="seal"][data-has="1"] {
+  background-image: linear-gradient(45deg, var(--surface-2) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--surface-2) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--surface-2) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface-2) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+.brand-meta { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.brand-meta b { font-size: var(--fs-xs); }
+.brand-meta small { color: var(--text-3); font-size: 11px; line-height: 1.5; }
+.brand-note {
+  display: flex;
+  gap: 5px;
+  margin: 2px 0 0;
+  color: var(--text-4);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.brand-note svg { flex: none; margin-top: 2px; }

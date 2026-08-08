@@ -21,10 +21,25 @@
 import type { Attachment, Customer, Database, Pi, PiLine, SellerEntity } from "@/data/types";
 import { lineAmount, lineCartons } from "@/data/types";
 import type { Contact } from "@/data/types";
+import type { Quotation } from "@/data/presales-types";
 import { batchInvoiceNo, resolveShipLines } from "@/data/shipment-lines";
 import { countryEn } from "@/lib/geo";
 
-export type DocKind = "PI" | "CI" | "PL";
+/**
+ * 五种单据，覆盖成交前后两段。
+ *
+ * ── 为什么补 QUOTATION 和 CONTRACT ──
+ * 原来只有成交后的三张。可客户先收到的是**报价单** —— 系统里有核算器、
+ * 有议价轨迹，最后要发出去的那张纸却还是业务员自己拼的 Excel，
+ * 售前漏斗的临门一脚落在系统外面。销售合同同理：PI 能当合同用，
+ * 但正式签约（尤其是信用证、大额单）客户要的是带双方签字栏的 S/C。
+ */
+export type DocKind = "QUOTATION" | "CONTRACT" | "PI" | "CI" | "PL";
+
+/** 成交前的单据从报价单生成，成交后的从 PI 生成 */
+export const isPresaleDoc = (k: DocKind) => k === "QUOTATION";
+/** 要不要签字栏。合同和报价单要，跟着货走的三张不要 */
+export const showsSignature = (k: DocKind) => k === "CONTRACT" || k === "QUOTATION";
 
 /**
  * 计量单位的英文。
@@ -39,6 +54,8 @@ const UNIT_EN: Record<string, string> = {
 export const unitEn = (u: string) => UNIT_EN[u] ?? u;
 
 export const DOC_TITLES: Record<DocKind, { en: string; zh: string }> = {
+  QUOTATION: { en: "QUOTATION", zh: "报价单" },
+  CONTRACT: { en: "SALES CONTRACT", zh: "销售合同" },
   PI: { en: "PROFORMA INVOICE", zh: "形式发票" },
   CI: { en: "COMMERCIAL INVOICE", zh: "商业发票" },
   PL: { en: "PACKING LIST", zh: "装箱单" },
@@ -87,6 +104,11 @@ export type DocModel = {
   totalCbm: number;
   /** 贸易术语后面该跟哪个地名，见 termPlace() */
   termLine: string;
+  /** 报价单专有：有效期、交货期。过了有效期的报价不作数，这一行必须打出来 */
+  validUntil?: string | null;
+  leadDays?: number | null;
+  /** 下载时的文件名主干（不含扩展名），见 DocSheet 里对 document.title 的处理 */
+  fileStem: string;
 };
 
 /** 毛重减 8% 当净重。真实系统里净重该单独填，这里给一个业内常用的估算并标明 */
@@ -111,7 +133,7 @@ export function buildDoc(db: Database, pi: Pi, kind: DocKind, shipmentId?: strin
   const quote = pi.quoteId ? db.presales.quotes.find((q) => q.id === pi.quoteId) : undefined;
 
   // PI 是合同，永远整票；CI/PL 跟着货走，指定了批次就只出这一批
-  const batch = kind === "PI" || !shipmentId ? null : (db.shipments.find((s) => s.id === shipmentId) ?? null);
+  const batch = kind === "PI" || kind === "CONTRACT" || !shipmentId ? null : (db.shipments.find((s) => s.id === shipmentId) ?? null);
   const batchLines = batch ? resolveShipLines(db, batch.id) : null;
 
   const lines: DocLine[] = batchLines
@@ -158,8 +180,8 @@ export function buildDoc(db: Database, pi: Pi, kind: DocKind, shipmentId?: strin
        PI、发票、装箱单、报关单串起来的，三张纸各有各的号只会让人对不上。
        分批时用批次自己的号（MT26X04118-4-CI）：4 批共用一个发票号，
        客户财务和清关行都对不上是哪一票货。 */
-    no: kind === "PI" ? pi.piNo : batch ? `${batchInvoiceNo(batch)}-${kind}` : `${pi.piNo}-${kind}`,
-    date: kind === "PI" ? pi.signedOn ?? pi.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    no: kind === "PI" || kind === "CONTRACT" ? pi.piNo : batch ? `${batchInvoiceNo(batch)}-${kind}` : `${pi.piNo}-${kind}`,
+    date: kind === "PI" || kind === "CONTRACT" ? (pi.signedOn ?? pi.createdAt.slice(0, 10)) : new Date().toISOString().slice(0, 10),
     seller,
     buyer,
     buyerContact: contact,
@@ -181,6 +203,83 @@ export function buildDoc(db: Database, pi: Pi, kind: DocKind, shipmentId?: strin
     totalNetKg: sum("netKg"),
     totalGrossKg: sum("grossKg"),
     totalCbm: sum("cbm"),
+    fileStem: fileStem(kind, batch ? batchInvoiceNo(batch) : pi.piNo, buyer?.name),
+  };
+}
+
+/**
+ * 下载文件名的主干。
+ *
+ * 浏览器"另存为 PDF"默认拿 `document.title`，于是所有单据存下来都叫
+ * 「信风 Tradewind · 外贸全流程管理.pdf」，一个文件夹里十几张分不清谁是谁。
+ * 客户名放进去是因为业务员真正需要的是**按客户找**那张纸。
+ */
+function fileStem(kind: DocKind, no: string, buyerName?: string | null) {
+  const safe = (s: string) => s.replace(/[\\/:*?"<>|]+/g, "").trim();
+  const parts = [kind, safe(no)];
+  if (buyerName) parts.push(safe(buyerName).slice(0, 28));
+  return parts.join("_");
+}
+
+/**
+ * 报价单 —— 唯一一张**成交之前**发给客户的纸。
+ *
+ * 数据来自 Quotation 而不是 Pi：这时候 PI 还不存在。两者喂进同一个
+ * DocModel，所以 DocSheet 那边一行都不用改。
+ */
+export function buildQuoteDoc(db: Database, quote: Quotation): DocModel | null {
+  const seller = db.sellerEntities.find((e) => e.id === quote.sellerEntityId) ?? db.sellerEntities[0];
+  if (!seller) return null;
+  const buyer = quote.customerId ? (db.customers.find((c) => c.id === quote.customerId) ?? null) : null;
+  const contact = quote.contactId ? (db.contacts.find((c) => c.id === quote.contactId) ?? null) : null;
+  const rows = db.presales.quoteLines.filter((l) => l.quoteId === quote.id).sort((a, b) => a.seq - b.seq);
+
+  const lines: DocLine[] = rows.map((l) => {
+    const cartons = lineCartons({ qty: l.qty, packQty: l.packQty });
+    const grossKg = (cartons * l.grossWeightG) / 1000;
+    return {
+      seq: l.seq,
+      desc: l.nameEn || l.name,
+      hsCode: l.hsCode,
+      qty: l.qty,
+      unit: unitEn(l.unit),
+      price: l.unitPriceE4 / 10_000,
+      amountCents: Math.round((l.qty * l.unitPriceE4) / 100),
+      cartons,
+      netKg: grossKg * NET_RATIO,
+      grossKg,
+      cbm: (cartons * l.volumeCm3) / 1_000_000,
+    };
+  });
+  const sum = <K extends keyof DocLine>(k: K) => lines.reduce((s, l) => s + (l[k] as number), 0);
+  const podName = quote.pod || countryEn(buyer?.country ?? quote.country);
+
+  return {
+    kind: "QUOTATION",
+    // 议价到第 3 版就打 -V3：客户手里同时有好几版，不标版本必然对错
+    no: quote.version > 1 ? `${quote.quoteNo}-V${quote.version}` : quote.quoteNo,
+    date: quote.createdAt.slice(0, 10),
+    seller,
+    buyer,
+    buyerContact: contact,
+    buyerCountryEn: countryEn(buyer?.country ?? quote.country),
+    currency: quote.currency,
+    incoterm: quote.incoterm,
+    pol: quote.pol,
+    pod: podName,
+    payTerm: quote.payTerm,
+    marks: "N/M",
+    termLine: termPlace(quote.incoterm, quote.pol, podName),
+    validUntil: quote.validUntil,
+    leadDays: quote.leadDays,
+    lines,
+    totalCents: sum("amountCents"),
+    totalQty: sum("qty"),
+    totalCartons: sum("cartons"),
+    totalNetKg: sum("netKg"),
+    totalGrossKg: sum("grossKg"),
+    totalCbm: sum("cbm"),
+    fileStem: fileStem("QUOTATION", quote.version > 1 ? `${quote.quoteNo}-V${quote.version}` : quote.quoteNo, buyer?.name ?? quote.company),
   };
 }
 

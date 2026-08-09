@@ -18,6 +18,7 @@ import { useDb } from "@/data/DataProvider";
 import { isPersistent, isReadOnly, schemaState } from "@/data/db";
 import { formatBytes } from "@/data/files";
 import { recoveryOutcome, requestRecovery, storageFault } from "@/data/idb";
+import { isDemo } from "@/data/profile";
 import { readStorageHealth, type StorageHealth } from "@/lib/storage-health";
 import { useT } from "@/i18n";
 
@@ -131,8 +132,16 @@ export function SystemBanner() {
     });
   }
 
-  if (health?.atRisk) {
-    const why = health.reasons[0];
+  /* ── 演示账套不催备份 ──
+     「导出一份存到网盘」是对**真账套**说的话。演示数据是随时能重灌的样板，
+     催人备份样板既没有意义，又把首屏第一眼让给了一条不需要行动的警告 ——
+     而这个组件的前提就是"常驻警告等于没有警告"。
+     配额是唯一的例外：空间写满之后附件和备份会静默失败，演示态一样会疼。
+     真账套的提醒一个字不动，那是这个产品对"数据只在本机"的诚实交代。 */
+  const risks = health ? (isDemo() ? health.reasons.filter((r) => r === "quota") : health.reasons) : [];
+
+  if (health && risks.length) {
+    const why = risks[0];
     const body =
       why === "quota"
         ? t("浏览器给这个站点的空间快用完了（{u} / {q}）。写满之后备份和附件会静默失败，先导出一份、再清理些附件。", {

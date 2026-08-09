@@ -589,11 +589,35 @@ button.kpi:hover {
    现在深色是整屏的地，表单收成一张浮在上面的卡 —— 明暗差还在，
    但那是「物件 / 场景」的关系，有影有边有层次，不是两张图硬贴。 */
 .login {
+  /* ── 版心 ──
+     左右页边距原来一个是常数（文字块 padding 60px）、一个是余数
+     （表单列宽减卡片宽再折半，1600px 下 194px，且随窗口无限长大）。
+     两个边距不同源，所以永远不会相等，中间那块空白也没有上限。
+
+     现在页眉 / 正文 / 页脚共用这一条 --stage：左右页边距是同一个减法
+     算出来的，天生相等。
+
+     ── 中缝为什么这么算 ──
+     版心刚好等于「两块内容 + 一道中缝」，所以三行的左右两条界完全重合：
+     标识、口号、页脚左端对齐，语言按钮、卡片右端对齐。
+
+     中缝本身按**三等分**取：屏幕宽减掉两块内容，剩下的平均分成
+     左页边距 / 中缝 / 右页边距三份。于是窗口一窄，中缝和页边距一起收，
+     不会出现「两块离屏幕边比离彼此还近」的倒挂。
+     上限 208px：再宽的屏幕多出来的宽度全给页边距，中缝不再长 ——
+     中缝比外缘窄，两块才读成「一件东西」，而不是被屏幕推向两端的两块。 */
+  --gut: clamp(22px, 5vw, 72px);
+  --col: 460px; /* 文字块 */
+  --card: 392px; /* 表单卡 */
+  --gap: clamp(48px, (100vw - var(--col) - var(--card)) / 3, 208px);
+  --stage: min(calc(var(--col) + var(--gap) + var(--card)), 100% - var(--gut) * 2);
+
   position: relative;
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
+  /* 中间那行给 min-content 下限：演示身份展开、或者窗口很矮的时候，
+     让整页长出屏幕外让文档去滚，而不是被 overflow:hidden 齐根切掉 */
+  grid-template-rows: auto minmax(min-content, 1fr) auto;
   /* 底色是品牌自己的深海军蓝，不跟明暗走；只有最亮那一档掺进主题色，
      换配色时整屏跟着偏，但不会变成一块彩色。 */
   background: linear-gradient(158deg, #050a17 0%, #0d1730 48%, color-mix(in srgb, var(--brand-1) 34%, #0a1024) 100%);
@@ -615,26 +639,50 @@ button.kpi:hover {
     radial-gradient(ellipse 90% 80% at 50% 50%, transparent 42%, rgba(2, 5, 12, 0.5) 100%);
   pointer-events: none;
 }
-/* 逐个点名，不写 `> *:not(.wind)` —— 那条会连 .login-actions 的
-   position:absolute 一起盖掉（选择器权重更高），右上角那两个按钮就掉到列里去了 */
-.login-art,
-.login-form,
+/* 三行都吊在版心上，也都要浮在风场之上（.login::after 是 z-index 0） */
+.login-head,
+.login-stage,
 .login-legal {
   position: relative;
   z-index: 1;
+  width: var(--stage);
+  margin-inline: auto;
 }
 
-.login-art {
-  display: grid;
-  align-content: center;
-  justify-items: start;
-  gap: 30px;
-  padding: 52px 60px;
+/* ── 页眉：标识钉左界，语言与外观钉右界 ── */
+.login-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: clamp(20px, 3.2vh, 34px);
 }
-.login-art-top {
+.login-mark {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* ── 正文：口号 | 表单 ──
+   版心 = 两块 + 中缝，所以 space-between 之后两块正好各自贴着自己那条界 */
+.login-stage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding-block: 8px 20px;
+}
+
+.login-art {
+  /* 可压不可胀：宽屏下就是 --col，窄到版心装不下时才让它先让步 */
+  flex: 0 1 var(--col);
+  display: grid;
+  justify-items: start;
+}
+.login-form {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
 }
 .login-brand {
   line-height: 1.15;
@@ -657,15 +705,20 @@ button.kpi:hover {
   font-size: 11px;
   letter-spacing: 0.08em;
 }
-.login-art-mid {
-  align-self: center;
-}
+/* 标识挪进页眉之后，口号成了这一列唯一的主角 —— 字号跟着放大一档。
+   原来 48px 的两行只占 235px 宽，摆在 780px 的列里当然显得空；
+   现在列宽 460，62px 的两行约 310px，字终于在替这一块干活了。 */
 .login-art h1 {
-  font-size: clamp(30px, 3.6vw, 48px);
+  font-size: clamp(30px, 4.6vw, 62px);
   font-weight: 680;
-  line-height: 1.2;
+  line-height: 1.18;
   letter-spacing: -0.022em;
   color: #fff;
+}
+/* 英文那两行是 19 个字符，同字号会顶穿版心，单独压一档 */
+.login-art h1[data-lang="en"] {
+  font-size: clamp(28px, 3.3vw, 44px);
+  line-height: 1.14;
 }
 /* 断行是手写的（见 BRAND.taglineZhLines），这里只负责把两行的轻重拉开：
    第一行退半步，第二行是落点，亮度和字重都压上去。
@@ -701,9 +754,13 @@ button.kpi:hover {
    字典条目的排法：词条 / 注音 / 词性，然后一行释义。
    比一段品牌故事短，也比一句空口号有内容 —— 看完知道「信风」是什么。 */
 .login-lore {
+  margin-top: 30px;
   padding-top: 22px;
   border-top: 1px solid rgba(255, 255, 255, 0.09);
-  max-width: 30em;
+  /* 上面那道横线要跟口号、定位句左右对齐成一个方块 —— 所以撑满整列，
+     不再按 30em 自己收一个宽度出来。
+     栅格里横向拉伸是 justify-self，align-self 管的是竖向 */
+  justify-self: stretch;
 }
 .login-lore p {
   font-size: var(--fs-md);
@@ -778,7 +835,7 @@ button.kpi:hover {
     transform: none;
   }
 }
-.login-art-top,
+.login-mark,
 .login-art h1 .l1,
 .login-art h1 .l2,
 .login-art p,
@@ -815,7 +872,7 @@ button.kpi:hover {
 @media (prefers-reduced-motion: reduce) {
   .wind-gust,
   .wind-cargo,
-  .login-art-top,
+  .login-mark,
   .login-art h1 .l1,
   .login-art h1 .l2,
   .login-art p,
@@ -831,17 +888,7 @@ button.kpi:hover {
   }
 }
 
-.login-form {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  padding: 48px;
-}
 .login-actions {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 2;
   display: flex;
   gap: 4px;
 }
@@ -860,7 +907,10 @@ button.kpi:hover {
    卡本身不透明 —— 试过半透明加背景模糊，流线在输入框后面爬，
    打字时余光一直被拽走。背景动画好看是一回事，挡着填表就是另一回事。 */
 .login-box {
-  width: min(392px, 100%);
+  /* 定死宽度，别写 min(392px, 100%) —— 在 flex 里那个百分比对着一个
+     不确定的宽度算，卡片会按内容的 max-content 收窄（实测缩到 373） */
+  width: var(--card, 392px);
+  max-width: 100%;
   padding: 30px 30px 26px;
   border-radius: 20px;
   /* 掺一丝品牌色。纯白的卡放在海军蓝上会显得发冷、像贴纸；
@@ -899,13 +949,12 @@ button.kpi:hover {
 /* ── 版权 ──
    整屏最底下一行，暗到几乎读不出来。版权声明的作用是「在」，不是被看见。 */
 .login-legal {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 0 24px 20px;
+  padding-bottom: 20px;
   font-size: var(--fs-xs);
   color: rgba(232, 238, 251, 0.3);
   letter-spacing: 0.03em;
@@ -1110,22 +1159,39 @@ button.kpi:hover {
   .kpi-v {
     font-size: var(--fs-xl);
   }
-  /* 窄屏一列到底：品牌一段、卡片一张、版权一行。
-     背景还是同一张风场，所以竖着堆也不会散架 —— 这正是去掉那条硬缝换来的。 */
+  /* 窄屏一列到底：口号一段、卡片一张、版权一行。
+     版心收成一条居中的窄栏 —— 平板上如果还按满宽排，一张 420 的卡片
+     贴在 690 的栏里，右边就空掉一大片。收窄之后标识、口号、卡片、版权
+     仍然共用同一条左界，只是这条界跟着栏一起居中了。
+
+     竖过来之后 flex 的两个属性会调头，必须一起改：
+     · justify-content 从横向的 space-between 变成纵向的 —— 不改的话
+       口号顶到屏幕最上、卡片沉到最下，中间空一大片；
+     · flex-basis 量的从宽度变成高度 —— `0 1 var(--col)` 会把文字块
+       撑成 460px 高，栅格行再一拉伸，行距散得不成样子。 */
   .login {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    min-height: 100dvh;
+    --stage: min(430px, 100% - var(--gut) * 2);
+  }
+  .login-stage {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 24px;
+    padding-block: 18px 24px;
+  }
+  .login-head {
+    padding-block: 22px 0;
   }
   .login-art {
-    align-content: start;
-    gap: 16px;
-    padding: 26px 22px 4px;
-  }
-  .login-art-mid {
+    flex: 0 0 auto;
     max-width: none;
   }
-  .login-art h1 {
+  /* 卡片跟口号对齐同一条左界，不居中 —— 一页只有一条左界才立得住 */
+  .login-form {
+    justify-content: flex-start;
+  }
+  .login-art h1,
+  .login-art h1[data-lang="en"] {
     font-size: 27px;
   }
   .login-art p {
@@ -1138,17 +1204,11 @@ button.kpi:hover {
   .login-lore {
     display: none;
   }
-  .login-form {
-    padding: 22px 18px 30px;
-    align-content: start;
-  }
   .login-box {
+    width: 100%;
+    max-width: none;
     padding: 24px 22px 22px;
     border-radius: 16px;
-  }
-  .login-actions {
-    top: 22px;
-    right: 18px;
   }
   .login-legal {
     padding-bottom: 24px;

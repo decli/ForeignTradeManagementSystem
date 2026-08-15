@@ -137,8 +137,28 @@ export function SystemBanner() {
      催人备份样板既没有意义，又把首屏第一眼让给了一条不需要行动的警告 ——
      而这个组件的前提就是"常驻警告等于没有警告"。
      配额是唯一的例外：空间写满之后附件和备份会静默失败，演示态一样会疼。
-     真账套的提醒一个字不动，那是这个产品对"数据只在本机"的诚实交代。 */
-  const risks = health ? (isDemo() ? health.reasons.filter((r) => r === "quota") : health.reasons) : [];
+     真账套的提醒一个字不动，那是这个产品对"数据只在本机"的诚实交代。
+
+     ── 刚建的空账套也不催 ──
+     同一条道理再走一步：刚点完「开始用我的账套」的人，库里只有他自己这个
+     账号和一条汇率，一张客户、一张 PI 都还没有 —— 没有任何东西可丢。
+     而这条横幅恰好压在「把系统跑起来，还差 4 步」那张引导卡上方，
+     等于用一条不需要行动的警告，盖住了唯一需要行动的东西。
+     等他真录进了客户和单子，这条提醒立刻回来，那时候它才是真的。 */
+  const ledgerEmpty = db.customers.length === 0 && db.pis.length === 0;
+  const kept = !health
+    ? []
+    : isDemo()
+      ? health.reasons.filter((r) => r === "quota")
+      : ledgerEmpty
+        ? health.reasons.filter((r) => r !== "never-exported")
+        : health.reasons;
+  /* `not-persisted` 是个**修饰语**不是独立警报 —— readStorageHealth 只在已经有
+     别的风险时才追加它（"没导出过，而且浏览器还没给持久化"）。所以一旦前面
+     那条被上面几个 filter 摘掉，它必须跟着走，否则就会单独浮上来当主标题，
+     而它压根没有对应的文案，会掉进最后那个 else 分支印出一句
+     「距上次导出已经 0 天」—— 一句不成立的话。 */
+  const risks = kept.length === 1 && kept[0] === "not-persisted" ? [] : kept;
 
   if (health && risks.length) {
     const why = risks[0];
@@ -150,9 +170,14 @@ export function SystemBanner() {
           })
         : why === "never-exported"
           ? t("这个账套还从来没有导出过。本地备份挡不住清空站点数据和换电脑 —— 导出一份 JSON 存到网盘，几秒钟的事。")
-          : t("距上次导出已经 {n} 天。本地备份挡不住清空站点数据和换电脑，建议每周导出一份存到网盘。", {
-              n: String(health.daysSinceExport ?? 0),
-            });
+          : why === "not-persisted"
+            ? t("浏览器还没答应长期保留这个站点的数据，长时间不访问可能被回收。导出一份 JSON 存到网盘最稳妥。")
+            : /* 到这儿只剩 stale-export。写成显式分支而不是兜底 else ——
+                 StorageRisk 将来加了第五种，兜底会把它印成一句「距上次导出已经 0 天」，
+                 而且不会有任何报错。这个坑刚踩过一次。 */
+              t("距上次导出已经 {n} 天。本地备份挡不住清空站点数据和换电脑，建议每周导出一份存到网盘。", {
+                n: String(health.daysSinceExport ?? 0),
+              });
     notices.push({
       // 天数进 id，关掉之后过些天再变严重了还能再提醒一次
       id: `storage-${why}-${why === "stale-export" ? Math.floor((health.daysSinceExport ?? 0) / 7) : "0"}`,

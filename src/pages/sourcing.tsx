@@ -222,7 +222,23 @@ export function Suppliers() {
         }
         rowTone={(r) => (r.certDays !== null && r.certDays < 0 ? "coral" : r.certDays !== null && r.certDays < 90 ? "amber" : undefined)}
         onRowOpen={setOpen}
-        empty={<EmptyState icon="building" title={t("没有匹配的供应商")} desc={t("换个关键词试试，或者清空搜索。")} />}
+        empty={
+          /* 见 Customers.tsx 同一处：一条都没有 ≠ 筛没了。前者要给出口，后者才是「换个词」 */
+          db.ops.suppliers.length === 0 ? (
+            <EmptyState
+              icon="building"
+              title={t("还没有供应商")}
+              desc={t("供应商档案支持从 Excel 直接粘贴导入。询价单、采购合同、生产单都要挂在供应商上。")}
+              action={
+                <Link className="btn btn-primary" to="/settings?import=supplier">
+                  {t("从 Excel 导入供应商")}
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState icon="building" title={t("没有匹配的供应商")} desc={t("换个关键词试试，或者清空搜索。")} />
+          )
+        }
         renderCard={(r) => (
           <button className="rcard" key={r.id} onClick={() => setOpen(r)} data-tone={r.certDays !== null && r.certDays < 0 ? "coral" : undefined}>
             <div className="rcard-top">
@@ -400,7 +416,22 @@ export function Products() {
         exportName={t("产品")}
         rows={rows}
         columns={columns}
-        empty={<EmptyState icon="box" title={t("没有匹配的产品")} desc={t("换个关键词试试，或者清空搜索。")} />}
+        empty={
+          db.ops.products.length === 0 ? (
+            <EmptyState
+              icon="box"
+              title={t("还没有产品")}
+              desc={t("产品档案支持从 Excel 直接粘贴导入。HS 编码和退税率挂在产品上，报价核算器和退税计算直接取这两个数。")}
+              action={
+                <Link className="btn btn-primary" to="/settings?import=product">
+                  {t("从 Excel 导入产品")}
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState icon="box" title={t("没有匹配的产品")} desc={t("换个关键词试试，或者清空搜索。")} />
+          )
+        }
         renderCard={(r) => (
           <div className="rcard" key={r.id}>
             <div className="rcard-top">

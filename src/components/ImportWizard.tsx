@@ -97,11 +97,20 @@ type Plan = {
 
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 
-export function ImportWizard({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ImportWizard({
+  open,
+  onClose,
+  initialTarget,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** 从档案页的空状态直接跳进来时，落在对应的那张表上，省一次选择 */
+  initialTarget?: string;
+}) {
   const db = useDb();
   const { user } = useAuth();
   const { t } = useT();
-  const [targetKey, setTargetKey] = useState("customer");
+  const [targetKey, setTargetKey] = useState(initialTarget ?? "customer");
   const [text, setText] = useState("");
   const [map, setMap] = useState<Record<string, number>>({});
   const [touched, setTouched] = useState(false);

@@ -406,6 +406,15 @@ export const EN: Record<string, string> = {
   "搜客户名 / 编号 / 国家 / 联系人…": "Search name / code / country / contact…",
   "按累计订单额排序": "Sorted by lifetime order value",
   "没有匹配的客户": "No matching customers",
+  "还没有客户": "No customers yet",
+  "客户档案支持从 Excel 直接粘贴导入 —— 编号和公司名两列就够开始，账期和信用等级会决定应收账龄怎么算。": "Customer records can be pasted straight in from Excel — a code column and a company-name column are enough to start. Payment terms and credit grade drive how receivables ageing is calculated.",
+  "从 Excel 导入客户": "Import customers from Excel",
+  "还没有产品": "No products yet",
+  "产品档案支持从 Excel 直接粘贴导入。HS 编码和退税率挂在产品上，报价核算器和退税计算直接取这两个数。": "Product records can be pasted straight in from Excel. HS codes and refund rates live on the product — the quote calculator and refund maths read them directly.",
+  "从 Excel 导入产品": "Import products from Excel",
+  "还没有供应商": "No suppliers yet",
+  "供应商档案支持从 Excel 直接粘贴导入。询价单、采购合同、生产单都要挂在供应商上。": "Supplier records can be pasted straight in from Excel. RFQs, purchase contracts and production orders all hang off a supplier.",
+  "从 Excel 导入供应商": "Import suppliers from Excel",
   "换个关键词试试，或者清空搜索。": "Try another keyword, or clear the search.",
   "客户编号": "Customer code",
   "联系人": "Contact",
@@ -1865,6 +1874,8 @@ export const EN: Record<string, string> = {
   "账套还没有异地备份": "No off-machine backup yet",
   "这个账套还从来没有导出过。本地备份挡不住清空站点数据和换电脑 —— 导出一份 JSON 存到网盘，几秒钟的事。":
     "This account set has never been exported. Local backups cannot survive cleared site data or a new computer — export a JSON to cloud storage; it takes seconds.",
+  "浏览器还没答应长期保留这个站点的数据，长时间不访问可能被回收。导出一份 JSON 存到网盘最稳妥。":
+    "Your browser hasn’t agreed to keep this site’s data long-term, so it may be evicted if you don’t visit for a while. Exporting a JSON backup is the safe move.",
   "距上次导出已经 {n} 天。本地备份挡不住清空站点数据和换电脑，建议每周导出一份存到网盘。":
     "{n} days since the last export. Local backups cannot survive cleared site data or a new computer — export weekly to cloud storage.",
   "浏览器存储快满了": "Browser storage nearly full",

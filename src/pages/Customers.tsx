@@ -67,7 +67,24 @@ export default function Customers() {
 
       {rows.length === 0 ? (
         <div className="card">
-          <EmptyState icon="users" title={t("没有匹配的客户")} desc={t("换个关键词试试，或者清空搜索。")} />
+          {/* 「筛没了」和「一家都还没有」是两回事。刚点完「开始用我的账套」的人
+              被引导第 2 步送到这一页，看到的却是「换个关键词试试」—— 而他根本
+              没输过关键词，这一页也没有新建入口。那句话把他指向了一条死路。
+              这一档改成指向真正能建档的地方：从 Excel 粘一列过来。 */}
+          {db.customers.length === 0 ? (
+            <EmptyState
+              icon="users"
+              title={t("还没有客户")}
+              desc={t("客户档案支持从 Excel 直接粘贴导入 —— 编号和公司名两列就够开始，账期和信用等级会决定应收账龄怎么算。")}
+              action={
+                <Link className="btn btn-primary" to="/settings?import=customer">
+                  {t("从 Excel 导入客户")}
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState icon="users" title={t("没有匹配的客户")} desc={t("换个关键词试试，或者清空搜索。")} />
+          )}
         </div>
       ) : (
         <div className="split">

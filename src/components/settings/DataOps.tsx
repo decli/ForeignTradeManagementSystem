@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Pill } from "@/components/ui/bits";
@@ -560,6 +561,24 @@ export function CustomFieldSection() {
 export function ImportSection() {
   const { t } = useT();
   const [open, setOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
+
+  /* 档案页（客户 / 产品 / 供应商）在一条数据都还没有的时候，会把人指到这里来 ——
+     `/settings?import=customer`。带着参数进来就直接把向导开在那张表上：
+     让人自己在设置页里翻到「从 Excel 导入」再选一次表，等于把刚才那句
+     「去这儿导入」又还给了他一半。 */
+  const deep = params.get("import");
+  useEffect(() => {
+    if (!deep) return;
+    setOpen(true);
+    // 参数用完就抹掉，否则关掉向导再刷新又会弹出来
+    setParams((p) => {
+      const next = new URLSearchParams(p);
+      next.delete("import");
+      return next;
+    }, { replace: true });
+  }, [deep, setParams]);
+
   return (
     <>
       <div className="setting">
@@ -572,7 +591,7 @@ export function ImportSection() {
           {t("导入向导")}
         </button>
       </div>
-      <ImportWizard open={open} onClose={() => setOpen(false)} />
+      <ImportWizard open={open} onClose={() => setOpen(false)} initialTarget={deep ?? undefined} />
     </>
   );
 }

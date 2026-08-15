@@ -52,6 +52,9 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
     [db, viewer, q, settle, sales, entity, onlyRisk, archived],
   );
   const allRows = useMemo(() => listOrders(db, viewer, { sales: mine ? sales : "" }), [db, viewer, mine, sales]);
+  /* 「一条都没有」和「筛没了」是两回事，空状态要说不同的话。
+     allRows 是不带任何筛选的本人全量，所以它为空就是真的一张都没有。 */
+  const hasOwnOrders = allRows.length > 0;
   const rate = customRate(db);
   const kpi = useMemo(() => orderKpis(allRows, rate), [allRows, rate]);
   const entities = useMemo(() => listEntities(db), [db]);
@@ -346,11 +349,30 @@ export default function Orders({ mine = false }: { mine?: boolean }) {
           </>
         }
         empty={
-          <EmptyState
-            icon="inbox"
-            title={t("当前筛选下没有订单")}
-            desc={onlyRisk ? t("没有利润率低于预警线的订单 —— 这是好事。") : t("换个筛选条件试试，或者去「PI 取号」建第一张。")}
-          />
+          /* 「我的订单」对不背单的角色天生是空的：管理员、财务、只读都不挂在
+             PI 的业务员字段上。而 admin 恰恰是演示站的默认账号 —— 谁进来点一下
+             侧栏第二项，看到的就是一张空表加一句「换个筛选条件试试」，
+             而这里根本没有筛选条件可换，那句话把人指向了一条死路。
+             所以这一档单独说清楚：不是没数据，是这个视角按定义就该是空的，
+             并把出口指向「订单核算跟踪」。 */
+          mine && !hasOwnOrders ? (
+            <EmptyState
+              icon="inbox"
+              title={t("{name} 名下没有订单", { name: user?.name ?? "" })}
+              desc={t("「我的订单」只列挂在你名下的单。管理员、财务、只读这类角色本来就不背单 —— 要看全部订单，去「订单核算跟踪」。")}
+              action={
+                <Link className="btn btn-primary" to="/orders">
+                  {t("去订单核算跟踪")}
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon="inbox"
+              title={t("当前筛选下没有订单")}
+              desc={onlyRisk ? t("没有利润率低于预警线的订单 —— 这是好事。") : t("换个筛选条件试试，或者去「PI 取号」建第一张。")}
+            />
+          )
         }
         renderCard={(r) => (
           <button className="rcard" key={r.id} data-tone={r.profitRate < 0 ? "coral" : r.profitRate < PROFIT_WARN_PCT ? "amber" : undefined} onClick={() => set({ id: r.id })}>

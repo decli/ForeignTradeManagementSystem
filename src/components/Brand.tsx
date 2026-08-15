@@ -94,6 +94,26 @@ export const BRAND = {
 /** 「© 2026 decli」。年份和作者都在 BRAND 里，这里只负责排版 */
 export const copyright = () => `© ${BRAND.year} ${BRAND.author}`;
 
+/**
+ * 排大标题用的断行。跟 taglineZhLines 的区别只有一处：**去掉行末的逗号**。
+ *
+ * 断行是手写的，那个断点本身就是停顿 —— 逗号在这儿不表示任何东西，
+ * 却要占满一个全角字宽。更麻烦的是那个字宽里字形落在哪儿**跟着字体走**：
+ * PingFang SC 把逗号压在左下角，Noto Sans CJK 摆在偏中间。于是同一句口号，
+ * Mac 上逗号贴着「货」，Windows / Linux 上「货」和「，」之间裂开半个字的洞。
+ * 一句六个字的口号裂一个洞，是这一屏最先被看见的东西。
+ *
+ * 中文标题在断行处不留标点，本来也是排版惯例。英文那行同理（"Every shipment," → 无逗号）。
+ *
+ * 句末的句号留着 —— 它在整句最后，不会在字里行间裂洞，而那一点收束正是
+ * 「全程可见。」这句话的语气所在。
+ * 完整带标点的句子仍在 BRAND.taglineZh / taglineEn 里，meta 和分享卡片读那一份。
+ */
+export const taglineLines = (lang: "zh" | "en") => {
+  const lines = lang === "zh" ? BRAND.taglineZhLines : BRAND.taglineEnLines;
+  return lines.map((line, i) => (i === lines.length - 1 ? line : line.replace(/[，,、；;]$/, "")));
+};
+
 export function Logomark({ size = 30, className }: { size?: number; className?: string }) {
   return (
     <svg

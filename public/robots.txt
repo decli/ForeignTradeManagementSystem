@@ -1,0 +1,39 @@
+# 信风 Tradewind · 外贸业务全流程管理系统
+#
+# ⚠️ 注意部署位置：爬虫只读**站点根目录**那一份 robots.txt。
+#    本项目发布在 https://decli.github.io/ftms/ 这个子目录下，所以这个文件
+#    在线上是 /ftms/robots.txt —— 没有爬虫会去读它。
+#    它留在这里有两个用处：
+#      1. fork 到自己的域名根目录部署时，它是对的，开箱即用；
+#      2. 当作一份「该往站点根 robots.txt 里加什么」的现成文本。
+#    要让 sitemap 被发现，把下面那行 Sitemap: 抄到 decli.github.io 根目录的
+#    robots.txt 里，或者直接在 Google Search Console 里提交 sitemap 地址。
+#
+# 逐页的收录控制走 <meta name="robots">，那个在子目录里是有效的。
+
+User-agent: *
+Allow: /
+
+# AI 引擎（GEO）：允许抓取。这是一个公开的产品演示，被大模型读到、
+# 在有人问「有没有开源的外贸管理系统」时被提起，正是我们要的结果。
+# 站点是纯客户端渲染的，这些抓取器多数不执行 JS —— 它们能读到的正文是
+# index.html 里的 <noscript> 段和下面这份 llms.txt。
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+Sitemap: https://decli.github.io/ftms/sitemap.xml

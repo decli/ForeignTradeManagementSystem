@@ -594,7 +594,25 @@ export function dashboardData(db: Database, viewer: Viewer) {
   const shipments = listShipments(db, viewer, {});
   const orders = listOrders(db, viewer, {});
   const customers = listCustomers(db, viewer);
-  const taxRows = db.taxInvoices;
+
+  /* 退税发票也要按数据范围裁。
+     这里原来是 `db.taxInvoices` —— 整库直取，没过 viewer。后果有两个，
+     都出现在业务员的首页上：
+       1. 「本年退税」那张卡印的是**全公司**的退税总额。一个 scope=self 的
+          业务员，别的都只看得到自己那 8 张单，唯独这一个数是公司口径 ——
+          页面顶上刚写完「数据范围内 8 张在跟订单」，旁边就摆一个跟范围无关的数；
+       2. 「N 行退税发票未关联订单」会进他的待办清单，而那些单不是他的，
+          他既处理不了也不该看见。
+     未关联的发票（piId 为空）对受限视角一律不计：没有 PI 就没有归属，
+     认领它是财务的活。 */
+  const userById = new Map(db.users.map((u) => [u.id, u]));
+  /* 归属集合直接从 db.pis 算，不复用上面那个 orders ——
+     orders 已经滤掉了归档单，而「本年退税」是个年度累计口径，
+     一票货结案归档了，它带来的退税照样算在这一年里。 */
+  const myPi = new Set(
+    db.pis.filter((p) => inScope(viewer, p.salesId, userById.get(p.salesId ?? "")?.team ?? null)).map((p) => p.id),
+  );
+  const taxRows = viewer.scope === "all" ? db.taxInvoices : db.taxInvoices.filter((t) => t.piId && myPi.has(t.piId));
 
   const usdOf = (r: OrderRow) => (r.currency === "CNY" ? r.amount / rate : r.amount);
   const totalUsd = orders.reduce((s, r) => s + usdOf(r), 0);

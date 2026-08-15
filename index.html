@@ -6,15 +6,179 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f3f6fa" media="(prefers-color-scheme: light)" />
+
+    <title>信风 Tradewind · 外贸业务全流程管理系统｜询盘 报价 跟单 收汇 退税</title>
     <meta
       name="description"
-      content="信风 Tradewind —— 你的外贸全流程数智化助手：询盘、报价、跟单、核算、收汇、退税，每一票货全程可见。纯前端演示版，数据存在你自己的浏览器里。"
+      content="信风 Tradewind 是面向中小外贸公司的全流程管理系统：询盘、报价、PI、采购生产、出运跟单、订单核算、收汇、出口退税一条线走完，每一票货全程可见。纯前端在线演示，免注册直接试用，数据只存在你自己的浏览器里。"
     />
-    <!-- 版权只出现在三处不打扰人的地方：这里、登录页页脚、设置页「关于」 -->
+    <meta
+      name="keywords"
+      content="外贸管理系统,外贸ERP,外贸订单管理,跟单系统,出口退税管理,应收账龄,报价核算,PI管理,外贸CRM,出口单证,货代跟单,信风,Tradewind,foreign trade management system,export management software"
+    />
+
+    <!-- 同一份产物发到主站和镜像两个地址，canonical 一律指向主站，
+         否则搜索引擎按重复内容处理，权重被劈成两半。地址由 vite.config.ts 注入 -->
+    <link rel="canonical" href="__CANONICAL__" />
+    <link rel="alternate" hreflang="zh-CN" href="__CANONICAL__" />
+    <link rel="alternate" hreflang="en" href="__CANONICAL__" />
+    <link rel="alternate" hreflang="x-default" href="__CANONICAL__" />
+
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="googlebot" content="index,follow" />
+    <meta name="applicable-device" content="pc,mobile" />
+
+    <!-- 版权只出现在三处不打扰人的地方：这里、登录页页脚、设置页「关于」。
+         邮箱不写进任何 meta —— 那是纯文本，写进去就等着收垃圾邮件；
+         它画在 canvas 上，见 src/components/Copyright.tsx -->
     <meta name="author" content="decli" />
     <meta name="copyright" content="© 2026 decli" />
+
+    <!-- ── 分享卡片 ──────────────────────────────────────────────
+         微信、飞书、Slack、X 里贴链接时展开的那张卡。没有这一段，
+         贴出去就是一条光秃秃的 URL，点击率差一大截 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="信风 Tradewind" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="__CANONICAL__" />
+    <meta property="og:title" content="信风 Tradewind · 外贸业务全流程管理系统" />
+    <meta
+      property="og:description"
+      content="每一票货，全程可见。询盘、报价、跟单、核算、收汇、退税一条线走完 —— 免注册在线演示，数据只存在你自己的浏览器里。"
+    />
+    <meta property="og:image" content="__CANONICAL__og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="信风 Tradewind 外贸业务全流程管理系统" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="信风 Tradewind · 外贸业务全流程管理系统" />
+    <meta
+      name="twitter:description"
+      content="每一票货，全程可见。询盘、报价、跟单、核算、收汇、退税一条线走完 —— 免注册在线演示。"
+    />
+    <meta name="twitter:image" content="__CANONICAL__og.png" />
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>信风 Tradewind · 外贸业务全流程</title>
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- ── 结构化数据 ──────────────────────────────────────────────
+         给搜索引擎和 AI 引擎（GEO）一份机器可读的产品说明。
+         FAQ 那几条是照着「潜在用户真的会问什么」写的，不是关键词堆砌 ——
+         AI 引擎引用的时候会整段抄，写成套话就等于替自己写了一段废话。 -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "@id": "__CANONICAL__#app",
+            "name": "信风 Tradewind",
+            "alternateName": ["Tradewind", "信风外贸管理系统", "Tradewind Foreign Trade Management System"],
+            "applicationCategory": "BusinessApplication",
+            "applicationSubCategory": "外贸管理系统 / Export Management Software",
+            "operatingSystem": "Web（Chrome、Edge、Safari、Firefox）",
+            "softwareVersion": "__APP_VERSION__",
+            "url": "__CANONICAL__",
+            "description": "面向中小外贸公司的全流程管理系统：询盘、报价、PI、采购生产、出运跟单、订单核算、收汇、出口退税一条线走完。纯前端实现，无服务端，数据存在访问者自己浏览器的 IndexedDB 里。",
+            "inLanguage": ["zh-CN", "en"],
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+            "featureList": [
+              "询盘管理与 SLA 跟进",
+              "报价核算：FOB/CIF/DDP 正算利润、反算报价",
+              "PI 取号与商品明细行",
+              "采购合同与生产单协同",
+              "出运跟单：里程碑航程线、停滞与超期识别",
+              "订单核算跟踪与利润率预警",
+              "应收账龄：账期从提单日起算",
+              "出口退税管理与报关单关联",
+              "出口单证齐套检查（按目的国）",
+              "中信保额度监控",
+              "提成与绩效（按利润率分档）",
+              "中英双语、深浅主题、五套主题色",
+              "行级数据范围 + 字段级权限",
+              "本地备份回滚与多标签页实时同步"
+            ],
+            "author": { "@id": "__CANONICAL__#author" },
+            "copyrightHolder": { "@id": "__CANONICAL__#author" },
+            "copyrightYear": "2026",
+            "license": "https://github.com/decli/ForeignTradeManagementSystem",
+            "screenshot": "__CANONICAL__og.png"
+          },
+          {
+            "@type": "Person",
+            "@id": "__CANONICAL__#author",
+            "name": "decli",
+            "url": "https://github.com/decli"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "__CANONICAL__#site",
+            "url": "__CANONICAL__",
+            "name": "信风 Tradewind",
+            "inLanguage": "zh-CN",
+            "publisher": { "@id": "__CANONICAL__#author" }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "__CANONICAL__#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "信风 Tradewind 是什么？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "一套面向中小外贸公司的全流程管理系统。它把询盘、报价、PI、采购生产、出运跟单、订单核算、收汇、出口退税这 33 个模块用同一个 PI 号串成一条链，任何一票货从第一封询盘到最后一笔退税的每一步都查得到。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "怎么试用？需要注册吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "不需要注册。打开在线演示，用 admin / demo1234 直接进去，系统会自动灌一份完整的演示数据（24 家客户、63 张 PI、51 个出运批次）。进去后可以在左下角切换成业务员、财务、只读等身份，用来验证不同角色看到的数据范围。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "我的数据会被上传吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "不会。这是纯前端应用，没有服务端也没有数据库进程，所有数据都写在你自己浏览器的 IndexedDB 里，关掉页面还在，换一台设备就是一套全新的空账套。系统设置里可以随时导出 JSON 备份、导入或重灌。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "业务员能看到我从工厂拿的采购底价吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "采购成本这一列对业务员和只读账号显示为掩码。需要说清楚的是：提成按利润率分档，所以利润率对业务员是可见的，而订单额也可见 —— 两个数摆在一起，成本可以用算术反推出来。要真正挡死，得把成本挡在服务端不下发。演示版的字段级权限挡的是「同事凑过来看一眼屏幕」和「顺手导出一份成本表带走」。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "可以直接用在真实业务上吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "不建议。这一版是演示版：没有服务端校验、没有真会话、不支持多台电脑共享同一份数据，权限判断都在浏览器里。要上生产需要接回后端，接口已经预留好（src/data/sync.ts 的 SyncAdapter），换掉一个数据层文件即可，查询与页面代码不用动。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "它和通用 ERP、通用 CRM 有什么不一样？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "每一页只回答一个外贸场景里的具体问题，而不是把字段列出来。比如库存管理回答「我还能答应客户多少」，给的是可用量（账面减已锁定）并写明锁给了哪张 PI；单证备案的齐套检查按目的国算，韩国要 FORM K、东盟要 FORM E；应收账龄的账期从提单日起算而不是从签约日。金额一律以分为单位的整数存储，避免浮点误差让核算和退税凑不平账。"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
     <script>
       // 主题要在首帧之前定，否则深色用户会先看到一闪的白底
       (function () {
@@ -37,6 +201,58 @@
         <p>正在装载账套…</p>
       </div>
     </div>
+
+    <!-- ── 给不执行 JS 的抓取器看的正文 ──────────────────────────
+         Googlebot 会跑 JS，看得到 React 渲染的界面；但 GPTBot / ClaudeBot /
+         PerplexityBot 这类 AI 抓取器多数不执行 JS，它们看到的就是上面那个空 div。
+         对一个纯客户端渲染的站，这段 <noscript> 是它们唯一读得到的内容 ——
+         所以这里写的是真话和干货，不是关键词。另见 /llms.txt。 -->
+    <noscript>
+      <div class="noscript-doc">
+        <h1>信风 Tradewind · 外贸业务全流程管理系统</h1>
+        <p><strong>每一票货，全程可见。</strong>询盘、报价、采购、跟单、核算、收汇、退税，一条线走完。</p>
+        <p>
+          本站是一个纯前端的在线演示，需要启用 JavaScript 才能运行。演示账号
+          <code>admin</code> / <code>demo1234</code>，无需注册，进去后可切换业务员、财务、只读等身份。
+        </p>
+
+        <h2>它解决什么</h2>
+        <p>
+          外贸公司的单、货、钱、票散在 Excel、微信和邮箱里，「这单到哪了」要靠人去问。信风用同一个
+          PI 号把 33 个模块串成一条链：任何一票货，从第一封询盘到最后一笔退税，每一步都查得到。
+        </p>
+
+        <h2>主要模块</h2>
+        <ul>
+          <li><strong>售前</strong> —— 询盘管理（分配与 SLA）、报价单（多版本议价轨迹）、样品管理</li>
+          <li><strong>订单</strong> —— PI 取号、商品明细行、订单核算跟踪与利润率预警</li>
+          <li><strong>采购生产</strong> —— 询价比价、采购合同、生产单、库存可用量（账面减已锁定）</li>
+          <li><strong>出运跟单</strong> —— 里程碑航程线（交期/装柜/进仓/ATD/ETA）、停滞与超期识别、运费询价、单证备案</li>
+          <li><strong>收付退税</strong> —— 收付款认领、应收账龄（账期从提单日起算）、出口退税、银行日记账、资金汇总、中信保额度</li>
+          <li><strong>档案与分析</strong> —— 客户/产品/供应商、开票资料、报表中心、提成与绩效（按利润率分档）</li>
+        </ul>
+
+        <h2>技术形态</h2>
+        <ul>
+          <li>Vite 7 + React 19 + TypeScript + react-router 7；不引入 UI 库、CSS 框架、图表库、状态管理库</li>
+          <li>数据存在浏览器 IndexedDB 里，无服务端、无数据库进程，可部署到任何静态托管</li>
+          <li>金额一律以「分」为单位的整数存储，避免浮点误差让核算与退税凑不平账</li>
+          <li>中英双语、深浅两套主题 × 五套主题色；行级数据范围 + 字段级权限</li>
+        </ul>
+
+        <h2>边界</h2>
+        <p>
+          这是演示版，<strong>不能直接用于真实业务</strong>：没有服务端校验、没有真会话、不支持多台电脑共享数据，
+          权限判断都在浏览器里。要上生产需要接回后端，接口已预留。
+        </p>
+
+        <p>
+          源码：<a href="https://github.com/decli/ForeignTradeManagementSystem">github.com/decli/ForeignTradeManagementSystem</a>
+          · 著作权所有人 decli · © 2026
+        </p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

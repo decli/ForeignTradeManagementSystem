@@ -7,6 +7,7 @@
  */
 
 import type { Cell, Row, SheetData } from "write-excel-file/browser";
+import { track } from "./analytics";
 
 type CellType = "text" | "number" | "date";
 
@@ -20,6 +21,11 @@ export type SheetColumn<T> = {
 };
 
 export async function exportXlsx<T>(filename: string, columns: SheetColumn<T>[], rows: T[]) {
+  /* 「有没有人真的导出过」是判断这个功能值不值得继续投的唯一硬信号。
+     只报行数和列数这两个规模量，不报文件名 —— 文件名里带着模块和日期，
+     而用户自建账套导出的文件名可能带公司简称。 */
+  track("export_xlsx", { rows: rows.length, columns: columns.length });
+
   // 走 /browser 子入口：node 入口会把 fs 之类的东西拖进包里
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
 

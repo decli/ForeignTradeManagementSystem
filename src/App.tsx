@@ -1,6 +1,8 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppShell } from "./components/shell/AppShell";
+import { trackPage } from "./lib/analytics";
+import { breadcrumb } from "./lib/nav";
 import { useAuth } from "./auth/AuthProvider";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -55,10 +57,29 @@ function PageFallback() {
   );
 }
 
+/**
+ * 路由变化时报一次 page_view。
+ *
+ * gtag 只在脚本加载那一刻自动报一次，之后在 33 个模块之间来回切它一无所知 ——
+ * 不补这一段，GA 上看到的就是「平均每次会话 1 个页面」，而这个数字恰恰是
+ * 我们最想弄清楚的那个（访客到底翻了几个模块）。
+ *
+ * 只报 pathname，不带 search：筛选条件、抽屉里打开的是哪一单，都不是「页面」，
+ * 也不该把单据号送进 GA（见 analytics.ts 第 3 条）。
+ */
+function usePageTracking() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const { group, title } = breadcrumb(pathname);
+    trackPage(pathname, pathname === "/login" ? "登录" : `${group} / ${title}`);
+  }, [pathname]);
+}
+
 export default function App() {
   const { session, user } = useAuth();
   const location = useLocation();
   const signedIn = !!session && !!user;
+  usePageTracking();
 
   if (!signedIn) {
     return (

@@ -136,10 +136,21 @@
 /* ═══════════════════ 打印 ═══════════════════ */
 
 @media print {
-  /* 整页藏起来，只放行单据。visibility 而不是 display —— 见文件顶部 */
-  body * { visibility: hidden; }
-  .doc-sheet,
-  .doc-sheet * { visibility: visible; }
+  /* 整页藏起来，只放行单据。visibility 而不是 display —— 见文件顶部。
+
+     ⚠️ 必须用 :has(.doc-sheet) 限定住。不限定的话，屏幕上**没有**单据的时候
+     这条规则照样把整页抹掉 —— 在看板上按一次 ⌘P，出来的是一张完全空白的纸，
+     没有报错也没有提示，用户只会以为这软件坏了。
+     单据是「只印这一张」，其余页面是「印你看到的」，两件事不能共用一条规则。 */
+  body:has(.doc-sheet) * { visibility: hidden; }
+  /* ⚠️ 这两条必须也带上 body:has(...) 前缀，不能只写 `.doc-sheet`。
+     `:has()` 的特指度取它括号里最强的那个选择器，于是上面那条是
+     (0,1,1)，而光秃秃的 `.doc-sheet` 只有 (0,1,0) —— 压不住它，
+     单据自己也被藏掉，打出来又是一张白纸。
+     （原来那条是 `body *`＝(0,0,1)，比 `.doc-sheet` 弱，所以没这个问题；
+     加了 :has() 之后天平就翻过去了。） */
+  body:has(.doc-sheet) .doc-sheet,
+  body:has(.doc-sheet) .doc-sheet * { visibility: visible; }
   .doc-sheet {
     position: absolute;
     inset: 0 auto auto 0;
@@ -228,4 +239,84 @@ body[data-demo="1"] .doc-sheet::after {
 
 @media print {
   .doc-logo, .doc-seal { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ═══════════ 普通页面的打印 ═══════════
+
+   单据之外的页面走「印你看到的」：把只在屏幕上有意义的东西（侧栏、顶栏、
+   工具条、分页器、浮层）撤掉，正文铺满纸面，版权行印在末尾。
+
+   为什么要管这件事：老板在演示里按一次 ⌘P 是很自然的动作 ——
+   「这张账龄表打一份给财务」。原来这么一按会出一张全白的纸。 */
+
+@media print {
+  body:not(:has(.doc-sheet)) {
+    background: #fff;
+    /* 屏幕上是三块各自滚动的区域，纸上没有「滚动」这回事，
+       不解开的话只会印出第一屏那点内容 */
+    height: auto;
+    overflow: visible;
+  }
+  body:not(:has(.doc-sheet)) .app,
+  body:not(:has(.doc-sheet)) .main,
+  body:not(:has(.doc-sheet)) .canvas {
+    display: block;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  body:not(:has(.doc-sheet)) .page {
+    max-width: none;
+    padding: 0;
+  }
+
+  /* 只在屏幕上有意义的部件。纸上没有「导出」「全屏」「下一页」这回事 ——
+     印一排点不动的按钮出来，比不印更像没做完 */
+  .rail,
+  .rail-scrim,
+  .topbar,
+  .skip-link,
+  .toaster,
+  .tooltip-layer,
+  .sticky-x,
+  .grid-bar .btn,
+  .grid-foot,
+  .pager,
+  .grid-full-veil,
+  .page-acts,
+  .scrim {
+    display: none !important;
+  }
+  /* 表格在屏幕上是个带滚动的窗口，纸上要摊平 —— 否则只印出第一屏那几行 */
+  .grid-scroll,
+  .grid-wrap {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* 纸上没有悬停也没有交互态，一律回到静止的样子 */
+  .card,
+  .kpi,
+  .grid-wrap {
+    box-shadow: none !important;
+    transform: none !important;
+    break-inside: avoid;
+  }
+  table { break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+
+  /* 印出来的东西也要能看出是谁的 */
+  .app-legal {
+    display: block !important;
+    margin-top: 18px;
+    padding: 10px 0 0;
+    border-top: 1px solid #ccc;
+  }
+  .legal-line[data-tone="app"] { color: #666; }
+
+  /* ⚠️ 这里**不能**再写一条 @page。@page 不受选择器约束，整份文档只有一套，
+     后写的那条会赢 —— 在这儿加 `size: A4 landscape` 想让宽表好看一点，
+     代价是上面那张出口发票也跟着横过来打。宽表要横向，用户在打印对话框里
+     选横向即可；单据的纸张方向是不能赌的。 */
 }

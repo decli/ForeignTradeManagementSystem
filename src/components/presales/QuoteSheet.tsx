@@ -20,6 +20,7 @@ import { getBlob } from "@/data/files";
 import { isDemo } from "@/data/profile";
 import type { Quotation } from "@/data/presales-types";
 import { DOC_TITLES, amountInWords, buildQuoteDoc, type DocLang } from "@/lib/docs";
+import { track } from "@/lib/analytics";
 import { daysUntil, formatInt, shortDate } from "@/lib/format";
 import { useT } from "@/i18n";
 
@@ -60,6 +61,7 @@ function useBlobUrl(fileId?: string | null) {
 
 /** 见 DocSheet.printAs：让「另存为 PDF」的默认文件名有意义 */
 function printAs(stem: string) {
+  track("print_quote");
   const prev = document.title;
   document.title = stem;
   const restore = () => {

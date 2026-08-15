@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@/components/Icon";
+import { AppFooter } from "@/components/Copyright";
 import { Toaster } from "@/components/ui/Toast";
 import { TooltipLayer } from "@/components/ui/TooltipLayer";
 import { Avatar } from "@/components/ui/bits";
@@ -64,6 +65,8 @@ export function AppShell() {
         <div className="canvas" ref={canvasRef} id="main">
           <SystemBanner />
           <Outlet />
+          {/* 版权行接在正文之后，跟着内容滚 —— 每一页都有，但一页也不占视口 */}
+          <AppFooter />
         </div>
       </div>
 

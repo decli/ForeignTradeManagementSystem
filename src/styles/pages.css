@@ -1805,3 +1805,97 @@ button.kpi:focus-visible {
     transform: none;
   }
 }
+
+/* ═══════════════ 版权署名 ═══════════════
+   邮箱画在 canvas 上（见 components/Copyright.tsx）。这里只管排版：
+   画布是替一行文字占位的，所以要跟旁边的字基线对齐 —— 用 vertical-align
+   而不是 flex 居中，后者在字号不同的两段之间会差半个像素，看着像没对齐。 */
+
+.mail-mark {
+  display: inline-block;
+  vertical-align: -0.22em;
+  /* 画布内容按 dpr 放大过，缩放时别再做一次平滑 */
+  image-rendering: auto;
+}
+
+.mail-owner {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: opacity var(--dur-1);
+}
+.mail-owner:hover { opacity: 0.75; }
+.mail-owner:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.legal-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+}
+.legal-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.legal-sep {
+  width: 1px;
+  height: 9px;
+  background: currentColor;
+  opacity: 0.35;
+}
+.legal-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: currentColor;
+  opacity: 0.5;
+}
+.legal-ver {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 0.92em;
+  opacity: 0.8;
+}
+
+/* 登录页：暗到几乎读不出来。版权的作用是「在」，不是被看见 */
+.legal-line[data-tone="login"] { color: rgba(232, 238, 251, 0.3); }
+/* 正文末尾：比正文再淡一档，不跟内容抢 */
+.legal-line[data-tone="app"] { color: var(--text-3); }
+.legal-line[data-tone="about"] {
+  justify-content: flex-start;
+  color: var(--text-2);
+}
+
+/* 登录后每一页的页脚。跟着内容滚，不占视口。
+
+   .page 原本留了 96px 底部留白（给横向滚动条和「最后一行别贴着视口底」）。
+   页脚接在它后面，那 96px 就变成了正文与版权行之间的一道空沟 ——
+   所以正文有页脚时把留白让给页脚，两者加起来仍是原来那个高度。
+   用 :has() 而不是无条件改 .page：将来若有页面不挂页脚，留白照旧。 */
+.canvas:has(> .app-legal) > .page {
+  padding-bottom: 36px;
+}
+.app-legal {
+  padding: 0 24px 30px;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+@media (max-width: 768px) {
+  .app-legal {
+    padding: 0 14px 24px;
+  }
+}

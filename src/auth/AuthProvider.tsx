@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useDb } from "@/data/DataProvider";
 import { viewerOf, type Viewer } from "@/data/queries";
 import type { Role, Scope, User } from "@/data/types";
+import { track } from "@/lib/analytics";
 import { googleSignOut, type GoogleProfile } from "./google";
 import { personName, useT } from "@/i18n";
 
@@ -87,10 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInDemo = useCallback((userId: string) => {
     setSession({ kind: "demo", userId, at: new Date().toISOString() });
+    track("login", { method: "demo" });
   }, []);
 
   const signInPassword = useCallback((userId: string) => {
     setSession({ kind: "password", userId, at: new Date().toISOString() });
+    track("login", { method: "password" });
   }, []);
 
   const signInGoogle = useCallback((profile: GoogleProfile, boundUserId: string) => {
@@ -111,6 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const impersonate = useCallback((userId: string) => {
     setSession((s) => (s ? { ...s, userId } : { kind: "demo", userId, at: new Date().toISOString() }));
+    // 只报「换了身份」这件事，不报换成了谁 —— 用户自建账套里的人名是他的数据
+    track("switch_identity");
   }, []);
 
   const value = useMemo<AuthValue>(() => {

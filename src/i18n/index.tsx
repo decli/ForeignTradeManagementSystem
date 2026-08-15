@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { EN } from "./en";
+import { track } from "@/lib/analytics";
 
 /**
  * 轻量 i18n。
@@ -71,7 +72,13 @@ export function LangProvider({ children }: { children: ReactNode }) {
     return {
       lang,
       setLang,
-      toggle: () => setLangState((l) => (l === "zh" ? "en" : "zh")),
+      toggle: () =>
+        setLangState((l) => {
+          const next = l === "zh" ? "en" : "zh";
+          // 英文版要不要继续投人力，靠这个事件回答，不靠猜
+          track("switch_language", { to: next });
+          return next;
+        }),
       t,
       pick: <T,>(zh: T, en: T) => (lang === "zh" ? zh : en),
       locale: lang === "zh" ? "zh-CN" : "en-US",

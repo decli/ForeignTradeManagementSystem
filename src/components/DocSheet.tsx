@@ -21,6 +21,7 @@ import { getBlob } from "@/data/files";
 import { isDemo } from "@/data/profile";
 import type { Pi } from "@/data/types";
 import { DOC_TITLES, amountInWords, buildDoc, showsPacking, showsPrice, showsSignature, type DocKind, type DocLang } from "@/lib/docs";
+import { track } from "@/lib/analytics";
 import { formatInt } from "@/lib/format";
 import { useT } from "@/i18n";
 
@@ -82,6 +83,8 @@ function useBlobUrl(fileId?: string | null) {
  * 标签页标题是全局的，留着不还原，用户回到列表页会看到一个发票号。
  */
 function printAs(stem: string) {
+  // 「打过单据」是这个演示站最有说服力的一步：走到这儿的人已经把产品当工具用了
+  track("print_document");
   const prev = document.title;
   document.title = stem;
   const restore = () => {

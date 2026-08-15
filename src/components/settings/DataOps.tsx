@@ -12,6 +12,7 @@ import { toast, toastError } from "@/components/ui/Toast";
 import { ImportWizard } from "@/components/ImportWizard";
 import { useDb } from "@/data/DataProvider";
 import { restoreSnapshot, snapshot, switchProfile } from "@/data/db";
+import { track } from "@/lib/analytics";
 import { isDemo } from "@/data/profile";
 import { dropSnapshot, listSnapshots, readSnapshot, storageEstimate, takeSnapshot, type SnapshotMeta } from "@/data/backup";
 import { requestPersist } from "@/data/idb";
@@ -64,6 +65,9 @@ export function ProfileSection() {
   const go = async (next: "demo" | "live") => {
     if (next === (demo ? "demo" : "live")) return;
     setBusy(true);
+    /* 从演示切到「我的账套」＝ 访客决定拿它录真数据。
+       这是这个站上最接近「转化」的一个动作，值得单独一个事件。 */
+    track("switch_profile", { to: next });
     await switchProfile(next, user?.id ?? null);
   };
 

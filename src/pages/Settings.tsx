@@ -3,6 +3,8 @@ import { Icon } from "@/components/Icon";
 import { toast, toastError } from "@/components/ui/Toast";
 import { Field, Pill, Segmented } from "@/components/ui/bits";
 import { BRAND, copyright } from "@/components/Brand";
+import { MailOwner } from "@/components/Copyright";
+import { analyticsState } from "@/lib/analytics";
 import { changePassword } from "@/auth/accounts";
 import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
 import { googleConfigured, GOOGLE_CLIENT_ID } from "@/auth/google";
@@ -294,8 +296,14 @@ export default function Settings() {
             <p className="muted">
               {t("也就是说：")}<b>{t("不要把真实业务数据放进这个演示站")}</b>{t("。它没有备份、没有多人协作、没有服务端校验。要用在真实业务上，把")} <code className="num">src/data/db.ts</code>{t(" 换成对接后端的 fetch 即可，上层的查询与页面代码不用动。")}
             </p>
+
+            {/* 站点有没有在统计访问，用户有权自己看到，而不是只有开发者知道。
+                一个反复强调「数据只在你本机」的产品，如果偷偷装了统计还不说，
+                那句话就掉价了 —— 所以宁可把它摆在明处。 */}
+            <AnalyticsNote />
             {/* 版权的正式落点。登录页那行是「在场」，这里才是「可查」——
-                谁做的、哪一年、什么版本，一个地方说全。 */}
+                谁做的、怎么联系、哪一年、什么版本，一个地方说全。
+                邮箱是画在 canvas 上的，点一下复制；理由见 components/Copyright.tsx。 */}
             <div className="about-legal">
               <span>
                 <b>
@@ -304,7 +312,8 @@ export default function Settings() {
                 <em>v{__APP_VERSION__}</em>
               </span>
               <span>
-                {t("作者")} <b>{BRAND.author}</b>
+                {t("著作权所有人")} <b>{BRAND.author}</b>
+                <MailOwner size={12.5} />
               </span>
               <span>{copyright()}</span>
               <span className="muted">{t("保留所有权利")}</span>
@@ -313,6 +322,38 @@ export default function Settings() {
         </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * 访问统计的当前状态。
+ *
+ * 三种情况说三句不同的话，而不是笼统一句「已启用」：
+ * 没配 ID（fork 下来的人看到的）、浏览器要求不被追踪（用户自己设的）、
+ * 正在统计（线上演示站）。第三种要说清楚统计的是什么、不统计什么 ——
+ * 「我们只看你翻了几个模块，不看你账套里的任何一个字」。
+ */
+function AnalyticsNote() {
+  const { t } = useT();
+  const st = analyticsState();
+
+  if (!st.configured) {
+    return (
+      <p className="muted">
+        {t("本站未接入任何访问统计。")}
+        <span className="hint"> {t("（部署时配置 VITE_GA_ID 才会启用）")}</span>
+      </p>
+    );
+  }
+  if (!st.enabled) {
+    return <p className="muted">{t("你的浏览器要求不被追踪，本站已按此关闭访问统计。")}</p>;
+  }
+  return (
+    <p className="muted">
+      {t("本站用 Google Analytics 统计访问量，只记录你打开了哪些模块、点了哪些功能，用来决定下一版先做什么。")}
+      <b> {t("账套里的任何数据都不会上传")}</b>
+      {t("：客户名、单据号、金额一个字都不进统计。浏览器开启「请勿跟踪」即自动关闭。")}
+    </p>
   );
 }
 

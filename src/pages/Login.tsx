@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
-import { BRAND, Logomark, brandLockup, copyright } from "@/components/Brand";
+import { BRAND, Logomark, brandLockup, taglineLines } from "@/components/Brand";
 import { BrandWind } from "@/components/BrandWind";
+import { CopyrightLine } from "@/components/Copyright";
 import { Avatar } from "@/components/ui/bits";
 import { DEMO_ACCOUNTS, signInWithPassword } from "@/auth/accounts";
 import { ROLE_LABEL, SCOPE_LABEL, useAuth } from "@/auth/AuthProvider";
@@ -105,7 +106,7 @@ export default function Login() {
           {/* 字号跟着语种走：中文两行各 5 个字，英文那两行是 19 个字符 ——
               同一个字号下英文会顶穿版心，所以英文那档单独压小 */}
           <h1 data-lang={lang}>
-            {(lang === "zh" ? BRAND.taglineZhLines : BRAND.taglineEnLines).map((line, i) => (
+            {taglineLines(lang).map((line, i) => (
               <span key={i} className={i === 0 ? "l1" : "l2"}>
                 {line}
               </span>
@@ -200,13 +201,10 @@ export default function Login() {
       {/* ── 版权 ──
           放在整屏最底下、暗到几乎读不出来的一行。版权声明的作用是**在**，
           不是被看见 —— 摆在卡片里或者标题旁边，就成了噪声。
-          它跟表单不在同一层，不参与「进去」这个决定。 */}
+          它跟表单不在同一层，不参与「进去」这个决定。
+          邮箱画在 canvas 上，见 components/Copyright.tsx。 */}
       <footer className="login-legal">
-        <span>
-          {copyright()} · {BRAND.zh} {BRAND.en}
-        </span>
-        <span className="login-legal-sep" aria-hidden="true" />
-        <span>{t("演示版本 · 数据仅存于本机")}</span>
+        <CopyrightLine tone="login" extra={t("演示版本 · 数据仅存于本机")} />
       </footer>
     </div>
   );

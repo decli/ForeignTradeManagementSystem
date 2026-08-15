@@ -3,7 +3,7 @@
 **你的外贸全流程数智化助手** —— 每一票货，全程可见。
 询盘、报价、采购、跟单、核算、收汇、退税，一条线走完。
 
-**在线体验 → <https://decli.github.io/>**（演示账号 `admin` / `demo1234`，进去后左下角可随时换身份）
+**在线体验 → <https://decli.github.io/ftms/>**（演示账号 `admin` / `demo1234`，进去后左下角可随时换身份）
 
 > **信风** —— 大航海时代，整条欧亚航线都靠这股常年不改向的风。
 > 「信」又是信用证的信。中英文指向同一个典故，不用解释。
@@ -80,6 +80,37 @@ VITE_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com npm run build
 Client ID 到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建
 「Web 应用」类型的 OAuth 2.0 客户端，「已获授权的 JavaScript 来源」填站点源
 （本地开发再加一条 `http://127.0.0.1:5173`）。不配也能跑，fork 下来什么都不改即可。
+
+---
+
+## 访问统计（可选）
+
+演示站要回答的问题很具体：**访客走到哪一步就走了。** 是登录页就关掉，
+还是进去点了两个模块？有没有人真的走到「导出」和「开始用我的账套」？
+
+```bash
+VITE_GA_ID=G-XXXXXXXXXX npm run build:site
+```
+
+到 [Google Analytics](https://analytics.google.com) → 管理 → 数据流 → 新建
+「网站」数据流，网址填 `https://decli.github.io/ftms/`，建完右上角就是这个 ID。
+GitHub Actions 走仓库 secret `VITE_GA_ID`。
+
+四条硬约定，写在 [`src/lib/analytics.ts`](src/lib/analytics.ts) 的文件头：
+
+| | |
+| --- | --- |
+| **没配 ID 就什么都不做** | 不是「加载了但不发」，是一行脚本都不下载。fork 的人不会莫名替别人收数据，本地开发也不会往线上打点 |
+| **尊重 Do Not Track** | GA 默认不管这个信号，这里主动管。一个卖「数据只在你自己浏览器里」的产品，转头无视用户明说的拒绝，那句宣传就是空的 |
+| **不上报任何业务数据** | 事件参数里只有模块名、动作名。客户名、PI 号、金额、邮箱一律不进 GA |
+| **SPA 手动报 page_view** | gtag 只在加载那一刻自动报一次，之后换 33 个模块它一无所知 —— 不补这段，看板上会显示「平均每次会话 1 个页面」 |
+
+埋的事件：`login` · `page_view` · `export_xlsx` · `print_document` ·
+`print_quote` · `switch_identity` · `switch_profile` · `switch_language`。
+其中 `switch_profile{to:live}`（从演示切到自己的账套）是这个站上最接近「转化」的动作。
+
+统计状态在**设置页「关于」里写明**，用户自己看得到 —— 装了统计还不说，
+「数据只在你本机」这句话就掉价了。
 
 ---
 
@@ -199,7 +230,7 @@ PI 详情里的「一单到底」把这条链画成一张图，每个节点可�
 | **数据导入** | 期初建账刚需；从 Excel 直接粘贴，导前先试运行 | `ImportWizard.tsx` |
 | **本地备份** | 清一次浏览器数据不能让三年台账消失 | `data/backup.ts` |
 | **多标签页同步** | 协同机制跑通，缺的只有网络那一段 | `data/sync.ts` |
-| **字段级权限** | 业务员看得见售价，看不见采购底价 | `lib/perms.ts` |
+| **字段级权限** | 业务员看得见售价，看不见采购底价（有个必须讲在前头的口子，见「从这一版走到生产」） | `lib/perms.ts` |
 | **自定义字段** | 每家公司总有两三个自己的字段 | `flow-types.ts` |
 | **一单到底** | 八个页面的数据接成一条可点的链路 | `OrderTimeline.tsx` |
 | **角色化首页** | 老板看钱，业务员看今天该干什么 | `RoleBand.tsx` |
@@ -277,6 +308,8 @@ PI 详情里的「一单到底」把这条链画成一张图，每个节点可�
 | **撤销** | 所有破坏性操作 6 秒内可撤销，提示条上画一圈倒计时，而不是写「5 秒内可撤销」 |
 | **键盘** | `⌘K` 搜索 · `[` 收侧栏 · `N` 新增 · `F` 聚焦搜索 · `↑↓` 选行 · `↵` 打开 · `空格` 勾选 · `J/K` 抽屉换票 |
 | **无障碍** | 跳转到主内容、`:focus-visible` 焦点环、`aria-sort` / `aria-current` / `aria-live`、按钮全部有可读名称、尊重 `prefers-reduced-motion` |
+| **打印** | 单据是「只印这一张」（整页藏起来，只放行 `.doc-sheet`），其余页面是「印你看到的」（撤掉侧栏顶栏与按钮，表格摊平，版权行印在末尾）。两件事共用一条规则的后果是：在看板上按 ⌘P 出来一张**全白的纸**，没有报错也没有提示 |
+| **版权署名** | 登录页页脚、登录后每一页末尾、设置页「关于」三处。邮箱**画在 canvas 上**，不以文本节点、不以源码字面量、不以 `aria-label` 出现 —— 贴在公开网页上的邮箱半天之内就会进入群发名录。整块可点击复制，读屏用户拿到的是可粘贴的真地址，而爬虫不会去点按钮。见 [`src/components/Copyright.tsx`](src/components/Copyright.tsx) |
 | **输入法** | 受控输入框在中文输入法下不会被打断。值走地址栏参数的框曾经**只能打英文** —— 原因不在输入法，在于 react-router 的 `startTransition` 让更新延后一帧提交，React 在事件收尾时把 DOM 的 `value` 写回旧值，而那对输入法就等于「合成结束」。见 [`docs/architecture.md` 第 9 节](docs/architecture.md) |
 
 ---
@@ -344,17 +377,41 @@ Vite 7 · React 19 · TypeScript · react-router 7 · IndexedDB · write-excel-f
 产物是纯静态文件，`dist/` 直接扔上去就行。仓库里带了两条路：
 
 ```bash
-npm run build:root      # base = /        → 用户站点 decli.github.io
-npm run build:project   # base = /ForeignTradeManagementSystem/  → 项目站点
-npm run deploy          # 构建并推到 decli/decli.github.io
+npm run build:site      # base = /ftms/   → 主站 decli.github.io/ftms/
+npm run build:project   # base = /ForeignTradeManagementSystem/  → 项目站点（镜像）
+npm run deploy          # 构建并推到 decli/decli.github.io 的 ftms/ 子目录
 ```
 
-GitHub Pages 没有服务端，刷新 `/follow-ups` 这种深链接会 404。构建时会把
+**为什么是 `/ftms/` 而不是根路径。** `decli.github.io` 是个人主页的地址，
+根路径该留给主页本身。一个业务系统占着主入口，等于把名片换成了一张产品说明书，
+以后再放任何东西都没地方摆。所以这个项目落在 `https://decli.github.io/ftms/`。
+
+`npm run deploy` 因此只动那个仓库的 `ftms/` 一个目录，其余一律不碰 ——
+它是共享仓库，早期版本「除了 .git 全删」的写法在这个前提下会删掉主页。
+脚本还会检查根目录有没有留着上一版直接发在 `/` 的产物，有就提示（不自动删）。
+
+GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 这种深链接会 404。构建时会把
 `index.html` 再拷一份成 `404.html`，Pages 找不到路径时回落到它，SPA 路由读
 `location.pathname` 就能正确渲染 —— URL 保持干净，不用 hash 路由。
 
 推到 `main` 时 `.github/workflows/deploy.yml` 会自动构建并发布到本仓库的
-项目站点，作为镜像。
+项目站点，作为镜像。**两个 URL 一份内容**，所以 canonical 一律指向主站
+（见 `vite.config.ts` 的 `CANONICAL`），搜索引擎不会把权重劈成两半。
+
+### SEO / GEO
+
+| | |
+| --- | --- |
+| **meta 与分享卡片** | title / description / keywords / canonical / hreflang / Open Graph / Twitter Card 齐全，`public/og.png` 是 1200×630 的分享图 |
+| **结构化数据** | `SoftwareApplication` + `Person` + `WebSite` + `FAQPage` 四段 JSON-LD。FAQ 是照着「潜在用户真会问什么」写的，包括「业务员能不能看到采购底价」这种不好回答的 |
+| **sitemap 与 llms.txt** | 都由 `vite.config.ts` 的 `ROUTES` 生成，一处定义两处输出 —— 手写的清单跟路由表一定会分叉，然后 sitemap 里躺着几条 404 |
+| **给不执行 JS 的抓取器的正文** | Googlebot 会跑 JS，看得到 React 渲染的界面；GPTBot / ClaudeBot / PerplexityBot 多数**不执行 JS**，看到的就是一个空 div。`index.html` 里的 `<noscript>` 段和 `/llms.txt` 是它们唯一读得到的内容，所以那里写的是真话和干货，不是关键词 |
+
+> ⚠️ 爬虫只读**站点根目录**那份 `robots.txt`。本项目在子目录下，线上是
+> `/ftms/robots.txt`，没有爬虫会去读。要让 sitemap 被发现，把
+> `Sitemap: https://decli.github.io/ftms/sitemap.xml` 抄进 `decli.github.io`
+> 根目录的 `robots.txt`，或者直接在 Search Console 里提交。
+> 仓库里那份 `public/robots.txt` 留着是为了 fork 到自己域名根目录时开箱即用。
 
 ---
 
@@ -368,6 +425,7 @@ GitHub Pages 没有服务端，刷新 `/follow-ups` 这种深链接会 404。构
 | 多标签页实时同步 | ✅ 同机多个标签页无刷新同步，冲突规则：最后写入者胜 |
 | **多台电脑共享数据** | ❌ 纯静态托管没有服务端。接口已留好（`data/sync.ts` 的 `SyncAdapter`） |
 | **服务端校验与真会话** | ❌ 权限判断都在浏览器里 —— 字段级权限挡的是「看一眼屏幕」和「顺手导出」，不是加密 |
+| **业务员反推采购成本** | ⚠️ 挡不住。订单列表上成本打了码、**利润率没有**，而 `成本 = 订单额 ×(1 − 利润率)` 一步就算得出来。不挡利润率是因为提成按利润率分档，业务员看不到自己的利润率那条规则就废了 —— 两害相权的结果，不是疏漏。这道墙真正挡住的是**别人的**成本：他导不出一张全公司的成本表 |
 | 附件 | ✅ 存本机 IndexedDB。换电脑不跟着走 |
 | 邮箱同步 | ❌ 需要 IMAP/OAuth 和常驻服务。往来记录目前是手工归档，数据结构按同步设计 |
 

@@ -12,8 +12,8 @@ import "./styles/index.css";
 
 /**
  * BASE_URL 由构建时的 --base 决定：
- * 主站是 `/ftms/`，项目站点镜像是 `/ForeignTradeManagementSystem/`，
- * 本地开发是 `/`。路由 basename 跟着走，三种部署共用一套代码。
+ * 线上是项目站点 `/ftms/`（路径就是仓库名），本地开发是 `/`。
+ * 路由 basename 跟着 BASE_URL 走，两种情况共用一套代码。
  */
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
 

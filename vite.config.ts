@@ -13,12 +13,12 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as {
 /**
  * 站点的正式地址。
  *
- * 同一份产物会发到两个地方：主站 `https://decli.github.io/ftms/` 和本仓库的
- * 项目站点镜像 `.../ForeignTradeManagementSystem/`。两个 URL 一份内容，
- * 搜索引擎按重复内容处理 —— 所以 canonical **永远指向主站**，
- * 镜像那份也是。这样权重不会被劈成两半。
+ * 本仓库是 GitHub Pages 的**项目站点**，路径就是仓库名 —— 仓库叫 `ftms`，
+ * 线上就是 `https://decli.github.io/ftms/`。
  *
- * 换域名只改这一个常量（或用 VITE_SITE_ORIGIN / VITE_SITE_PATH 覆盖）。
+ * 流水线里 VITE_SITE_ORIGIN / VITE_SITE_PATH 由仓库名推导后传进来（见
+ * .github/workflows/deploy.yml），所以改仓库名不用回来改这里。
+ * 下面这两个默认值只在本地构建时生效。换自己的域名也改它们。
  */
 const SITE_ORIGIN = process.env.VITE_SITE_ORIGIN ?? "https://decli.github.io";
 const SITE_PATH = process.env.VITE_SITE_PATH ?? "/ftms/";
@@ -98,7 +98,7 @@ function seoFiles() {
           ``,
           `- 在线演示：${CANONICAL}`,
           `- 演示账号：admin / demo1234（登录后可切换业务员、财务、只读身份，用来验证数据范围）`,
-          `- 源码：https://github.com/decli/ForeignTradeManagementSystem`,
+          `- 源码：https://github.com/decli/ftms`,
           `- 版本：v${pkg.version}`,
           `- 著作权所有人：decli`,
           ``,
@@ -150,9 +150,8 @@ function htmlMeta() {
 
 export default defineConfig({
   /* 默认 `/` 是给 `npm run dev` / `npm run preview` 用的。
-     两个正式产物都走显式的 --base：
-       npm run build:site     → /ftms/                       主站
-       npm run build:project  → /ForeignTradeManagementSystem/  镜像 */
+     线上由流水线传 `--base=/<仓库名>/`；本地想按线上路径核对就用
+     `npm run build:site`（base = /ftms/）。 */
   base: "/",
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [react(), htmlMeta(), spaFallback(), seoFiles()],

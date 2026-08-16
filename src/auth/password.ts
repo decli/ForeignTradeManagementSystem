@@ -26,9 +26,33 @@ const fromHex = (hex: string) => {
   return out;
 };
 
+/**
+ * WebCrypto 只在**安全上下文**里存在：https、localhost、file 之外，
+ * `crypto.subtle` 直接是 undefined。
+ *
+ * 这不是假想场景。这个产品的卖点之一就是「扔到任何一个能发文件的地方就能跑」，
+ * 于是必然有人把它放到内网的 `http://192.168.x.x/` 上做演示 —— 那一刻
+ * 整个站会卡在装载页，报一句 `Cannot read properties of undefined (reading 'importKey')`。
+ * 那句话对着屏幕看半天也猜不到答案是「换成 https 或 localhost」。
+ *
+ * 所以在这里拦一次，把原因和解法直接写出来。
+ */
+function subtleOrThrow(): SubtleCrypto {
+  const s = globalThis.crypto?.subtle;
+  if (!s) {
+    throw new Error(
+      "浏览器没有提供 WebCrypto，口令无法校验。原因是当前页面不是「安全上下文」—— " +
+        "http:// 打开的非 localhost 地址拿不到 crypto.subtle。" +
+        "换成 https 访问，或者在本机用 localhost / 127.0.0.1 打开即可。",
+    );
+  }
+  return s;
+}
+
 async function derive(password: string, salt: Uint8Array, iterations: number) {
-  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits(
+  const subtle = subtleOrThrow();
+  const key = await subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await subtle.deriveBits(
     { name: "PBKDF2", salt: salt as unknown as BufferSource, iterations, hash: "SHA-256" },
     key,
     KEY_LEN * 8,

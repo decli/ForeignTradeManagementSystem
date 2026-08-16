@@ -562,7 +562,7 @@ export const EN: Record<string, string> = {
   "版权所有": "Copyright",
   "保留所有权利": "All rights reserved",
   "本站未接入任何访问统计。": "This site has no visitor analytics.",
-  "（部署时配置 VITE_GA_ID 才会启用）": "(set VITE_GA_ID at build time to enable)",
+  "（内置的衡量 ID 只在官方站点生效；自己部署时配 VITE_GA_ID 即可启用）": "(the built-in measurement ID only applies on the official site; set VITE_GA_ID to enable it on your own deployment)",
   "你的浏览器要求不被追踪，本站已按此关闭访问统计。": "Your browser asks not to be tracked, so analytics is turned off here.",
   "本站用 Google Analytics 统计访问量，只记录你打开了哪些模块、点了哪些功能，用来决定下一版先做什么。": "This site uses Google Analytics to record which modules you open and which features you try, so we know what to build next.",
   "账套里的任何数据都不会上传": "Nothing from your data set is ever uploaded",

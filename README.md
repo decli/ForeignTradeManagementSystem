@@ -92,9 +92,33 @@ Client ID 到 [Google Cloud Console](https://console.cloud.google.com/apis/crede
 VITE_GA_ID=G-XXXXXXXXXX npm run build:site
 ```
 
-到 [Google Analytics](https://analytics.google.com) → 管理 → 数据流 → 新建
-「网站」数据流，网址填 `https://decli.github.io/ftms/`，建完右上角就是这个 ID。
-GitHub Actions 走仓库 secret `VITE_GA_ID`。
+衡量 ID **已内置**（`G-Y7H2JMNX74`，见 `src/lib/analytics.ts`），不用配也能跑。
+它不是密钥 —— 明文写在每个页面的 HTML 里，任何访客按 F12 都看得到，
+所以直接写在源码里而不是塞进 secret：塞进 secret 只会让「本机 deploy」和
+「CI 构建」各配一次，然后有一天忘了配，数据就悄悄断了。
+
+写死带来的另一个问题（fork 的人一构建就在替别人收数据）用**域名守卫**解决：
+内置 ID 只在 `decli.github.io` 上生效，fork 到自己的 github.io 或在 localhost
+跑，一行统计脚本都不加载。配了自己的 `VITE_GA_ID` 就是显式选择，不再受域名限制。
+
+### 同域几个站为什么共用一个 property
+
+`decli.github.io` 下现在有四个入口：`/`（门户）、`/ftms/`、`/ems/`、`/wxformat3/`。
+四个站共用同一个衡量 ID，而不是各申请一个：
+
+- GA4 靠**域名级**的 `_ga` cookie 认人。一个 property 才能把「从门户点进 ftms、
+  退出来又去了 ems」看成**一次会话、一条路径** —— 而那正是做入口页最想知道的事。
+- 拆成四个 property 的话，同一个人会被算成四个访客，跨站流向彻底看不到。
+- 分站数据不会混：每个站发一个 `site` 参数（`portal` / `ftms` / `ems` / `wxformat3`），
+  `page_path` 也带着 `/ftms/` 这样的前缀，报表里按任一维度一拆即可。
+
+> ⚠️ `page_path` 那个前缀是**特意补的**。react-router 的 `pathname` 会剥掉
+> basename，`/ftms/follow-ups` 到埋点这儿只剩 `/follow-ups` —— 直接上报的话，
+> `/ftms/` 和 `/ems/` 在报表里会挤成同一批路径，共用 property 的前提就塌了。
+> 同理 `page_location` 必须是真实地址，拿 `origin + path` 拼出来的是个 404 的 URL。
+
+真要换成自己的 ID：GitHub Actions 走仓库 secret `VITE_GA_ID`，本机构建
+在仓库根建个 `.env` 写一行即可（已在 `.gitignore` 里）。
 
 四条硬约定，写在 [`src/lib/analytics.ts`](src/lib/analytics.ts) 的文件头：
 

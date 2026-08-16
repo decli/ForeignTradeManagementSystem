@@ -341,7 +341,7 @@ function AnalyticsNote() {
     return (
       <p className="muted">
         {t("本站未接入任何访问统计。")}
-        <span className="hint"> {t("（部署时配置 VITE_GA_ID 才会启用）")}</span>
+        <span className="hint"> {t("（内置的衡量 ID 只在官方站点生效；自己部署时配 VITE_GA_ID 即可启用）")}</span>
       </p>
     );
   }

@@ -7,8 +7,9 @@
  *
  * ── 四条硬约定 ──
  *
- * **1. 没配 ID 就什么都不做。** 不是「加载了但不发」，是**一行脚本都不下载**。
- *    fork 这个仓库的人不该莫名其妙替别人收数据，本地开发也不该往线上打点。
+ * **1. 不该统计的场合一行脚本都不下载。** 不是「加载了但不发」。
+ *    内置 ID 只在官方域名上生效，所以 fork 的人不会替别人收数据，
+ *    本地开发也不会往线上打脏数据 —— 细节见下面那段。
  *
  * **2. 尊重 Do Not Track。** GA 默认不管这个信号，这里主动管。
  *    一个卖「你的数据只存在你自己浏览器里」的产品，如果转头无视用户明说的
@@ -23,8 +24,36 @@
  *    所以关掉自动上报，改成跟着路由走。
  */
 
-/** 构建时注入。`VITE_GA_ID=G-XXXXXXXXXX npm run build:site` */
-const GA_ID = (import.meta.env.VITE_GA_ID ?? "").trim();
+/**
+ * ── 衡量 ID 与它的适用范围 ──
+ *
+ * GA 的衡量 ID 不是密钥 —— 它明文写在每个页面的 HTML 里，任何访客按 F12 都看得到。
+ * 所以直接写在源码里，而不是塞进 secret：塞进 secret 只会让「本机 deploy」和
+ * 「CI 构建」各配一次，然后有一天忘了配，数据就悄悄断了。
+ *
+ * 但写死会带来另一个问题：fork 这个仓库的人一构建就在替别人收数据。
+ * 所以内置这个 ID **只在官方域名上生效**。别人 fork 到自己的 github.io、
+ * 或者在 localhost 上跑，一行统计脚本都不会加载。
+ * 真想统计的人配自己的 `VITE_GA_ID`，那是显式选择，就不再受域名限制。
+ *
+ * ── 为什么 decli.github.io 下的几个站共用同一个 ID ──
+ * /ftms/、/ems/、/wxformat3/ 在**同一个域名**下。GA4 靠域名级的 _ga cookie
+ * 认人，同一个 property 才能把「从门户点进 ftms、退出来又去了 ems」
+ * 看成一次会话、一条路径。拆成三个 property 的话，同一个人会被算成三个访客，
+ * 跨站流向彻底看不到 —— 而那恰恰是做门户首页最想知道的事。
+ * 分站数据靠 page_path 的前缀和 `site` 参数切开，见 trackPage()。
+ */
+const BUILTIN_GA_ID = "G-Y7H2JMNX74";
+const OFFICIAL_HOSTS = ["decli.github.io"];
+const ENV_GA_ID = (import.meta.env.VITE_GA_ID ?? "").trim();
+const GA_ID = ENV_GA_ID || BUILTIN_GA_ID;
+
+/** 这个站点该不该用上面那个 ID */
+const idApplies = () =>
+  typeof location !== "undefined" && (!!ENV_GA_ID || OFFICIAL_HOSTS.includes(location.hostname));
+
+/** 报表里用来区分同域下几个站的标签。跟着部署的 base 走，不用手写 */
+const SITE = (import.meta.env.BASE_URL || "/").replace(/^\/|\/$/g, "") || "root";
 
 /** 浏览器明说了不要被追踪就不追踪。三个字段是不同浏览器/年代的写法 */
 function optedOut(): boolean {
@@ -39,9 +68,15 @@ let ready = false;
 
 /** 装没装上。给设置页显示状态用 —— 埋点是否生效不该只有开发者知道 */
 export const analyticsState = () => ({
-  configured: !!GA_ID,
+  configured: !!GA_ID && idApplies(),
   enabled: ready,
-  reason: !GA_ID ? ("未配置 GA ID" as const) : optedOut() ? ("浏览器要求不被追踪" as const) : null,
+  reason: !GA_ID
+    ? ("未配置 GA ID" as const)
+    : !idApplies()
+      ? ("非官方部署，内置 ID 不生效" as const)
+      : optedOut()
+        ? ("浏览器要求不被追踪" as const)
+        : null,
 });
 
 type Params = Record<string, string | number | boolean | undefined>;
@@ -60,7 +95,7 @@ declare global {
  * 而拖慢产品会让统计出来的跳出率变难看，得不偿失。
  */
 export function initAnalytics() {
-  if (ready || !GA_ID || optedOut()) return;
+  if (ready || !GA_ID || !idApplies() || optedOut()) return;
 
   window.dataLayer = window.dataLayer || [];
   // 必须是 arguments 而不是数组：gtag.js 读的是 arguments 对象本身
@@ -77,6 +112,8 @@ export function initAnalytics() {
     allow_google_signals: false,
     allow_ad_personalization_signals: false,
     app_version: __APP_VERSION__,
+    // 同域下几个站共用一个 property，靠这个参数在报表里分开
+    site: SITE,
   });
 
   const s = document.createElement("script");
@@ -86,13 +123,29 @@ export function initAnalytics() {
   ready = true;
 }
 
-/** 一次页面浏览。path 用应用内路由（/follow-ups），不带查询串 —— 筛选条件不是页面 */
+/**
+ * 一次页面浏览。
+ *
+ * ⚠️ 传进来的 path 是 **react-router 的 pathname，它剥掉了 basename** ——
+ * 站点部署在 /ftms/ 下时，/ftms/follow-ups 到这儿只剩 /follow-ups。
+ * 直接上报的话，同域下的 /ftms/ 和 /ems/ 在 GA 报表里会挤成同一批路径，
+ * 而这几个站共用一个 property，正是靠路径前缀区分的 —— 所以这里补回 base。
+ *
+ * page_location 必须是**真实地址**（location.href），不能拿 origin 拼 path：
+ * 拼出来的 https://decli.github.io/follow-ups 是个根本不存在的 URL，
+ * GA 里点进去 404，报表也就没法拿去核对了。
+ *
+ * 不带查询串：筛选条件、抽屉里打开的是哪一单，都不是「页面」，
+ * 也不该把单据号送进 GA（见文件头第 3 条）。
+ */
 export function trackPage(path: string, title: string) {
   if (!ready) return;
+  const full = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") + path;
   window.gtag?.("event", "page_view", {
-    page_path: path,
+    page_path: full,
     page_title: title,
-    page_location: location.origin + path,
+    page_location: location.origin + full,
+    site: SITE,
   });
 }
 
@@ -104,5 +157,5 @@ export function trackPage(path: string, title: string) {
  */
 export function track(event: string, params: Params = {}) {
   if (!ready) return;
-  window.gtag?.("event", event, params);
+  window.gtag?.("event", event, { site: SITE, ...params });
 }

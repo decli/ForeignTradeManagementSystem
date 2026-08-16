@@ -12,10 +12,40 @@ import "./styles/index.css";
 
 /**
  * BASE_URL 由构建时的 --base 决定：
- * 用户站点（decli.github.io）是 `/`，项目站点是 `/ForeignTradeManagementSystem/`。
- * 路由 basename 跟着走，两种部署共用一套代码。
+ * 主站是 `/ftms/`，项目站点镜像是 `/ForeignTradeManagementSystem/`，
+ * 本地开发是 `/`。路由 basename 跟着走，三种部署共用一套代码。
  */
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+/**
+ * 深链接兜底。
+ *
+ * GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 会走 404 流程。正常情况下
+ * Pages 会回落到同目录的 `ftms/404.html`（构建时由 index.html 拷贝而来），
+ * 路由读 pathname 就能正确渲染 —— 这条路走通时下面这段根本不会执行。
+ *
+ * 但「Pages 会不会为子目录找最近的那个 404.html」这件事，官方文档说得并不硬，
+ * 而它错了的后果是**所有深链接刷新后全 404**。所以站点根目录那份 404.html 里
+ * 留了一小段脚本：遇到 /ftms/ 开头的路径，把原始路径记进 sessionStorage
+ * 再跳回 /ftms/。这里把它取回来，用 replaceState 还原成原来的地址 ——
+ * 用户看到的 URL 和刷新前一模一样，历史记录里也不会多出一条。
+ *
+ * 用 sessionStorage 而不是查询串：查询串会在地址栏里留下 `?p=/ftms/follow-ups`
+ * 这种一看就是补丁的东西，而这个产品的路由是刻意保持干净的。
+ */
+const RESCUE_KEY = "ftms:deeplink";
+try {
+  const saved = sessionStorage.getItem(RESCUE_KEY);
+  if (saved) {
+    sessionStorage.removeItem(RESCUE_KEY);
+    // 只认本站路径，"//evil.com" 这种协议相对写法会被当成外站地址
+    if (saved.startsWith(basename + "/") && !saved.startsWith("//")) {
+      history.replaceState(null, "", saved);
+    }
+  }
+} catch {
+  /* 隐私模式下没有 sessionStorage，那就退回 404.html 已经跳到的首页 */
+}
 
 // 卡片光晕跟随鼠标。委托一次就覆盖全站的 .kpi，页面里不用管
 initSpotlight();

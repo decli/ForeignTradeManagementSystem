@@ -19,7 +19,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,20 +49,11 @@ try {
 
   const dest = join(work, SUBDIR);
 
-  /* 旧版本曾经发布在仓库根目录。那批文件还躺在那儿的话，
-     一是 `/` 仍然是这个系统（主入口没让出来），二是同一份内容出现在两个
-     URL 上，搜索引擎会当重复内容处理。这里只提示，不自动删 ——
-     根目录下有什么是这个脚本看不见的，删错了就是删掉别人的主页。 */
-  const strays = ["index.html", "404.html", "assets", "favicon.svg", "robots.txt", "sitemap.xml", "llms.txt", "og.png"]
-    .filter((n) => existsSync(join(work, n)));
-  if (strays.length) {
-    console.log(
-      `\n⚠️  用户站点根目录下还留着上一版直接发布在 / 的产物：\n` +
-        `   ${strays.join("  ")}\n` +
-        `   它们会让 https://decli.github.io/ 仍然打开这个系统，并和 /${SUBDIR}/ 构成重复内容。\n` +
-        `   确认根目录该放什么之后，在 decli.github.io 仓库里手动删掉这几项。\n`,
-    );
-  }
+  /* ── 这个脚本只碰三样东西 ──
+     `ftms/`（整个替换）、`.nojekyll`、根目录的 `robots.txt`（没有才建）。
+     根目录的 index.html / 404.html 是**站点主页**，属于仓库主人，
+     这里一个字都不改 —— 部署一个子项目顺手把人家首页覆盖掉，
+     是这类脚本最容易犯、也最难查的错。 */
 
   // 只清自己那一格
   rmSync(dest, { recursive: true, force: true });
@@ -71,6 +62,18 @@ try {
 
   // GitHub Pages 默认走 Jekyll，下划线开头的目录会被吞掉。这个标记是全仓库级的
   writeFileSync(join(work, ".nojekyll"), "");
+
+  /* robots.txt 只有在**站点根目录**才会被爬虫读到 —— 子目录那份没人看。
+     所以 sitemap 的登记只能落在根上。已经有一份就不覆盖（可能是主人自己写的），
+     只在缺 Sitemap 那一行时喊一声。 */
+  const robots = join(work, "robots.txt");
+  const sitemapLine = `Sitemap: https://decli.github.io/${SUBDIR}/sitemap.xml`;
+  if (!existsSync(robots)) {
+    writeFileSync(robots, `User-agent: *\nAllow: /\n\n${sitemapLine}\n`);
+    console.log("→ 根目录没有 robots.txt，建了一份并登记 sitemap");
+  } else if (!readFileSync(robots, "utf8").includes(sitemapLine)) {
+    console.log(`\n⚠️  根目录 robots.txt 里没有这一行，搜索引擎发现不了 sitemap：\n   ${sitemapLine}\n`);
+  }
 
   const sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: root }).toString().trim();
   run("git", ["add", "-A"], work);

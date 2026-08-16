@@ -386,9 +386,27 @@ npm run deploy          # 构建并推到 decli/decli.github.io 的 ftms/ 子目
 根路径该留给主页本身。一个业务系统占着主入口，等于把名片换成了一张产品说明书，
 以后再放任何东西都没地方摆。所以这个项目落在 `https://decli.github.io/ftms/`。
 
-`npm run deploy` 因此只动那个仓库的 `ftms/` 一个目录，其余一律不碰 ——
-它是共享仓库，早期版本「除了 .git 全删」的写法在这个前提下会删掉主页。
-脚本还会检查根目录有没有留着上一版直接发在 `/` 的产物，有就提示（不自动删）。
+`npm run deploy` 因此只动三样东西：`ftms/`（整个替换）、`.nojekyll`、根目录的
+`robots.txt`（没有才建）。根目录的 `index.html` / `404.html` 是**站点主页**，
+一个字都不改 —— 部署一个子项目顺手把人家首页覆盖掉，是这类脚本最容易犯、
+也最难查的错。（早期版本是「除了 .git 全删」，那是在它独占整个仓库的前提下写的。）
+
+站点仓库现在的样子：
+
+```
+/            一个极简占位首页，随时可整个换掉，不影响 /ftms/
+/ftms/       信风 Tradewind ← 这个仓库的产物
+/robots.txt  站点级，登记各子项目的 sitemap
+/404.html    站点级；另带一段 /ftms/ 深链接的兜底，见下
+```
+
+**深链接的两道保险。** 刷新 `/ftms/follow-ups` 时，Pages 正常会回落到
+`ftms/404.html`（构建时由 `index.html` 拷来），路由读 `pathname` 就渲染对了。
+但「Pages 会不会替子目录去找最近的那个 404.html」官方说得并不硬，而它一旦
+不这么做，后果是**所有深链接刷新后全 404**。所以站点根的 `404.html` 里补了
+一段：把原始路径记进 `sessionStorage` 再跳回 `/ftms/`，应用启动时取回来用
+`replaceState` 还原（见 `src/main.tsx` 的 `RESCUE_KEY`）—— 地址栏和刷新前
+一模一样，历史记录里也不多一条。只认本站路径，`//evil.com` 这种写法会被丢掉。
 
 GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 这种深链接会 404。构建时会把
 `index.html` 再拷一份成 `404.html`，Pages 找不到路径时回落到它，SPA 路由读
@@ -408,10 +426,9 @@ GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 这种深链接会 404�
 | **给不执行 JS 的抓取器的正文** | Googlebot 会跑 JS，看得到 React 渲染的界面；GPTBot / ClaudeBot / PerplexityBot 多数**不执行 JS**，看到的就是一个空 div。`index.html` 里的 `<noscript>` 段和 `/llms.txt` 是它们唯一读得到的内容，所以那里写的是真话和干货，不是关键词 |
 
 > ⚠️ 爬虫只读**站点根目录**那份 `robots.txt`。本项目在子目录下，线上是
-> `/ftms/robots.txt`，没有爬虫会去读。要让 sitemap 被发现，把
-> `Sitemap: https://decli.github.io/ftms/sitemap.xml` 抄进 `decli.github.io`
-> 根目录的 `robots.txt`，或者直接在 Search Console 里提交。
-> 仓库里那份 `public/robots.txt` 留着是为了 fork 到自己域名根目录时开箱即用。
+> `/ftms/robots.txt`，没有爬虫会去读 —— 所以 sitemap 的登记落在
+> `decli.github.io` 根目录那份里（已配好，`npm run deploy` 会检查它在不在）。
+> 仓库里 `public/robots.txt` 留着是为了 fork 到自己域名根目录时开箱即用。
 
 ---
 

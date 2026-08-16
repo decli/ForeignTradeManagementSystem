@@ -410,18 +410,20 @@ npm run deploy          # 构建并推到 decli/decli.github.io 的 ftms/ 子目
 根路径该留给主页本身。一个业务系统占着主入口，等于把名片换成了一张产品说明书，
 以后再放任何东西都没地方摆。所以这个项目落在 `https://decli.github.io/ftms/`。
 
-`npm run deploy` 因此只动三样东西：`ftms/`（整个替换）、`.nojekyll`、根目录的
-`robots.txt`（没有才建）。根目录的 `index.html` / `404.html` 是**站点主页**，
-一个字都不改 —— 部署一个子项目顺手把人家首页覆盖掉，是这类脚本最容易犯、
+`npm run deploy` 因此只动两样东西：`ftms/`（整个替换）和 `.nojekyll`。
+根目录的 `index.html` / `404.html` / `robots.txt` / `sites.js` 归**首页仓库**
+[decli/githubBlogHomePage](https://github.com/decli/githubBlogHomePage) 管，
+这里一个字都不改 —— 部署一个子项目顺手把人家首页覆盖掉，是这类脚本最容易犯、
 也最难查的错。（早期版本是「除了 .git 全删」，那是在它独占整个仓库的前提下写的。）
 
 站点仓库现在的样子：
 
 ```
-/            一个极简占位首页，随时可整个换掉，不影响 /ftms/
-/ftms/       信风 Tradewind ← 这个仓库的产物
-/robots.txt  站点级，登记各子项目的 sitemap
-/404.html    站点级；另带一段 /ftms/ 深链接的兜底，见下
+decli.github.io/          ← Pages 实际发布的仓库，谁也不独占它
+├── index.html  sites.js  404.html  robots.txt   ← decli/githubBlogHomePage
+├── ftms/       ← 这个仓库
+├── ems/        ← decli/ExportMarketingSystem
+└── …
 ```
 
 **深链接的两道保险。** 刷新 `/ftms/follow-ups` 时，Pages 正常会回落到
@@ -450,9 +452,10 @@ GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 这种深链接会 404�
 | **给不执行 JS 的抓取器的正文** | Googlebot 会跑 JS，看得到 React 渲染的界面；GPTBot / ClaudeBot / PerplexityBot 多数**不执行 JS**，看到的就是一个空 div。`index.html` 里的 `<noscript>` 段和 `/llms.txt` 是它们唯一读得到的内容，所以那里写的是真话和干货，不是关键词 |
 
 > ⚠️ 爬虫只读**站点根目录**那份 `robots.txt`。本项目在子目录下，线上是
-> `/ftms/robots.txt`，没有爬虫会去读 —— 所以 sitemap 的登记落在
-> `decli.github.io` 根目录那份里（已配好，`npm run deploy` 会检查它在不在）。
-> 仓库里 `public/robots.txt` 留着是为了 fork 到自己域名根目录时开箱即用。
+> `/ftms/robots.txt`，没有爬虫会去读 —— 所以 sitemap 的登记落在首页仓库
+> 那份根 `robots.txt` 里（已配好）。`npm run deploy` 只**检查**那一行在不在，
+> 不去写它：两个仓库都往同一个文件里写字，迟早互相覆盖，而覆盖掉的那次没人会发现。
+> 本仓库 `public/robots.txt` 留着是为了 fork 到自己域名根目录时开箱即用。
 
 ---
 

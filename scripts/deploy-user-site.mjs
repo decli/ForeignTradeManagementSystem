@@ -63,16 +63,18 @@ try {
   // GitHub Pages 默认走 Jekyll，下划线开头的目录会被吞掉。这个标记是全仓库级的
   writeFileSync(join(work, ".nojekyll"), "");
 
-  /* robots.txt 只有在**站点根目录**才会被爬虫读到 —— 子目录那份没人看。
-     所以 sitemap 的登记只能落在根上。已经有一份就不覆盖（可能是主人自己写的），
-     只在缺 Sitemap 那一行时喊一声。 */
+  /* robots.txt 只有在**站点根目录**才会被爬虫读到，子目录那份没人看 ——
+     所以 sitemap 的登记只能落在根上。但根目录那几个文件归首页仓库
+     （decli/githubBlogHomePage）管，这里只查不写：两个仓库都往同一个文件里
+     写字，迟早互相覆盖，而覆盖掉的那次没人会发现。 */
   const robots = join(work, "robots.txt");
   const sitemapLine = `Sitemap: https://decli.github.io/${SUBDIR}/sitemap.xml`;
-  if (!existsSync(robots)) {
-    writeFileSync(robots, `User-agent: *\nAllow: /\n\n${sitemapLine}\n`);
-    console.log("→ 根目录没有 robots.txt，建了一份并登记 sitemap");
-  } else if (!readFileSync(robots, "utf8").includes(sitemapLine)) {
-    console.log(`\n⚠️  根目录 robots.txt 里没有这一行，搜索引擎发现不了 sitemap：\n   ${sitemapLine}\n`);
+  if (!existsSync(robots) || !readFileSync(robots, "utf8").includes(sitemapLine)) {
+    console.log(
+      `\n⚠️  站点根目录的 robots.txt 里没有这一行，搜索引擎发现不了本站的 sitemap：\n` +
+        `   ${sitemapLine}\n` +
+        `   它归首页仓库管，去 decli/githubBlogHomePage 的 robots.txt 里补上。\n`,
+    );
   }
 
   const sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: root }).toString().trim();

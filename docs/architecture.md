@@ -103,16 +103,24 @@ GitHub Pages 有两种站点，路径不一样：
 | 站点 | URL | base |
 | --- | --- | --- |
 | 用户站点 | `https://decli.github.io/` | `/` |
-| 项目站点 | `https://decli.github.io/ForeignTradeManagementSystem/` | `/ForeignTradeManagementSystem/` |
+| 项目站点 | `https://decli.github.io/<仓库名>/` | `/<仓库名>/` |
 
-资源路径和路由 `basename` 都得跟着 base 走，所以构建两次：
+本项目走**项目站点**：仓库叫 `ftms`，所以线上是 `https://decli.github.io/ftms/`。
+项目站点的路径**就是仓库名**，一字不差、不能自选 —— 这也是仓库从
+`ForeignTradeManagementSystem` 改名成 `ftms` 的原因。
+
+资源路径和路由 `basename` 都跟着 base 走。流水线里 base 从
+`github.event.repository.name` 取，不写死：
 
 ```bash
-npm run build:root       # base = /
-npm run build:project    # base = /ForeignTradeManagementSystem/
+npm run build         # base = /        本地开发
+npm run build:site    # base = /ftms/   跟线上一致，用来本地核对
 ```
 
-运行时 `src/main.tsx` 从 `import.meta.env.BASE_URL` 取 basename，两种部署共用一套代码。
+写死 base 的后果值得记一笔：仓库一改名，产物里所有资源路径就全指向旧路径 ——
+页面打得开，CSS 和 JS 全 404，**而且构建是绿的**，CI 不会报错，没人会去看。
+
+运行时 `src/main.tsx` 从 `import.meta.env.BASE_URL` 取 basename，各种部署共用一套代码。
 
 **深链接 404**：Pages 是纯文件服务，请求 `/follow-ups` 时磁盘上没有这个文件。
 构建插件把 `index.html` 再拷一份成 `404.html`，Pages 找不到路径时会把它吐回来，

@@ -398,49 +398,41 @@ Vite 7 · React 19 · TypeScript · react-router 7 · IndexedDB · write-excel-f
 
 ## 部署
 
-产物是纯静态文件，`dist/` 直接扔上去就行。仓库里带了两条路：
+推到 `main` 就自动上线 —— `.github/workflows/deploy.yml` 构建并发布到
+**本仓库自己的项目站点** <https://decli.github.io/ftms/>。没有别的步骤。
 
 ```bash
-npm run build:site      # base = /ftms/   → 主站 decli.github.io/ftms/
-npm run build:project   # base = /ForeignTradeManagementSystem/  → 项目站点（镜像）
-npm run deploy          # 构建并推到 decli/decli.github.io 的 ftms/ 子目录
+npm run build        # 本地构建（base = /）
+npm run build:site   # 按线上路径构建（base = /ftms/）
+npm run preview      # 预览构建产物
 ```
 
-**为什么是 `/ftms/` 而不是根路径。** `decli.github.io` 是个人主页的地址，
-根路径该留给主页本身。一个业务系统占着主入口，等于把名片换成了一张产品说明书，
-以后再放任何东西都没地方摆。所以这个项目落在 `https://decli.github.io/ftms/`。
+**base 从仓库名算，不写死。** 项目站点的路径就是仓库名，一字不差、不能自选 ——
+所以这个仓库叫 `ftms`，地址才是 `/ftms/`。写死 `--base=/xxx/` 的话，仓库一改名，
+产物里所有资源路径就全指向旧路径：页面打得开，CSS 和 JS 全 404，而且构建是绿的，
+没人会去看。流水线改成从 `github.event.repository.name` 取，改名当天自动跟上。
+canonical / og:url / sitemap 里的绝对地址同理（`VITE_SITE_ORIGIN` / `VITE_SITE_PATH`）。
 
-`npm run deploy` 因此只动两样东西：`ftms/`（整个替换）和 `.nojekyll`。
-根目录的 `index.html` / `404.html` / `robots.txt` / `sites.js` 归**首页仓库**
-[decli/githubBlogHomePage](https://github.com/decli/githubBlogHomePage) 管，
-这里一个字都不改 —— 部署一个子项目顺手把人家首页覆盖掉，是这类脚本最容易犯、
-也最难查的错。（早期版本是「除了 .git 全删」，那是在它独占整个仓库的前提下写的。）
+### 站点全貌
 
-站点仓库现在的样子：
+`decli.github.io` 域名下每个项目都是**独立仓库的项目站点**，各自发各自的，
+互不依赖：
 
-```
-decli.github.io/          ← Pages 实际发布的仓库，谁也不独占它
-├── index.html  sites.js  404.html  robots.txt   ← decli/githubBlogHomePage
-├── ftms/       ← 这个仓库
-├── ems/        ← decli/ExportMarketingSystem
-└── …
-```
+| 地址 | 来自 |
+| --- | --- |
+| `/` | [decli/decli.github.io](https://github.com/decli/decli.github.io)（首页） |
+| `/ftms/` | **本仓库** |
+| `/ems/` | [decli/ems](https://github.com/decli/ems) |
+| `/wxformat3/` | [decli/wxformat3](https://github.com/decli/wxformat3) |
 
-**深链接的两道保险。** 刷新 `/ftms/follow-ups` 时，Pages 正常会回落到
-`ftms/404.html`（构建时由 `index.html` 拷来），路由读 `pathname` 就渲染对了。
-但「Pages 会不会替子目录去找最近的那个 404.html」官方说得并不硬，而它一旦
-不这么做，后果是**所有深链接刷新后全 404**。所以站点根的 `404.html` 里补了
-一段：把原始路径记进 `sessionStorage` 再跳回 `/ftms/`，应用启动时取回来用
-`replaceState` 还原（见 `src/main.tsx` 的 `RESCUE_KEY`）—— 地址栏和刷新前
-一模一样，历史记录里也不多一条。只认本站路径，`//evil.com` 这种写法会被丢掉。
+> 早期这个项目是用一个 `deploy-user-site.mjs` 脚本把产物推到
+> `decli.github.io` 仓库的子目录里的。改成项目站点之后那套跨仓库部署整个不需要了，
+> 脚本已删。一个项目一个仓库，谁也不用去动别人的仓库。
 
 GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 这种深链接会 404。构建时会把
 `index.html` 再拷一份成 `404.html`，Pages 找不到路径时回落到它，SPA 路由读
 `location.pathname` 就能正确渲染 —— URL 保持干净，不用 hash 路由。
-
-推到 `main` 时 `.github/workflows/deploy.yml` 会自动构建并发布到本仓库的
-项目站点，作为镜像。**两个 URL 一份内容**，所以 canonical 一律指向主站
-（见 `vite.config.ts` 的 `CANONICAL`），搜索引擎不会把权重劈成两半。
+站点根还有第二道保险，见 `decli.github.io` 仓库的 `404.html`。
 
 ### SEO / GEO
 
@@ -452,9 +444,9 @@ GitHub Pages 没有服务端，刷新 `/ftms/follow-ups` 这种深链接会 404�
 | **给不执行 JS 的抓取器的正文** | Googlebot 会跑 JS，看得到 React 渲染的界面；GPTBot / ClaudeBot / PerplexityBot 多数**不执行 JS**，看到的就是一个空 div。`index.html` 里的 `<noscript>` 段和 `/llms.txt` 是它们唯一读得到的内容，所以那里写的是真话和干货，不是关键词 |
 
 > ⚠️ 爬虫只读**站点根目录**那份 `robots.txt`。本项目在子目录下，线上是
-> `/ftms/robots.txt`，没有爬虫会去读 —— 所以 sitemap 的登记落在首页仓库
-> 那份根 `robots.txt` 里（已配好）。`npm run deploy` 只**检查**那一行在不在，
-> 不去写它：两个仓库都往同一个文件里写字，迟早互相覆盖，而覆盖掉的那次没人会发现。
+> `/ftms/robots.txt`，没有爬虫会去读 —— 所以 sitemap 的登记落在
+> [decli/decli.github.io](https://github.com/decli/decli.github.io) 那份根
+> `robots.txt` 里（已配好）。加新项目时记得同步加一行。
 > 本仓库 `public/robots.txt` 留着是为了 fork 到自己域名根目录时开箱即用。
 
 ---

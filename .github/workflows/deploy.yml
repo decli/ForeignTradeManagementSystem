@@ -1,11 +1,11 @@
-# 推到 main 就构建并发布到本仓库的项目站点：
-# https://decli.github.io/ForeignTradeManagementSystem/
+# 推到 main 就构建并发布到**本仓库自己的项目站点**：
+#   https://decli.github.io/<仓库名>/
 #
-# 主站点是 https://decli.github.io/ftms/，由 `npm run deploy` 推到
-# decli/decli.github.io 仓库的 ftms/ 子目录，那个仓库走 Pages 的
-# 「从分支发布」模式，跟这条流水线互不干扰。
-# 这里发的是**镜像**：两个 URL 一份内容，所以 canonical 一律指向主站
-# （见 vite.config.ts 的 CANONICAL），搜索引擎只会收录主站那一份。
+# ── base 为什么从仓库名算，而不是写死 ──
+# 项目站点的路径就是仓库名，一字不差、不能自选。写死 `--base=/xxx/` 的话，
+# 仓库一改名，产物里所有资源路径就全指向旧路径 —— 页面能打开，CSS 和 JS 全 404，
+# 而且构建是绿的，没人会去看。
+# 从 ${{ github.event.repository.name }} 取，改名当天这条流水线自动跟上。
 name: Deploy to GitHub Pages
 
 on:
@@ -32,11 +32,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build:project
+      - name: Build（base = /<仓库名>/）
+        # tsc -b 不能省：package.json 里的 build 脚本本来就先跑类型检查，
+        # 这里绕开脚本直接调 vite 的话，类型错误会一路溜到线上
+        run: npx tsc -b && npx vite build --base="/${REPO}/"
         env:
+          REPO: ${{ github.event.repository.name }}
+          # canonical / og:url / sitemap 里的绝对地址也跟着走，
+          # 否则改名之后 sitemap 里全是指向旧路径的死链
+          VITE_SITE_ORIGIN: https://${{ github.repository_owner }}.github.io
+          VITE_SITE_PATH: /${{ github.event.repository.name }}/
           # 两个 secret 都没配也能构建成功：
           #   没有 GOOGLE_CLIENT_ID → 登录页退回账密登录
-          #   没有 GA_ID           → 一行统计脚本都不加载
+          #   没有 GA_ID           → 用源码里内置的衡量 ID（只在官方域名生效）
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
       - uses: actions/configure-pages@v5

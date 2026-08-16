@@ -10,7 +10,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:site": "tsc -b && vite build --base=/ftms/",
-    "build:project": "tsc -b && vite build --base=/ForeignTradeManagementSystem/",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "deploy": "node scripts/deploy-user-site.mjs"
